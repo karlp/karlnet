@@ -1,5 +1,9 @@
 
 Hi! This is the karlnet source tree.
+karlnet consists of nodes, which are (normally) batter powered sensor devices, transmitting data at some
+interval back to a base station.  The base station handles decoding the binary wire formats, and posts all
+the data onto a stomp message bus topic. (the base station is a data producer)  Then whatever consumers
+wish, simply subscribe to the topic.
 
 common - headers and things for packet definitions, etc
 producers - software that can produce data to stick into karlnet, (xbee receiver)
