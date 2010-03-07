@@ -1,0 +1,2 @@
+This requires an activemq with the websockets feature turned on, ie, 5.4-SNAPSHOT or higher.
+

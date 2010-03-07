@@ -1,0 +1,42 @@
+<html>
+<head>
+<title>Current status in karlnet...</title>
+<link rel="stylesheet" type="text/css" href="style.css"></link>
+<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js'></script>
+
+<script type="text/javascript" src="stomp.js"></script>
+<script type="text/javascript" src="karlnet.js"></script>
+<style>
+      .nodes                { border: 1 solid black; }
+      .nodes td, .nodes th { text-align: right; }
+      .nodes .up            { background-color: #9f9; }
+      .nodes .down          { background-color: #f99; }
+    </style>
+</head>
+<body>
+
+<h1>Karlnet nodes</h1>
+<p>The rows automatically update as often as new data is received.  New nodes will simply start growing the
+table
+
+<table id="nodes" class="nodes">
+ <tr>
+  <th>Node</th>
+  <th>sensor1-type</th>
+  <th>sensor1-value</th>
+  <th>sensor2-type</th>
+  <th>sensor2-value</th>
+    <th>last seen</th>
+ </tr>
+ <tr id="16897">
+  <td id="nodename">tinytemp</td>
+  <td id="sensor1-type"></td>
+  <td id="sensor1-value"></td>
+  <td id="sensor2-type"></td>
+  <td id="sensor2-value"></td>
+  <td id="last-seen">Never!</td>
+ </tr>
+</table>
+<pre id="debug"></pre>
+</body>
+</html>
