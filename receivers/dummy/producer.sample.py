@@ -3,11 +3,11 @@
 # A mini producer that can generate some fake data for testing with.
 
 from stompy.simple import Client
+import sys, os, time, socket, random
+sys.path.append('../../common')
 import kpacket
-import time
 import logging
 import jsonpickle
-import random
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 log = logging.getLogger("main")
 
