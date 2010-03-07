@@ -6,6 +6,8 @@ __author__="karlp"
 
 import serial
 from xbee import xbee
+import sys
+sys.path.append("../../common")
 import kpacket
 import time
 from stompy.simple import Client
