@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Karl Palsson, 2010
-# prototyping message sending to karlnet
+# A mini producer that can generate some fake data for testing with.
 
 from stompy.simple import Client
 import kpacket
@@ -14,7 +14,8 @@ log = logging.getLogger("main")
 stomp = Client(host='egri')
 
 def runMain():
-    stomp.connect(clientid="sample producer")
+    clientid = "karlnet_fake_producer@%s/%d" % (socket.gethostname(), os.getpid())
+    stomp.connect(clientid=clientid)
     
     while True:
         s1 = kpacket.Sensor(type=36, raw=1234, value=random.randint(0,100))
