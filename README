@@ -1,0 +1,8 @@
+
+Hi! This is the karlnet source tree.
+
+common - headers and things for packet definitions, etc
+producers - software that can produce data to stick into karlnet, (xbee receiver)
+consumers - software that makes use of karlnet data (rrd, webpages, etc)
+nodes - firmware that runs on the wireless nodes
+
