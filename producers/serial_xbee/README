@@ -1,0 +1,11 @@
+The main, and normally, the only producer.  This code expects to listen to a
+serial port with a directly connected xbee.  It listens for rx 16bit
+addressing frames (as sent by of the karlnet nodes) and decodes the wire
+formats and applies any dataprocessing, before posting it all to the message
+bus.
+
+An upstart script is included to get this started, and keep it started. 
+
+Requirements:
+  * serial port with xbee attached
+  * stomp broker active. (activemq or similar)

@@ -21,7 +21,6 @@ def runMain():
         log.info("received a message: %s", message.body)
         kp = jsonpickle.decode(message.body)
         log.info("received a message: %s", kp)
-        log.debug("hohoho: %s", kp.node)
 
 
 if __name__ == "__main__":

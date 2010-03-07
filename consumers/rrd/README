@@ -1,0 +1,6 @@
+This logs received messages into two rrd files.  One of them is from an
+existing cacti installation, the other is for a separate rrd I made for use
+with rrd.cgi, as an experiment.
+
+You'll probabaly definitely need to do some work on this one.
+

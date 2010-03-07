@@ -4,6 +4,8 @@
 
 __author__="karlp"
 
+config = { 'serialPort' : "/dev/ttyUSB0" }
+
 import serial
 from xbee import xbee
 import sys
@@ -23,7 +25,6 @@ stomp = Client(host='egri')
 
 
 def runMainLoop():
-    #port = serial.Serial("/dev/ttyUSB0", 19200, timeout=30)
     lastgoodtime = 0
     port = None
     manualTimeout = 40
@@ -35,7 +36,7 @@ def runMainLoop():
             log.warn("XXX Reopening the serial port, no data for %d seconds!", manualTimeout)
             if port:
                 port.close()
-            port = serial.Serial("/dev/ttyUSB0", 19200, timeout=10)
+            port = serial.Serial(config['serialPort'], 19200, timeout=10)
 	packet = xbee.find_packet(port)
         if packet:
                 xb = xbee(packet, strict=True)

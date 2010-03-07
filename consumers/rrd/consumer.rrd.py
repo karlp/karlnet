@@ -2,8 +2,11 @@
 # Karl Palsson, 2010
 # A karlnet consumer, writing into the cacti and rrd.cgi rrd files...
 
+import sys
+sys.path.append("../../common")
 import kpacket
 
+# The keys are the node id, which is the 16bit xbee address at the moment.
 config = {
     16897 : {
         "cacti_filename" : '/var/lib/cacti/rra/localhost_freq_9.rrd',
