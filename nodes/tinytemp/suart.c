@@ -1,5 +1,6 @@
 // Karl Palsson, 2010
-// 
+// Very basic polled IO, for a tx only software uart.
+// config is in suart.h
 #include <avr/io.h> 
 #include <util/delay.h>
 #include "suart.h"

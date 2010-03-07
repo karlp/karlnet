@@ -1,5 +1,5 @@
 // Karl Palsson, 2010
-// 
+// Sample, not connected to anything reall
 #include <stdio.h>
 #include <stdlib.h>
 #include <avr/io.h> 

@@ -1,0 +1,6 @@
+
+This package contains the c-firmware for the "tinytemp" node.  This is an
+attiny85/45/25 hooked up to an xbee via the adafruit xbee adapter.  This is a
+dumb node, sending data to base only.
+
+Base station address is hardcoded to xbee 16 bit address 0x0001.
