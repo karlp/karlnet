@@ -4,6 +4,9 @@
 
 from stompy.simple import Client
 import jsonpickle
+import sys, os
+sys.path.append(os.path.join(sys.path[0], "../../common"))
+
 import kpacket
 import logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s")

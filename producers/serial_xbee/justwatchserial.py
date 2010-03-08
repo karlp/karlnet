@@ -5,13 +5,12 @@
 __author__="karlp"
 
 config = { 'serialPort' : "/dev/ttyUSB0" }
-
+import sys, os, time
 import serial
 from xbee import xbee
-import sys
-sys.path.append("../../common")
+sys.path.append(os.path.join(sys.path[0], "../../common"))
+
 import kpacket
-import time
 from stompy.simple import Client
 import jsonpickle
 import logging

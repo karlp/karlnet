@@ -2,8 +2,8 @@
 # Karl Palsson, 2010
 # A karlnet consumer, writing into the cacti and rrd.cgi rrd files...
 
-import sys
-sys.path.append("../../common")
+import sys, os, socket
+sys.path.append(os.path.join(sys.path[0], "../../common"))
 import kpacket
 
 # The keys are the node id, which is the 16bit xbee address at the moment.
@@ -14,12 +14,9 @@ config = {
     }
 }
 
-
 from stompy.simple import Client
 import jsonpickle
 import rrdtool
-import socket
-import os
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s",
