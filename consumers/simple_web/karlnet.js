@@ -1,13 +1,16 @@
 // Pretty much from: http://jmesnil.net/stomp-websocket/doc/
 
-var client = Stomp.client("ws://egri:61614");
+var client = Stomp.client("ws://is.beeroclock.net:61614");
 
 
-/*
 client.debug = function(str) {
-    $("#debug").append(str + "\n");
+    if ($("#debugEntries li").length > 5) {
+        $("#debugEntries li:last").remove()
+    }
+    $("#debugEntries li:first").before("<li><pre>" + str + "</pre>");
+    
 }
-*/
+
 
 
 
@@ -37,4 +40,12 @@ var onconnect = function(frame) {
     client.subscribe("/topic/karlnet", onreceive);
 };
 
-client.connect("blah", "blah", onconnect);
+var onerror = function(frame) {
+    debug("bang!" + frame.headers.message);
+    // try and reconnect?,
+    // or just present a button to reconnect?
+    client.connect("blah", "blah", onconnect, onerror);
+};
+    
+
+client.connect("blah", "blah", onconnect, onerror);
