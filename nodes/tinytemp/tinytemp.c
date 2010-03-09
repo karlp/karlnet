@@ -53,9 +53,17 @@ void init(void) {
 	clock_prescale_set(0);
 	TX_CONFIG;
         ADCSRA = (1<<ADPS2) | (1<<ADPS1); // prescale down to 125khz for accuracy
+
 	// things we never need...
 	power_timer1_disable();
 	power_usi_disable();
+
+        // switch off the analog comparator
+        ACSR &= ~(1<<ACIE);
+        ACSR |= (1<<ACD);
+
+        // Make sure no analog input pins have digital buffers
+        DIDR0 = 0;  // we don't use _any_ digitial inputs
 	
 	// setup the timer0 prescalar stuff
 	GTCCR |= (1<<TSM) | (1<<PSR0);  // reset prescalar
@@ -83,13 +91,15 @@ int main(void) {
 
 	while (1) {
 
-		//power_adc_enable();
+		power_adc_enable();
+                _delay_us(70);  // max internal vref startup time from datasheet
                 ADC_ENABLE;
                 init_adc();
 		unsigned int sensor1 = adc_read();
 		init_adc_int_temp();
 		unsigned int sensor2 = adc_read();
                 ADC_DISABLE;
+		power_adc_disable();
 
 		packet.type1 = 36;
 		packet.value1 = sensor1;
