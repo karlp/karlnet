@@ -59,7 +59,7 @@ class Sensor(object):
     
     def __convertSensor_TMP36(self, rawValue, reference):
         rawNum = float(rawValue)
-        milliVolts = rawNum / 1023 * reference;
+        milliVolts = rawNum / 1024 * reference;
         lessOffset = (milliVolts - 750) / 10;
         tempC = 25 + lessOffset;
         return tempC
