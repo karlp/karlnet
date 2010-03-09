@@ -25,8 +25,11 @@
 #define VREF_11  (1<<REFS1)
 #define VREF_256 (1<<REFS1) | (1<<REFS2)
 
+#define ADC_ENABLE  (ADCSRA |= (1<<ADEN))
+#define ADC_DISABLE  (ADCSRA &= ~(1<<ADEN))
+
+
 void init_adc(void) {
-    ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS1); // prescale down to 125khz for accuracy
     ADMUX = VREF_256 | 0x03;  // vcc reference, and source = ADC3
 }
 
@@ -38,9 +41,8 @@ unsigned int adc_read(void)
     return (ADCH << 8) | lsb;          // read the MSB and return 10 bit result
 }
 
-unsigned int init_adc_int_temp(void)
+void init_adc_int_temp(void)
 {
-    ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS1); // prescale down to 125khz for accuracy
     ADMUX = VREF_11 | (1<<MUX3) | (1<<MUX2) | (1<<MUX1) | (1<<MUX0); // internal temp sensor
 }
 
@@ -50,6 +52,7 @@ void init(void) {
 	XBEE_OFF;
 	clock_prescale_set(0);
 	TX_CONFIG;
+        ADCSRA = (1<<ADPS2) | (1<<ADPS1); // prescale down to 125khz for accuracy
 	// things we never need...
 	power_timer1_disable();
 	power_usi_disable();
@@ -58,13 +61,6 @@ void init(void) {
 	GTCCR |= (1<<TSM) | (1<<PSR0);  // reset prescalar
 	TCCR0B |= (1<<CS02) | (1<<CS00);  // timer prescale down to 1024
 	GTCCR &= ~(1<<TSM);  // allow prescalar changes to take effect
-	
-}
-
-void s_print_header(void) {
-	putChar('x');
-	putChar('x');
-	putChar('x');
 }
 
 void s_print_short(unsigned int val) {
@@ -86,12 +82,15 @@ int main(void) {
 	packet.header = 'x';
 
 	while (1) {
-		power_adc_enable();
-		init_adc();
+
+		//power_adc_enable();
+                ADC_ENABLE;
+                init_adc();
 		unsigned int sensor1 = adc_read();
 		init_adc_int_temp();
 		unsigned int sensor2 = adc_read();
-		power_adc_disable();
+                ADC_DISABLE;
+
 		packet.type1 = 36;
 		packet.value1 = sensor1;
 		packet.type2 = 'i';
