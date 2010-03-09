@@ -1,17 +1,14 @@
 // Pretty much from: http://jmesnil.net/stomp-websocket/doc/
 
-var client = Stomp.client("ws://is.beeroclock.net:61614");
+var client = Stomp.client("ws://is.beeroclock.net:61619");
 
 
 client.debug = function(str) {
-    if ($("#debugEntries li").length > 5) {
+    if ($("#debugEntries li").length > 10) {
         $("#debugEntries li:last").remove()
     }
     $("#debugEntries li:first").before("<li><pre>" + str + "</pre>");
-    
 }
-
-
 
 
 var onreceive = function(message) {
@@ -31,8 +28,6 @@ var onreceive = function(message) {
     row.find('#sensor2-type').html(hp.sensor2.type);
     row.find('#sensor2-value').html(hp.sensor2.value);
     row.find('#last-seen').html(timestamp.toString());
-
-
 }
 
 var onconnect = function(frame) {
@@ -40,11 +35,20 @@ var onconnect = function(frame) {
     client.subscribe("/topic/karlnet", onreceive);
 };
 
+var connectErrorCount = 0;
 var onerror = function(frame) {
-    debug("bang!" + frame.headers.message);
-    // try and reconnect?,
-    // or just present a button to reconnect?
-    client.connect("blah", "blah", onconnect, onerror);
+    if (frame.message) {
+        debug("bang something went wrong: " + frame.message);
+    } else {
+        // couldn't connect at all, try a few times then give up?
+        debug("Failed to connect: " + frame)
+        connectErrorCount += 1;
+        if (connectErrorCount < 5) {
+            client.connect("blah", "blah", onconnect, onerror);
+        } else {
+            debug("Aborting connection after 5 attempts");
+        }
+    }
 };
     
 
