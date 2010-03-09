@@ -7,6 +7,7 @@
 #include <avr/power.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
+#include <avr/wdt.h>
 #include "suart.h"
 #include "karlnet.h"
 #include "xbee-api.h"
@@ -55,6 +56,7 @@ void init(void) {
         ADCSRA = (1<<ADPS2) | (1<<ADPS1); // prescale down to 125khz for accuracy
 
 	// things we never need...
+	power_timer0_disable();
 	power_timer1_disable();
 	power_usi_disable();
 
@@ -65,10 +67,16 @@ void init(void) {
         // Make sure no analog input pins have digital buffers
         DIDR0 = 0;  // we don't use _any_ digitial inputs
 	
-	// setup the timer0 prescalar stuff
-	GTCCR |= (1<<TSM) | (1<<PSR0);  // reset prescalar
-	TCCR0B |= (1<<CS02) | (1<<CS00);  // timer prescale down to 1024
-	GTCCR &= ~(1<<TSM);  // allow prescalar changes to take effect
+        // We're going to use the watchdog timer to wake us up from deep sleep...
+        set_sleep_mode(SLEEP_MODE_PWR_DOWN);  // Deeeeep sleeeep
+    
+        MCUSR &= ~(1<<WDRF);
+        // start timed sequence
+        WDTCR |= (1<<WDCE) | (1<<WDE);
+        // set new watchdog timeout value
+        WDTCR = (1<<WDP3);  // 4 secs
+        WDTCR |= (1<<WDIE);
+
 }
 
 void s_print_short(unsigned int val) {
@@ -81,6 +89,8 @@ void s_print_sensor(unsigned char sensor_type, unsigned int value) {
 	putChar(sensor_type);
 	s_print_short(value);
 }
+
+EMPTY_INTERRUPT(WDT_vect);
 
 
 int main(void) {
@@ -110,21 +120,11 @@ int main(void) {
 		xbee_send_16(1, packet);  // manually set my base station to address MY = 1
 		XBEE_OFF;
 
-		// slow down the clocks, so we can do a wakeup in ~5 seconds from one timer overflow..
-		clock_prescale_set(8);  // fclock now 1Mhz
-		// preload the timer so it overflows about where we expect
-		TCNT0 = SENSOR_DELAY_5sec;
-		TIMSK |= (1<<TOIE0);  // enable timer0 overflow interrupt (wakeup)
-		
-
 		// now sleep!
-		set_sleep_mode(0);
-		sleep_enable();
 		sei();
-		sleep_cpu();
+		sleep_mode();
 		sleep_disable();
 		cli();
-		clock_prescale_set(0);
 	}
 }
 
