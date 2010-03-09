@@ -1,15 +1,19 @@
 // Pretty much from: http://jmesnil.net/stomp-websocket/doc/
 
-var client = Stomp.client("ws://is.beeroclock.net:61619");
+
+(function(window) {
 
 
-client.debug = function(str) {
+var debug = function(str) {
     if ($("#debugEntries li").length > 10) {
         $("#debugEntries li:last").remove()
     }
     $("#debugEntries li:first").before("<li><pre>" + str + "</pre>");
 }
 
+
+var client = Stomp.client("ws://is.beeroclock.net:61619");
+client.debug = debug;
 
 var onreceive = function(message) {
     hp = jQuery.parseJSON(message.body)
@@ -53,3 +57,5 @@ var onerror = function(frame) {
     
 
 client.connect("blah", "blah", onconnect, onerror);
+
+})(window);
