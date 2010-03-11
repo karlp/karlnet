@@ -20,7 +20,7 @@ var onreceive = function(message) {
     // bah humbug! what's wrong here?!
     //timestamp = new Date(parseInt(message.timestamp));
     timestamp = new Date();
-    row = $("#nodes").find("#" + hp.node)
+    row = $("#nodes").find("#node_" + hp.node)
     if (row.length == 0) {
         row = $("#nodes tr:last").clone();
         row.attr("id", hp.node);
