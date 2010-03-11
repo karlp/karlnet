@@ -1,14 +1,15 @@
 // Karl Palsson
 // hacky tx only xbee api mode....
-
+// YOU ARE EXPECTED TO DEFINE PUT_CHAR youself!
 
 #include "xbee-api.h"
-#include "suart.h"
 
 #define FRAME_DELIM 0x7e
 #define ESCAPE 0x7d
 #define X_ON 0x11
 #define X_OFF 0x13
+
+
 
 // private methods...
 int needsEscaping(uint8_t val) {
@@ -22,10 +23,10 @@ int needsEscaping(uint8_t val) {
 // write out value, inserting and escaping if needed.  returns the input to add in checksumming
 uint8_t escapePutChar(uint8_t value) {
 	if (needsEscaping(value)) {
-		putChar(ESCAPE);
-		putChar(value ^ 0x20);
+		PUT_CHAR(ESCAPE);
+		PUT_CHAR(value ^ 0x20);
 	} else {
-		putChar(value);
+		PUT_CHAR(value);
 	}
 	return value;
 }
@@ -42,9 +43,9 @@ uint8_t escapePut32(uint32_t value) {
 
 // send a karlpacket.  Not exactly very general :)
 void xbee_send_16(uint16_t destination, kpacket packet) {
-	putChar(FRAME_DELIM);
-	putChar(0);  // we never send more than 255 bytes
-	putChar(5 + sizeof(kpacket));  // command, frame, destination + options
+	PUT_CHAR(FRAME_DELIM);
+	PUT_CHAR(0);  // we never send more than 255 bytes
+	PUT_CHAR(5 + sizeof(kpacket));  // command, frame, destination + options
 
 	uint8_t checksum;  // doesn't need to include escaping! woo
 
@@ -58,5 +59,5 @@ void xbee_send_16(uint16_t destination, kpacket packet) {
 	checksum += escapePutChar(packet.type2);
 	checksum += escapePut32(packet.value2);
 	
-	putChar(0xff - checksum);
+	PUT_CHAR(0xff - checksum);
 }

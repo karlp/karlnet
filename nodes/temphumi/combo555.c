@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <avr/io.h> 
 #include <avr/pgmspace.h>
+#include <avr/sleep.h>
+#include <avr/power.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 #include "uart.h"
 #include "karlnet.h"
@@ -19,18 +22,17 @@
 #define XBEE_ON         (PORTD &= ~(1<<PIND3))
 #define XBEE_CONFIG     (DDRD |= (1<<PIND3))
 
-#define CPU_PRESCALE(n) (CLKPR = 0x80, CLKPR = (n))
+#define ADC_ENABLE  (ADCSRA |= (1<<ADEN))
+#define ADC_DISABLE  (ADCSRA &= ~(1<<ADEN))
 
 #define BAUD_RATE 19200
+
 
 #define VREF_VCC  0
 #define VREF_11  (1<<REFS1) | (1<<REFS0) // requires external cap at aref!
 
-
-void adc_config(void)
-{
-    ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);  // enable ADC
-    ADMUX = VREF_11;  // vref and adc0
+void init_adc(void) {
+    ADMUX = VREF_11 | 0;  // adc0
 }
 
 
@@ -62,29 +64,38 @@ unsigned int readSensorFreq(void) {
 void init(void) {
 	LED_CONFIG;
 	XBEE_CONFIG;
-	adc_config();
+        XBEE_OFF;
+        clock_prescale_set(0);
+        ADCSRA = (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);  // enable ADC
 	uart_init(UART_BAUD_SELECT(BAUD_RATE,F_CPU));
 }
 
 
 int main(void) {
-	CPU_PRESCALE(0);
 	init();
 	sei();
+        kpacket packet;
+        packet.header = 'x';
 
 	LED_ON;
 	while (1) {
+                ADC_ENABLE;
+                init_adc();
 		unsigned int sensor1 = adc_read();
+                ADC_DISABLE;
+                
 		LED_ON;
 		unsigned int freq1 = readSensorFreq();
 		LED_OFF;
+
+                packet.type1 = 37;
+                packet.value1 = sensor1;
+                packet.type2 = 'f';
+                packet.value2 = freq1;
+
 		XBEE_ON;
-		_delay_ms(20);
-		uart_puts_P("xxx");
-		uart_putc(37);
-		uart_print_short(sensor1);
-		uart_putc('f');
-		uart_print_short(freq1);
+		_delay_ms(15); // xbee manual says 2ms for sleep mode 2, 13 for sm1
+                xbee_send_16(1, packet);
 		XBEE_OFF;
 		_delay_ms(2000);
 	}
