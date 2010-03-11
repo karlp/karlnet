@@ -1,0 +1,7 @@
+*.o
+*.ls[st]
+*.sym
+*.hex
+*.elf
+*.eep
+

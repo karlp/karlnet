@@ -45,9 +45,10 @@ TARGET = tinytemp
 
 
 # List C source files here. (C dependencies are automatically generated.)
+KARLNET_COMMON = ../../common
 SRC =	$(TARGET).c \
 	suart.c	\
-	xbee-api.c
+	$(KARLNET_COMMON)/xbee-api.c
 
 # MCU name, you MUST set this to match the board you are using
 # type "make clean" after changing this, so all files will be rebuilt
@@ -109,7 +110,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = 
+EXTRAINCDIRS = $(KARLNET_COMMON)
 
 
 # Compiler flag to set the C Standard level.
