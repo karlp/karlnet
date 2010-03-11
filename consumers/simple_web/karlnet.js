@@ -23,7 +23,7 @@ var onreceive = function(message) {
     row = $("#nodes").find("#node_" + hp.node)
     if (row.length == 0) {
         row = $("#nodes tr:last").clone();
-        row.attr("id", hp.node);
+        row.attr("id", "node_" + hp.node);
         $("#nodename", row).html(hp.node);
         $("#nodes tr:last").after(row);
     }
