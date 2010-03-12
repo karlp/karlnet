@@ -12,7 +12,8 @@ var debug = function(str) {
 }
 
 
-var client = Stomp.client("ws://is.beeroclock.net:61619");
+//var client = Stomp.client("ws://is.beeroclock.net:61614");
+var client = Stomp.client("ws://is.beeroclock.net:61614");
 client.debug = debug;
 
 var onreceive = function(message) {
