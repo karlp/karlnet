@@ -35,12 +35,13 @@ var onreceive = function(message) {
     row.find('#last-seen').html(timestamp.toString());
 }
 
+var connectErrorCount = 0;
 var onconnect = function(frame) {
     debug("Connected to stomp");
     client.subscribe("/topic/karlnet", onreceive);
+    connectErrorCount = 0;
 };
 
-var connectErrorCount = 0;
 var onerror = function(frame) {
     if (frame.message) {
         debug("bang something went wrong: " + frame.message);
