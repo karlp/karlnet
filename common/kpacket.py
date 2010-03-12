@@ -18,7 +18,7 @@ class human_packet(object):
         self.sensor2 = sensor2
 
     def __str__(self):
-        return "human_packet[node=%s, sensor1=%s, sensor2=%s]" % (self.node, self.sensor1, self.sensor2)
+        return "human_packet[node=%#x, sensor1=%s, sensor2=%s]" % (self.node, self.sensor1, self.sensor2)
 
 class wire_packet(object):
 	"""
