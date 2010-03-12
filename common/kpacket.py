@@ -79,7 +79,8 @@ class Sensor(object):
         if self.type == 37:
             return self.__convertSensor_TMP36(self.rawValue, 1100)
         if self.type == ord('f'):
-            return self.rawValue
+            # 555 timer is C = 1/f / 300k / 0.693 (555 constant)
+            return (1e12/(self.rawValue * 300000 * 0.693))
         if self.type == ord('i'):
             return self.rawValue
         self.log.warn("Unknown sensor type: %s", self.type)
