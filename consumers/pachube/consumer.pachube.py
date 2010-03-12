@@ -8,6 +8,9 @@ import kpacket
 
 # The keys are the node id, which is the 16bit xbee address at the moment.
 config = {
+    0x4201 : {
+        "feedId" : 6235
+        },
     0x4202 : {
         "feedId" : 6234
         },
@@ -17,6 +20,7 @@ config = {
 from stompy.simple import Client
 import jsonpickle
 import httplib
+import time
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s",
@@ -27,42 +31,55 @@ log = logging.getLogger("main")
 stomp = Client(host='egri')
 
 
-def buildEeml(kp):
-    """Construct EEML from a karlnet packet"""
-    data = """<?xml version="1.0" encoding="UTF-8"?>
-<eeml xmlns="http://www.eeml.org/xsd/005">
-  <environment>
-    <data id="0">
-        <value>%(value1)s</value>
-    </data>
-  </environment>
-</eeml>"""
-    return data % {'value1' : kp.sensor1.value}
-
 def runMain():
     clientid = "karlnet_pachube@%s/%d" % (socket.gethostname(), os.getpid())
     stomp.connect(clientid=clientid)
     stomp.subscribe("/topic/karlnet")
+
+    last = time.time()
+    running = {0x4201: {}, 0x4202: {}}
     
     while True:
         message = stomp.get()
         kp = jsonpickle.decode(message.body)
-        log.info("updating pachube for: %s", kp)
 
-        if (kp.node == 0x4202) :
-            log.info("so far so good...")
-            eeml = buildEeml(kp)
-            print eeml
-            log.info("using node: %#x and feedid %d", kp.node, config[kp.node]['feedId'])
-            conn = httplib.HTTPConnection('www.pachube.com')
+        # first, average them up for a little while, so we don't massively over hit the api
+        if 'sensor1' in running[kp.node]:
+            running[kp.node]['sensor1'] += kp.sensor1.value
+        else:
+            running[kp.node]['sensor1'] = kp.sensor1.value
+        if 'sensor2' in running[kp.node]:
+            running[kp.node]['sensor2'] += kp.sensor1.value
+        else:
+            running[kp.node]['sensor2'] = kp.sensor1.value
+        if 'count' in running[kp.node]:
+            running[kp.node]['count'] += 1
+        else:
+            running[kp.node]['count'] = 1
+        log.info("just finished averaging for: %s", kp)
+    
+
+
+        if (time.time() - last > 60):
+            log.info("Sending the last minutes averages...")
             headers = {"X-PachubeApiKey" : config["apikey"]}
-            #conn.request("PUT", "/api/%d.eeml" % config[kp.node]['feedId'], eeml, headers) 
-            csv = "%d,%d,text" % (kp.sensor1.value, kp.sensor2.value)
+
+            s1avg = running[0x4201]['sensor1'] / running[0x4201]['count']
+            s2avg = running[0x4201]['sensor2'] / running[0x4201]['count']
+            csv = "%d,%d,text" % (s1avg, s2avg)
+            conn = httplib.HTTPConnection('www.pachube.com')
             conn.request("PUT", "/api/%d.csv" % config[kp.node]['feedId'], csv, headers) 
-            print conn.getresponse()
-            
-            
-            
+            log.info("uploaded 0x4201: %s", conn.getresponse())
+
+            s1avg = running[0x4202]['sensor1'] / running[0x4202]['count']
+            s2avg = running[0x4202]['sensor2'] / running[0x4202]['count']
+            csv = "%d,%d,text" % (s1avg, s2avg)
+            conn = httplib.HTTPConnection('www.pachube.com')
+            conn.request("PUT", "/api/%d.csv" % config[kp.node]['feedId'], csv, headers) 
+            log.info("uploaded 0x4202: %s", conn.getresponse())
+
+            last = time.time()
+            running = {0x4201: {}, 0x4202: {}}
 
 
 if __name__ == "__main__":
