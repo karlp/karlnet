@@ -38,7 +38,7 @@ def runMainLoop():
             port = serial.Serial(config['serialPort'], 19200, timeout=10)
 	packet = xbee.find_packet(port)
         if packet:
-                xb = xbee(packet, strict=True)
+                xb = xbee(packet)
 	else:
                 log.warn("NO PACKET FOUND")
 		continue

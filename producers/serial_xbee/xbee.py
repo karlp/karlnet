@@ -2,6 +2,7 @@
 # $Id: xbee.py 3 2008-05-11 02:54:17Z amitsnyderman $
 # From: http://code.google.com/p/python-xbee/
 # license: MIT
+# Extended and bugfixed by karlp, adding rx frames, fixing checksumming and api mode unescaping
 
 import array
 import logging
@@ -13,6 +14,16 @@ class NullHandler(logging.Handler):
 h = NullHandler()
 log = logging.getLogger("xbee")
 log.addHandler(h)
+
+def checkChecksum(data):
+    localChecksum = sum(map(ord,data))
+    if (localChecksum & 0xff) != 0xff:
+        log.error("Checksum should have summed to 0xff, but summed to: %#x", localChecksum)
+        return False
+    else:
+        log.debug("checksum valid!")
+        return True
+	
 
 
 def readAndUnescape(serial, length):
@@ -59,6 +70,8 @@ class xbee(object):
             if not char:
                 log.warn("SERIAL READ TIMEOUT")
                 return None
+
+            data = None
             if ord(char) == xbee.START_IOPACKET:
                 # note, no guarantee that these are good packets!
                 lengthMSB = ord(serial.read())
@@ -66,22 +79,27 @@ class xbee(object):
                 length = (lengthLSB + (lengthMSB << 8)) + 1
                 if length > xbee.MAX_PACKET_LENGTH:
                     log.warn("Dropping invalid length packet. %d > maxlength", length)
-                    return None
-                log.debug("will attempt to read %d bytes to finish the packet", length)
-                return readAndUnescape(serial, length)
+                    data = None
+                else:
+                    log.debug("will attempt to read %d bytes to finish the packet", length)
+                    data = readAndUnescape(serial, length)
             else:
                 log.debug("Found instead: %#x", ord(char))
                 return None
+
+            if checkChecksum(data):
+                return data
+            else:
+                return None
+
 	find_packet = staticmethod(find_packet)
 	
-	def __init__(self, arg, strict=False):
+	def __init__(self, arg):
                 """
             arg is a the main packet body
-            strict is whether to report on checksum validity
                 """
 		self.digital_samples = []
 		self.analog_samples = []
-                self.strict = strict
 		self.init_with_packet(arg)
 	
 	def init_with_packet(self, p):
@@ -99,7 +117,6 @@ class xbee(object):
 			self.pan_broadcast = ((p[4] >> 2) & 0x01) == 1
 			self.rxdata = p[5:-1]
 			self.checksum = p[-1]
-                        self.checkChecksum(p[:-1])
                         log.info("xbee packet: %s", self)
 		
 		
@@ -157,21 +174,8 @@ class xbee(object):
 				
 				self.analog_samples.append(dataADC)
 				
-			checksum = p[10 + analog_count * n]
-			local_checksum = 0xff - local_checksum;
-                        checkChecksum(p[-1])
 			
 
-        def checkChecksum(self, data):
-            if not self.strict:
-                return
-            localChecksum = sum(data) & 0xff
-            if localChecksum + self.checksum != 0xff:
-                log.error("invalid checksum on this packet: local:%#x + 0xff != packet:%#x",
-                                localChecksum, self.checksum)
-            else:
-                log.debug("checksum valid!")
-	
 	def __str__(self):
             basic = "<xbee {app_id: %#x, address_16: %#x, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_16, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
             if self.app_id == xbee.SERIES1_IOPACKET:
