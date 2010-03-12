@@ -1,7 +1,13 @@
 *.o
+# avr compiled cruft
 *.ls[st]
 *.sym
 *.hex
 *.elf
 *.eep
+*.map
+
+# python droppings
+*.pyc
+*.pyo
 
