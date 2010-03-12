@@ -49,9 +49,9 @@ def runMain():
         else:
             running[kp.node]['sensor1'] = kp.sensor1.value
         if 'sensor2' in running[kp.node]:
-            running[kp.node]['sensor2'] += kp.sensor1.value
+            running[kp.node]['sensor2'] += kp.sensor2.value
         else:
-            running[kp.node]['sensor2'] = kp.sensor1.value
+            running[kp.node]['sensor2'] = kp.sensor2.value
         if 'count' in running[kp.node]:
             running[kp.node]['count'] += 1
         else:
@@ -68,14 +68,14 @@ def runMain():
             s2avg = running[0x4201]['sensor2'] / running[0x4201]['count']
             csv = "%d,%d,text" % (s1avg, s2avg)
             conn = httplib.HTTPConnection('www.pachube.com')
-            conn.request("PUT", "/api/%d.csv" % config[kp.node]['feedId'], csv, headers) 
+            conn.request("PUT", "/api/%d.csv" % config[0x4201]['feedId'], csv, headers) 
             log.info("uploaded 0x4201: %s", conn.getresponse())
 
             s1avg = running[0x4202]['sensor1'] / running[0x4202]['count']
             s2avg = running[0x4202]['sensor2'] / running[0x4202]['count']
             csv = "%d,%d,text" % (s1avg, s2avg)
             conn = httplib.HTTPConnection('www.pachube.com')
-            conn.request("PUT", "/api/%d.csv" % config[kp.node]['feedId'], csv, headers) 
+            conn.request("PUT", "/api/%d.csv" % config[0x4202]['feedId'], csv, headers) 
             log.info("uploaded 0x4202: %s", conn.getresponse())
 
             last = time.time()
