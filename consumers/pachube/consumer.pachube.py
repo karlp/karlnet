@@ -69,14 +69,14 @@ def runMain():
             csv = "%d,%d,text" % (s1avg, s2avg)
             conn = httplib.HTTPConnection('www.pachube.com')
             conn.request("PUT", "/api/%d.csv" % config[0x4201]['feedId'], csv, headers) 
-            log.info("uploaded 0x4201: %s", conn.getresponse())
+            log.info("uploaded 0x4201: avg1: %d, avg2: %d with response: %s", s1avg, s2avg, conn.getresponse())
 
             s1avg = running[0x4202]['sensor1'] / running[0x4202]['count']
             s2avg = running[0x4202]['sensor2'] / running[0x4202]['count']
             csv = "%d,%d,text" % (s1avg, s2avg)
             conn = httplib.HTTPConnection('www.pachube.com')
             conn.request("PUT", "/api/%d.csv" % config[0x4202]['feedId'], csv, headers) 
-            log.info("uploaded 0x4202: %s", conn.getresponse())
+            log.info("uploaded 0x4202: avg1: %d, avg2: %d with response: %s", s1avg, s2avg, conn.getresponse())
 
             last = time.time()
             running = {0x4201: {}, 0x4202: {}}
