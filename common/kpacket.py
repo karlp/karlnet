@@ -54,7 +54,7 @@ class Sensor(object):
         self.log.debug("Decoding bytes into a sensor object: *%s*", arg)
         self.type = arg[0]
         self.rawValue = (arg[1] << 24) + (arg[2] << 16) + (arg[3] << 8) + arg[4]
-        self.value = self.__decode()
+        (self.value,self.units) = self.__decode()
 
     
     def __convertSensor_TMP36(self, rawValue, reference):
@@ -75,14 +75,14 @@ class Sensor(object):
         """
         self.log.debug("Decoding type:%s, raw=%s", self.type, self.rawValue)
         if self.type == 36:
-            return self.__convertSensor_TMP36(self.rawValue, 2560)
+            return (self.__convertSensor_TMP36(self.rawValue, 2560), 'degreesCelsius')
         if self.type == 37:
-            return self.__convertSensor_TMP36(self.rawValue, 1100)
+            return (self.__convertSensor_TMP36(self.rawValue, 1100), 'degreesCelsius')
         if self.type == ord('f'):
             # 555 timer is C = 1/f / 300k / 0.693 (555 constant)
-            return (1e12/(self.rawValue * 300000 * 0.693))
+            return ((1e12/(self.rawValue * 300000 * 0.693)), 'picoFarads')
         if self.type == ord('i'):
-            return self.rawValue
+            return (self.rawValue, 'unknown')
         self.log.warn("Unknown sensor type: %s", self.type)
         return 0
 
