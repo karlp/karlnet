@@ -4,7 +4,7 @@
 
 from stompy.simple import Client
 import sys, os, time, socket, random
-sys.path.append('../../common')
+sys.path.append(os.path.join(sys.path[0], "../../common"))
 import kpacket
 import logging
 import jsonpickle
@@ -20,7 +20,8 @@ def runMain():
     while True:
         s1 = kpacket.Sensor(type=36, raw=1234, value=random.randint(0,100))
         s2 = kpacket.Sensor(type=69, raw=4321, value=random.randint(40,80))
-        kp = kpacket.human_packet("fake", s1, s2)
+        kp = kpacket.human_packet(0xcafe, s1, s2)
+        log.info("Producing the dummy data: %s", kp)
         stomp.put(jsonpickle.encode(kp), destination="/topic/karlnet")
         time.sleep(5)
 
