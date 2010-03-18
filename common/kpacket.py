@@ -84,7 +84,7 @@ class Sensor(object):
         if self.type == ord('i'):
             return (self.rawValue, 'unknown')
         self.log.warn("Unknown sensor type: %s", self.type)
-        return 0
+        return (0, "na")
 
 
     def __str__(self):
