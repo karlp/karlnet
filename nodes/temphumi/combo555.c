@@ -93,18 +93,7 @@ void init(void) {
 
 }
 
-//EMPTY_INTERRUPT(WDT_vect);
-int wasOn = 0;
-ISR(WDT_vect) {
-    if (wasOn) {
-        LED_OFF;
-        wasOn = 0;
-    } else {
-        LED_ON;
-        wasOn = 1;
-    }
-}
-
+EMPTY_INTERRUPT(WDT_vect);
 
 int main(void) {
 	init();
@@ -125,9 +114,9 @@ int main(void) {
                 ADC_DISABLE;
                 power_adc_disable();
                 
-		//LED_ON;
+		LED_ON;
 		unsigned int freq1 = readSensorFreq();
-		//LED_OFF;
+		LED_OFF;
 
                 ksensor s1 = { 37, sensor1};
                 ksensor s2 = { 'f', freq1};
