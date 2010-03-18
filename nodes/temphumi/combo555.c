@@ -80,12 +80,15 @@ int main(void) {
 
 	sei();
 	LED_ON;
-        unsigned long prior;
+        unsigned long prior = 0;
 	while (1) {
+                power_adc_enable();
+                _delay_us(70);  // bandgap wakeup time from datasheet (worst case)
                 ADC_ENABLE;
                 init_adc();
 		unsigned int sensor1 = adc_read();
                 ADC_DISABLE;
+                power_adc_disable();
                 
 		LED_ON;
 		unsigned int freq1 = readSensorFreq();
