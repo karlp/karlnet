@@ -16,8 +16,9 @@ import jsonpickle
 import logging
 import logging.config
 import logging.handlers
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-filename="/var/log/karlnet_serial.log")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s"
+,filename="/var/log/karlnet_serial.log")
+)
 log = logging.getLogger("main")
 
 stomp = Client(host='egri')
@@ -28,7 +29,7 @@ def runMainLoop():
     port = None
     manualTimeout = 40
     
-    stomp.connect(clientid="serial port listener")
+    stomp.connect(clientid="serial port listener", username="karlnet", password="password")
 
     while(1):
         if time.time() - lastgoodtime > manualTimeout:
@@ -53,7 +54,7 @@ def runMainLoop():
 		log.warn("Couldn't decode: %s" % e.msg)
 		continue
         lastgoodtime = time.time()
-        hp = kpacket.human_packet(node=xb.address_16, sensor1=kp.sensor1, sensor2=kp.sensor2)
+        hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
         stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet")
         log.info(hp)
 
@@ -65,4 +66,6 @@ if __name__ == "__main__":
         print " ok, quitting :) " 
         log.info("QUIT - Quitting due to keyboard interrupt :)")
         raise SystemExit
+    except:
+        log.exception("Bang! something went wrong :(")
 

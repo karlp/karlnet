@@ -6,31 +6,45 @@ class human_packet(object):
     """
     Defines the human post processed packet. Something that client applications would use
     """
-    def __init__(self, node, sensor1, sensor2):
+    def __init__(self, node, sensors):
         """Make a human packet from some basic data
         
         :param node: The nodeid this sensor data is from.
-        :param sensor1: Sensor object for sensor1
-        :param sensor2: Sensor object for sensor2
+        :param sensors: A list of sensor objects
         """
         self.node = node
-        self.sensor1 = sensor1
-        self.sensor2 = sensor2
+        self.sensors = sensors
 
     def __str__(self):
-        return "human_packet[node=%#x, sensor1=%s, sensor2=%s]" % (self.node, self.sensor1, self.sensor2)
+        return "human_packet[node=%#x, sensors=%s]" % (self.node, self.sensors)
 
 class wire_packet(object):
 	"""
 	Defines the packet format used in my sensor network, and handles decoding it from an xbee frame
 	"""
+        log = logging.getLogger("WirePacket")
 	def __init__(self, arg):
 		if arg[0] != ord('x'):
 			raise BadPacketException("this isn't a kpacket: %s" % arg[0])
-		if len(arg) != 11:
-			raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
-                self.sensor1 = Sensor(binary=arg[1:6])
-                self.sensor2 = Sensor(binary=arg[6:11])
+                if len(arg) == 11:
+                    # Handle original packet format here?!!!
+                    self.log.warn("Handling legacy packet format!")
+                    self.sensors = []
+                    self.sensors.append(Sensor(binary=arg[1:6]))
+                    self.sensors.append(Sensor(binary=arg[6:11]))
+                    return
+
+                version_samples = arg[1];
+                version = version_samples >> 4
+                if version != 1:
+                    raise BadPacketException("currently only know how to handle version 1 packets")
+                num_samples = version_samples & 0xf
+                if len(arg) != 2 + (num_samples * 5):
+                    raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
+                self.log.debug("handling packet version: %d with %d samples", version, num_samples)
+                self.sensors = []
+                for i in range (0, num_samples):
+                    self.sensors.append(Sensor(binary=arg[2+(i*5):7+(i*5)]))
 
 class Sensor(object):
     """
@@ -84,10 +98,10 @@ class Sensor(object):
         if self.type == ord('i'):
             return (self.rawValue, 'unknown')
         self.log.warn("Unknown sensor type: %s", self.type)
-        return 0
+        return (0, "na")
 
 
-    def __str__(self):
+    def __repr__(self):
         return "sensor[t:%d, raw=%d, val=%f]" % (self.type, self.rawValue, self.value)
         
 

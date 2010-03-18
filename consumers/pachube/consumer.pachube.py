@@ -27,8 +27,8 @@ import time
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-#filename="/var/log/karlnet_rrd.log")
-filename="karlnet_pachube.log")
+filename="/var/log/karlnet_pachube.log")
+#filename="karlnet_pachube.log")
 log = logging.getLogger("main")
 
 stomp = Client(host='egri')
@@ -36,13 +36,13 @@ stomp = Client(host='egri')
 
 def upload(node, running):
     """Average a set of data and upload to pachube. Assumes that a config exists for the node id."""
-    s1avg = running['sensor1'] / running['count']
-    s2avg = running['sensor2'] / running['count']
-    csv = "%d,%d,text" % (s1avg, s2avg)
+    s1avg = running['sensor1'] / (1.0 * running['count'])
+    s2avg = running['sensor2'] / (1.0 * running['count'])
+    csv = "%3.2f,%3.2f,text" % (s1avg, s2avg)
     conn = httplib.HTTPConnection('www.pachube.com')
     headers = {"X-PachubeApiKey" : config["apikey"]}
     conn.request("PUT", "/api/%d.csv" % config[node]['feedId'], csv, headers) 
-    log.info("uploaded node:%#x: avg1: %d, avg2: %d with response: %s", node, s1avg, s2avg, conn.getresponse())
+    log.info("uploaded node:%#x: csv:: %s with response: %s", node, csv, conn.getresponse())
 
 
 def runMain():
@@ -59,8 +59,8 @@ def runMain():
 
         # first, average them up for a little while, so we don't massively over hit the api
         nd = running.setdefault(kp.node, {})
-        nd['sensor1'] = nd.setdefault('sensor1', 0) + kp.sensor1.value
-        nd['sensor2'] = nd.setdefault('sensor2', 0) + kp.sensor2.value
+        nd['sensor1'] = nd.setdefault('sensor1', 0) + kp.sensors[0].value
+        nd['sensor2'] = nd.setdefault('sensor2', 0) + kp.sensors[1].value
         nd['count'] = nd.setdefault('count', 0) + 1
         log.info("just finished averaging for: %s", kp)
 
