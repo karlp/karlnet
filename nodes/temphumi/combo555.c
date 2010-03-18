@@ -73,11 +73,14 @@ void init(void) {
 
 int main(void) {
 	init();
-	sei();
         kpacket packet;
         packet.header = 'x';
+        packet.version = 1;
+        packet.nsensors = 3;
 
+	sei();
 	LED_ON;
+        unsigned long prior;
 	while (1) {
                 ADC_ENABLE;
                 init_adc();
@@ -88,15 +91,20 @@ int main(void) {
 		unsigned int freq1 = readSensorFreq();
 		LED_OFF;
 
-                packet.type1 = 37;
-                packet.value1 = sensor1;
-                packet.type2 = 'f';
-                packet.value2 = freq1;
+                ksensor s1 = { 37, sensor1};
+                ksensor s2 = { 'f', freq1};
+                ksensor s3 = { 99, prior };
+                packet.ksensors[0] = s1;
+                packet.ksensors[1] = s2;
+                packet.ksensors[2] = s3;
 
+                TCCR1B = (1<<CS11);
+                TCNT1 = 0;
 		XBEE_ON;
-		_delay_ms(15); // xbee manual says 2ms for sleep mode 2, 13 for sm1
+		_delay_ms(13); // xbee manual says 2ms for sleep mode 2, 13 for sm1
                 xbee_send_16(1, packet);
 		XBEE_OFF;
+                prior = TCNT1;
 		_delay_ms(2000);
 	}
 }
