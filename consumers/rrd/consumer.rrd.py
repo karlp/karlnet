@@ -36,7 +36,7 @@ def runMain():
         log.info("updating RRD for: %s", kp)
         
         if (config.get(kp.node, None)) : # slightly funky safe check
-            args = "N:%f:%d" % (kp.sensor1.value, kp.sensor2.value)
+            args = "N:%f:%d" % (kp.sensors[0].value, kp.sensors[1].value)
             rrdtool.update(config[kp.node]["cacti_filename"], '--template', 'temp:freq', args)
             rrdtool.update(config[kp.node]["cgi_filename"], '--template', 'tmp36:onboard', args)
         else:

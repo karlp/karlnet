@@ -59,8 +59,8 @@ def runMain():
 
         # first, average them up for a little while, so we don't massively over hit the api
         nd = running.setdefault(kp.node, {})
-        nd['sensor1'] = nd.setdefault('sensor1', 0) + kp.sensor1.value
-        nd['sensor2'] = nd.setdefault('sensor2', 0) + kp.sensor2.value
+        nd['sensor1'] = nd.setdefault('sensor1', 0) + kp.sensors[0].value
+        nd['sensor2'] = nd.setdefault('sensor2', 0) + kp.sensors[1].value
         nd['count'] = nd.setdefault('count', 0) + 1
         log.info("just finished averaging for: %s", kp)
 
