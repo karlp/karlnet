@@ -16,6 +16,7 @@ log = logging.getLogger("xbee")
 log.addHandler(h)
 
 def checkChecksum(data):
+    """is the checksum xbee valid, plain and simple"""
     localChecksum = sum(map(ord,data))
     if (localChecksum & 0xff) != 0xff:
         log.error("Checksum should have summed to 0xff, but summed to: %#x", localChecksum)
@@ -23,8 +24,6 @@ def checkChecksum(data):
     else:
         log.debug("checksum valid!")
         return True
-	
-
 
 def readAndUnescape(serial, length):
     """
@@ -79,7 +78,7 @@ class xbee(object):
                 length = (lengthLSB + (lengthMSB << 8)) + 1
                 if length > xbee.MAX_PACKET_LENGTH:
                     log.warn("Dropping invalid length packet. %d > maxlength", length)
-                    data = None
+                    return None
                 else:
                     log.debug("will attempt to read %d bytes to finish the packet", length)
                     data = readAndUnescape(serial, length)
