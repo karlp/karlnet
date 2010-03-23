@@ -28,10 +28,10 @@ var onreceive = function(message) {
         $("#nodename", row).html(hp.node);
         $("#nodes tr:last").after(row);
     }
-    row.find('#sensor1-type').html(hp.sensor1.type);
-    row.find('#sensor1-value').html(hp.sensor1.value);
-    row.find('#sensor2-type').html(hp.sensor2.type);
-    row.find('#sensor2-value').html(hp.sensor2.value);
+    row.find('#sensor1-type').html(hp.sensors[0].type);
+    row.find('#sensor1-value').html(hp.sensors[0].value);
+    row.find('#sensor2-type').html(hp.sensors[1].type);
+    row.find('#sensor2-value').html(hp.sensors[1].value);
     row.find('#last-seen').html(timestamp.toString());
 }
 
@@ -50,7 +50,7 @@ var onerror = function(frame) {
         debug("Failed to connect: " + frame)
         connectErrorCount += 1;
         if (connectErrorCount < 5) {
-            client.connect("blah", "blah", onconnect, onerror);
+            client.connect("", "", onconnect, onerror);
         } else {
             debug("Aborting connection after 5 attempts");
         }
@@ -58,6 +58,6 @@ var onerror = function(frame) {
 };
     
 
-client.connect("blah", "blah", onconnect, onerror);
+client.connect("", "", onconnect, onerror);
 
 })(window);

@@ -84,7 +84,8 @@ class Sensor(object):
     type is the sensor type id, known values are...
      chr(36) for tmp-36 vs a 2.56 vref
      chr(37) for tmp-36 vs a 1.1 vref
-     'i' for tiny85 internal temp sensor reading, raw
+     'i' for tiny85 internal temp sensor reading, raw  (measures against 1.1vref)
+     'I' for mega32u4 internal temp sensor (measures against 2.56vref)
      'f' for raw frequency measurements from HCH1000 humidity sensor
         """
         self.log.debug("Decoding type:%s, raw=%s", self.type, self.rawValue)
@@ -95,7 +96,10 @@ class Sensor(object):
         if self.type == ord('f'):
             # 555 timer is C = 1/f / 300k / 0.693 (555 constant)
             return ((1e12/(self.rawValue * 300000 * 0.693)), 'picoFarads')
+        # need calibration!
         if self.type == ord('i'):
+            return (self.rawValue, 'unknown')
+        if self.type == ord('I'):
             return (self.rawValue, 'unknown')
         self.log.warn("Unknown sensor type: %s", self.type)
         return (0, "na")
