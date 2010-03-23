@@ -11,6 +11,9 @@
 #if __AVR_UART
 #define PUT_CHAR(x) uart_putc(x)
 #endif
+#if __PJRC_UART
+#define PUT_CHAR(x) uart_putchar(x)
+#endif
 
 #ifndef PUT_CHAR
 #error PUT_CHAR(x) needs to be defined 
