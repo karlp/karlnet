@@ -50,7 +50,7 @@ var onerror = function(frame) {
         debug("Failed to connect: " + frame)
         connectErrorCount += 1;
         if (connectErrorCount < 5) {
-            client.connect("blah", "blah", onconnect, onerror);
+            client.connect("", "", onconnect, onerror);
         } else {
             debug("Aborting connection after 5 attempts");
         }
