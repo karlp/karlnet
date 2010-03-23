@@ -54,10 +54,12 @@ void xbee_send_16(uint16_t destination, kpacket packet) {
 	checksum += escapePut16(destination);
 	checksum += escapePutChar(0); // options
 	checksum += escapePutChar(packet.header);
-	checksum += escapePutChar(packet.type1);
-	checksum += escapePut32(packet.value1);
-	checksum += escapePutChar(packet.type2);
-	checksum += escapePut32(packet.value2);
+	checksum += escapePutChar((packet.version << 4) | (packet.nsensors & 0x0f));
+	//checksum += escapePutChar(packet.nsensors);
+        for (int i = 0; i < packet.nsensors; i++) {
+	    checksum += escapePutChar(packet.ksensors[i].type);
+	    checksum += escapePut32(packet.ksensors[i].value);
+        }
 	
 	PUT_CHAR(0xff - checksum);
 }
