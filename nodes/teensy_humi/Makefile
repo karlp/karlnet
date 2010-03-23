@@ -44,11 +44,15 @@
 TARGET = trx
 
 
+KARLNET_COMMON = ../../common
+
 # List C source files here. (C dependencies are automatically generated.)
 SRC =	$(TARGET).c \
 	pjrc_uart.c \
 	usb_debug_only.c \
-	print.c
+	print.c \
+        $(KARLNET_COMMON)/xbee-api.c \
+        $(KARLNET_COMMON)/FreqCounter.c
 
 # MCU name, you MUST set this to match the board you are using
 # type "make clean" after changing this, so all files will be rebuilt
@@ -109,7 +113,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = 
+EXTRAINCDIRS = $(KARLNET_COMMON)
 
 
 # Compiler flag to set the C Standard level.
@@ -122,6 +126,7 @@ CSTANDARD = -std=gnu99
 
 # Place -D or -U options here for C sources
 CDEFS = -DF_CPU=$(F_CPU)UL
+CDEFS += -D__PJRC_UART
 
 
 # Place -D or -U options here for ASM sources
