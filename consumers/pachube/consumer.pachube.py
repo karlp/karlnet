@@ -56,7 +56,7 @@ def upload(node, running):
 def runMain():
     clientid = "karlnet_pachube@%s/%d" % (socket.gethostname(), os.getpid())
     stomp.connect(clientid=clientid)
-    stomp.subscribe("/topic/karlnet")
+    stomp.subscribe("/topic/karlnet.>")
 
     last = time.time()
     running = {}
