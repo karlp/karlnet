@@ -17,6 +17,9 @@ config = {
     0x4202 : {
         "feedId" : 6234
         },
+    0x4203 : {
+        "feedId" : 6447
+        },
     'apikey' : "68711d479b154637ab0f9def0f475306d73b87da19f3b15efa43ff61e25e5af9"
 }
 
@@ -36,9 +39,14 @@ stomp = Client(host='egri')
 
 def upload(node, running):
     """Average a set of data and upload to pachube. Assumes that a config exists for the node id."""
-    s1avg = running['sensor1'] / (1.0 * running['count'])
-    s2avg = running['sensor2'] / (1.0 * running['count'])
-    csv = "%3.2f,%3.2f,text" % (s1avg, s2avg)
+    sensorStrings = []
+    for sensor in running['sensors']:
+        log.debug("sensor is: %d, count is %d", running['sensors'][sensor], running['count'])
+        avg = running['sensors'][sensor] / (1.0 * running['count'])
+        sensorStrings.append("%3.2f" % avg)
+
+    csv = ','.join(sensorStrings)
+    log.debug("Derived averages, trying to upload: %s", csv)
     conn = httplib.HTTPConnection('www.pachube.com')
     headers = {"X-PachubeApiKey" : config["apikey"]}
     conn.request("PUT", "/api/%d.csv" % config[node]['feedId'], csv, headers) 
@@ -59,8 +67,11 @@ def runMain():
 
         # first, average them up for a little while, so we don't massively over hit the api
         nd = running.setdefault(kp.node, {})
-        nd['sensor1'] = nd.setdefault('sensor1', 0) + kp.sensors[0].value
-        nd['sensor2'] = nd.setdefault('sensor2', 0) + kp.sensors[1].value
+        nd.setdefault('sensors', {})
+        for i in range(len(kp.sensors)):
+            nd['sensors'][i] = nd['sensors'].setdefault(i, 0) + kp.sensors[i].value
+            log.debug("Averaged sensor: %s", kp.sensors[i])
+
         nd['count'] = nd.setdefault('count', 0) + 1
         log.info("just finished averaging for: %s", kp)
 
