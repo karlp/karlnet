@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 // max max, but you should only declar as many as you need.
-#define MAX_SENSORS     3
+#define MAX_SENSORS     4
 
 // A single sensor reading.
 typedef struct _ksensor {
