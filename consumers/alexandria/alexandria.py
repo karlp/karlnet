@@ -6,7 +6,7 @@ import sys, os, socket, string, time
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 import kpacket
 
-# The keys are the node id, which is the 16bit xbee address at the moment.
+# Some basic config
 config = {
     'library_file': '/home/karl/src/karlnet-git/consumers/alexandria/library.alexandria.sqlite3',
     'create_sql' : """
