@@ -107,6 +107,7 @@ int main(void) {
                 packet.ksensors[2] = s3;
 
                 xbee_send_16(1, packet);
+                xbee_send_16(0x4202, packet);
 
                 _delay_ms(4000);
 	}
