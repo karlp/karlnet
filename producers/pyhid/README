@@ -1,0 +1,16 @@
+You'll need pyusb 1.x from: http://pyusb.wiki.sourceforge.net/
+I used pyusb-1.0.0-a0, and just ran the regular python setup.py install.
+
+I did that before I had libusb-1.0 installed.
+
+Steps for getting libusb-1.0 on windows.... (at least, what worked for me)
+
+1. from http://www.libusb.org/wiki/windows_backend 
+   That's from libusb itself.  NOT from libusb-win32.
+2. get the latest package, I used 2010.05.17(pbr277)
+3. for me, on winxp (32bit) I copied libusb-1.0.dll and libusb-1.0.lib from
+   the MS32\dll directory, over to \windows\system32
+
+
+I have not (yet) tried this on linux...
+
