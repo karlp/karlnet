@@ -45,12 +45,13 @@ TARGET = trx
 
 
 KARLNET_COMMON = ../../common
+PJRC_LIBS = ../../common/pjrc
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC =	$(TARGET).c \
-	pjrc_uart.c \
-	usb_debug_only.c \
-	print.c \
+	$(PJRC_LIBS)/pjrc_uart.c \
+	$(PJRC_LIBS)/usb_debug_only.c \
+	$(PJRC_LIBS)/print.c \
         $(KARLNET_COMMON)/xbee-api.c \
         $(KARLNET_COMMON)/FreqCounter.c
 
@@ -113,7 +114,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = $(KARLNET_COMMON)
+EXTRAINCDIRS = $(KARLNET_COMMON) $(PJRC_LIBS)
 
 
 # Compiler flag to set the C Standard level.
