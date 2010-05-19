@@ -12,5 +12,5 @@ Steps for getting libusb-1.0 on windows.... (at least, what worked for me)
    the MS32\dll directory, over to \windows\system32
 
 
-I have not (yet) tried this on linux...
+Verified working on ubuntu 9.10 (with libusb-1.0-0) as well as windows xp
 
