@@ -18,6 +18,13 @@ ep = intf[0]
 if ep is None:
 	raise ValueError('couldn''t get the endpoint :(')
 
+
+try :
+    teensy.detach_kernel_driver(0)
+except usb.core.USBError as e:
+    # already detached...
+    pass
+
 while 1:
 	# at most 32 bytes, 6000ms timeout
 	data = []
