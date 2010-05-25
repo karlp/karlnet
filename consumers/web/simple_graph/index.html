@@ -21,6 +21,12 @@
 
 <script id="source" language="javascript" type="text/javascript"> 
 $(function () {
+
+    if (!window.WebSocket) {
+        $("#placeholder").append("Websockets not supported by this browser");
+        return;
+    }
+
     var options = {
         lines: { show: true },
         points: { show: true },
