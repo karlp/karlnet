@@ -69,7 +69,7 @@ var debug = function(str) {
     $("#debugEntries li:first").before("<li><pre>" + str + "</pre>");
 }
 
-var client = Stomp.client("ws://is.beeroclock.net:61614");
+var client = Stomp.client("ws://is.beeroclock.net:8080");
 client.debug = debug;
 
 var onreceive =  function(message) {
