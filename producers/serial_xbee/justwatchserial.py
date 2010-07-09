@@ -4,7 +4,7 @@
 
 __author__="karlp"
 
-config = { 'serialPort' : "/dev/ttyUSB0" }
+config = { 'serialPort' : "/dev/ftdi0" }
 import sys, os, time
 import serial
 from xbee import xbee
