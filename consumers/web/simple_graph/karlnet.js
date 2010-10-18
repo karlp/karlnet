@@ -38,7 +38,7 @@ var onreceive = function(message) {
 var connectErrorCount = 0;
 var onconnect = function(frame) {
     debug("Connected to stomp");
-    client.subscribe("/topic/karlnet", onreceive);
+    client.subscribe("/topic/karlnet.>", onreceive);
     connectErrorCount = 0;
 };
 

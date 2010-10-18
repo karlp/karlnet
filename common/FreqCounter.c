@@ -13,15 +13,7 @@
   	Dec/08 - V0.0 
         2010/03  Added mega32u4 support... Karl Palsson
 
-  Notes: This library was originally developed for arduino's, so it does some poking
-         of the Timer0 registers, to try and "play nice" with the arduino libraries.
-         When running in a pure C environment, and especially on other boards, you 
-         may not want this.
-       * Assumes a 16Mhz clock.  All bets are off otherwise.  (Change the 124 constant)
-
-  Resources Used:
-        mega32u4: Timer1 and Timer0
-        mega168/328: Timer1 and Timer2
+	
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -54,18 +46,23 @@ volatile unsigned int f_comp;
 
 
 void start(unsigned int comp, int ms) {
-  f_period = ms/2;  // the gate timing interrupt counts 2ms blocks...
-  f_comp = comp;
-  f_ready = 0;      // reset period measure flag
-  f_tics = 0;       // reset interrupt counter
-
 
 #if defined (__AVR_ATmega168__) || defined (__AVR_ATmega328P__) || defined (__AVR_ATmega32U4__)
-  // Setup a 16bit timer to count external events.  No need for interrupts, just a counter
-  TCCR1A=0;
-  // reset timer1 to external clock source on T1, rising edge.
+
+  f_period=ms/2;
+  f_comp=comp;
+	
+	// hardware counter setup ( refer atmega168.pdf chapter 16-bit counter1)
+  TCCR1A=0;                 // reset timer/counter1 control register A
+    // reset timer1 to external clock source on T1, rising edge.
+  // set timer/counter1 hardware as counter , counts events on pin T1 ( arduino pin 5)
   TCCR1B = (1<<CS10) | (1<<CS11) | (1<<CS12);
+  TCNT1=0;           		// counter value = 0
+
 #endif
+
+  f_ready=0;          		// reset period measure flag
+  f_tics=0;                 // reset interrupt counter
 
 #if defined (__AVR_ATmega168__) || defined (__AVR_ATmega328P__)
   // timer2 setup / is used for frequency measurement gatetime generation
@@ -108,8 +105,6 @@ void start(unsigned int comp, int ms) {
 #endif
 }
 
-
-// Helper to simply get a sample.
 unsigned long blockingRead(unsigned int comp, int ms) {
 	start(comp, ms);
 	while (f_ready == 0) {
@@ -127,24 +122,26 @@ unsigned long blockingRead(unsigned int comp, int ms) {
 
 #if defined (__AVR_ATmega168__) || defined (__AVR_ATmega328P__)
 ISR(TIMER2_COMPA_vect) {
-#define GATE_CONTROL            TIMSK2
-#define GATE_INTERRUPT_EN_FLAG  OCIE2A
+#define GATE_CONTROL        TIMSK2
+#define GATE_INTERRUPT_FLAG OCIE2A
 #elif defined (__AVR_ATmega32U4__)
+
 ISR(TIMER0_COMPA_vect) {
-#define GATE_CONTROL            TIMSK0
-#define GATE_INTERRUPT_EN_FLAG  OCIE0A
+#define GATE_CONTROL        TIMSK0
+#define GATE_INTERRUPT_FLAG OCIE0A
 #else
-#error your cpu type is either undefined, or unsupported.
+#error You need one of them?!
 #endif
 
-  if (f_tics >= f_period) {         	
+// multiple 2ms = gate time = 100 ms
+if (f_tics >= f_period) {         	
     // end of gate time, measurement ready
 
     // GateCalibration Value, set to zero error with reference frequency counter
     _delay_us(f_comp); // 0.01=1/ 0.1=12 / 1=120 sec 
-    TCCR1B = TCCR1B & ~7;   			  // Gate Off  / Counter T1 stopped 
-    GATE_CONTROL &= ~(1<<GATE_INTERRUPT_EN_FLAG); // disable gate timing Interrupt
-    sbi (TIMSK0,TOIE0);    // enable Timer0 again // millis and delay (arduino)
+    TCCR1B = TCCR1B & ~7;   			// Gate Off  / Counter T1 stopped 
+    GATE_CONTROL &= ~(1<<GATE_INTERRUPT_FLAG);// disable Timer2 Interrupt
+    sbi (TIMSK0,TOIE0);     			// enable Timer0 again // millis and delay
     f_ready=1;             // set global flag for end count period
     
     // calculate now frequeny value
@@ -154,8 +151,8 @@ ISR(TIMER0_COMPA_vect) {
 
   }
   f_tics++;            	// count number of interrupt events
-  if (TIFR1 & 1) {      // if Timer/Counter 1 overflow flag
-    f_mlt++;            // count number of Counter1 overflows
-    sbi(TIFR1,TOV1);    // clear Timer/Counter 1 overflow flag
+  if (TIFR1 & 1) {          			// if Timer/Counter 1 overflow flag
+    f_mlt++;               // count number of Counter1 overflows
+    sbi(TIFR1,TOV1);        			// clear Timer/Counter 1 overflow flag
   }
 }

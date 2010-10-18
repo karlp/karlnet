@@ -13,6 +13,7 @@
 #endif
 #if __PJRC_UART
 #define PUT_CHAR(x) uart_putchar(x)
+#define GET_CHAR() uart_getchar()
 #endif
 
 #ifndef PUT_CHAR

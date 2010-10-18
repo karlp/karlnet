@@ -55,7 +55,7 @@ def runMainLoop():
 		continue
         lastgoodtime = time.time()
         hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
-        stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet")
+        stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet.%d" % hp.node)
         log.info(hp)
 
 

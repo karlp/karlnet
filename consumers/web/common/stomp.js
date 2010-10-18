@@ -29,44 +29,46 @@
 
   trim = function(str) {
     return str.replace(/^\s+/g,'').replace(/\s+$/g,'');
-  }
+  };
 
-  Stomp.unmarshall = function(data) {
-    var command, headers, body;
-    var lines = data.split('\n');
-    command = lines[0];
-    headers = {};
-    var pos;
-    for (pos = 1; pos < lines.length ; pos++) {
-      if (lines[pos] === '') {
-        break;
-      }
-      var pair = lines[pos].split(':');
-      headers[trim(pair[0])] = trim(pair[1]);
+  Stomp.unmarshal = function(data) {
+    var divider = data.search(/\n\n/),
+        headerLines = data.substring(0, divider).split('\n'),
+        command = headerLines.shift(),
+        headers = {},
+        body = '';
+
+    // Parse headers
+    var line = idx = null;
+    for (var i = 0; i < headerLines.length; i++) {
+      line = headerLines[i];
+      idx = line.indexOf(':');
+      headers[trim(line.substring(0, idx))] = trim(line.substring(idx + 1));
     }
-    pos++;
-    if(lines[pos] === '') {
-      // no body
-    } else {
-      body = "";
-      for (i = pos; i < lines.length; i++) {
-        if (i >= pos) {
-          pos += '\n'
-        }
-        body += lines[i];
+
+    // Parse body, stopping at the first \0 found.
+    // TODO: Add support for content-length header.
+    var chr = null;
+    for (var i = divider + 2; i < data.length; i++) {
+      chr = data.charAt(i);
+      if (chr === '\0') {
+         break;
       }
+      body += chr;
     }
+
     return Stomp.frame(command, headers, body);
   };
 
-  Stomp.marshall = function(command, headers, body) {
+  Stomp.marshal = function(command, headers, body) {
     return Stomp.frame(command, headers, body).toString() + '\0';
   };
   
   Stomp.client = function (url){
 
     var that, ws, login, passcode;
-    // subscription callbacks indexed by destination
+    var counter = 0; // used to index subscribers
+    // subscription callbacks indexed by subscriber's ID
     var subscriptions = {};
 
     debug = function(str) {
@@ -77,11 +79,11 @@
 
     onmessage = function(evt) {
       debug('<<< ' + evt.data);
-      var frame = Stomp.unmarshall(evt.data);
+      var frame = Stomp.unmarshal(evt.data);
       if (frame.command === "CONNECTED" && that.connectCallback) {
         that.connectCallback(frame);
       } else if (frame.command === "MESSAGE") {
-        var onreceive = subscriptions[frame.headers.destination];
+        var onreceive = subscriptions[frame.headers.subscription];
         if (onreceive) {
           onreceive(frame);
         }
@@ -93,10 +95,10 @@
     };
 
     transmit = function(command, headers, body) {
-      var out = Stomp.marshall(command, headers, body);
+      var out = Stomp.marshal(command, headers, body);
       debug(">>> " + out);
       ws.send(out);
-    }
+    };
 
     that = {};
 
@@ -137,15 +139,18 @@
 
     that.subscribe = function(destination, callback, headers) {
       var headers = headers || {};
+      var id = "sub-" + counter++;
       headers.destination = destination;
-      subscriptions[destination] = callback;
+      headers.id = id;
+      subscriptions[id] = callback;
       transmit("SUBSCRIBE", headers);
+      return id;
     };
 
-    that.unsubscribe = function(destination, headers) {
+    that.unsubscribe = function(id, headers) {
       var headers = headers || {};
-      headers.destination = destination;
-      delete subscriptions[destination];
+      headers.id = id;
+      delete subscriptions[id];
       transmit("UNSUBSCRIBE", headers);
     };
     

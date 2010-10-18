@@ -1,0 +1,3 @@
+The great library of alexandria.
+
+This consumer sucks in all the packet data and saves it in a sqlite3 db, for eventual sucking out and graphing and all that jazz.
