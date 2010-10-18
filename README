@@ -10,3 +10,8 @@ producers - software that can produce data to stick into karlnet, (xbee receiver
 consumers - software that makes use of karlnet data (rrd, webpages, etc)
 nodes - firmware that runs on the wireless nodes
 
+
+python dependencies:
+ * Stompy: http://packages.python.org/stompy/
+ * python-usb v1.x (you'll have to uninstall 0.4.x, or fiddle with sys.path)
+ * python-jsonpickle

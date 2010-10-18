@@ -96,7 +96,7 @@ int main(void) {
 
 		uint8_t c;
 		c = GET_CHAR();
-		phex(c);
+                usb_debug_putchar(c);
 
 	}
 }

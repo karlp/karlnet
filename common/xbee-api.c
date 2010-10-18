@@ -45,7 +45,8 @@ uint8_t escapePut32(uint32_t value) {
 void xbee_send_16(uint16_t destination, kpacket packet) {
 	PUT_CHAR(FRAME_DELIM);
 	PUT_CHAR(0);  // we never send more than 255 bytes
-	PUT_CHAR(5 + sizeof(kpacket));  // command, frame, destination + options
+        // 5 = command, frame, destination + options, 2 = kpacket header
+	PUT_CHAR(5 + 2 + (packet.nsensors * sizeof(ksensor)));
 
 	uint8_t checksum;  // doesn't need to include escaping! woo
 

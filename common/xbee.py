@@ -67,7 +67,7 @@ class xbee(object):
             log.debug("Starting to look for a packet")
             char = serial.read()
             if not char:
-                log.warn("SERIAL READ TIMEOUT")
+                log.debug("SERIAL READ TIMEOUT")
                 return None
 
             data = None
