@@ -6,6 +6,7 @@
 *.elf
 *.eep
 *.map
+.dep/
 
 # python droppings
 *.pyc
