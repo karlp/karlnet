@@ -28,7 +28,7 @@ stomp = Client(host='egri')
 def runMain():
     clientid = "karlnet_rrd@%s/%d" % (socket.gethostname(), os.getpid())
     stomp.connect(clientid=clientid)
-    stomp.subscribe("/topic/karlnet")
+    stomp.subscribe("/topic/karlnet.>")
     
     while True:
         message = stomp.get()
