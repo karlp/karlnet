@@ -1,0 +1,4 @@
+For a teensy, with an xbee, to be a listener via usb, rather than via an xbee directly to an FTDI cable.
+
+Right now, it just receives, it should be able to take local measurements too, and interleave them in the
+datastream.

@@ -1,0 +1,7 @@
+Very very basic webpage that autoupdates a table showing the most recent data from karlnet.  The data is read off via websockets, talking
+to a stomp server.  There's basically NO support for browsers that don't support websockets.  And NO support for browsers that can't connect 
+to port 61613/61614 (jms/stomp)  I really should fix that, but this was mostly just a test bed.
+
+(to use stomp with websockets with activemq, you need 5.4-SNAPSHOT or higher.)
+
+

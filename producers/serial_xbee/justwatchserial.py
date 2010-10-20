@@ -4,12 +4,12 @@
 
 __author__="karlp"
 
-config = { 'serialPort' : "/dev/ttyUSB0" }
+config = { 'serialPort' : "/dev/ftdi0" }
 import sys, os, time
 import serial
-from xbee import xbee
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
+from xbee import xbee
 import kpacket
 from stompy.simple import Client
 import jsonpickle

@@ -11,3 +11,7 @@
 *.pyc
 *.pyo
 
+# vim droppings
+*.*~
+*~
+.*.swp

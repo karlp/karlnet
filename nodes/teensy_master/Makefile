@@ -41,7 +41,7 @@
 
 
 # Target file name (without extension).
-TARGET = trx
+TARGET = usbmaster
 
 
 KARLNET_COMMON = ../../common

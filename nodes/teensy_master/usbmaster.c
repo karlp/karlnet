@@ -76,14 +76,10 @@ int main(void) {
 	CPU_PRESCALE(0);
 	init();
 
-        kpacket packet;
-        packet.header = 'x';
-        packet.version = 1;
-        packet.nsensors = 3;
-
 	print("woke up...woo\n");
         sei();
 	while (1) {
+		/*
                 power_adc_enable();
                 _delay_us(270);  // not mentioned in 32u4 datasheet, value from tiny85 and mega328p
                 ADC_ENABLE;
@@ -96,20 +92,12 @@ int main(void) {
                 unsigned int sensor2 = adc_read();
                 ADC_DISABLE;
                 power_adc_disable();
+		*/
 
-                unsigned int freq1 = readSensorFreq();
+		uint8_t c;
+		c = GET_CHAR();
+                usb_debug_putchar(c);
 
-                ksensor s1 = {36, sensor1};
-                ksensor s2 = {'f', freq1};
-                ksensor s3 = {'I', sensor2};
-                packet.ksensors[0] = s1;
-                packet.ksensors[1] = s2;
-                packet.ksensors[2] = s3;
-
-                xbee_send_16(1, packet);
-                xbee_send_16(0x4202, packet);
-
-                _delay_ms(4000);
 	}
 }
 

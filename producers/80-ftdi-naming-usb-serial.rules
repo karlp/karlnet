@@ -1,0 +1,4 @@
+# my current ftdi serial cable
+# Found with udevadm info -a -n /dev/ttyUSB1
+# (I was having problems with ttyUSB0 vs ttyUSB1)
+SUBSYSTEM=="tty" ATTRS{serial}=="FTE531X6" SYMLINK+="ftdi0"
