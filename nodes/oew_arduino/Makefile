@@ -41,10 +41,7 @@
 
 
 # Target file name (without extension).
-#TARGET = analog0
-TARGET = combo555
-#TARGET = comparator
-#TARGET = comparator328
+TARGET = power
 
 
 KARLNET_COMMON = ../../common
