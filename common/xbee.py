@@ -4,7 +4,6 @@
 # license: MIT
 # Extended and bugfixed by karlp, adding rx frames, fixing checksumming and api mode unescaping
 
-import array
 import logging
 
 class NullHandler(logging.Handler):
@@ -162,7 +161,6 @@ class xbee(object):
 				if digital:
 					digMSB = p[8]
 					digLSB = p[9]
-					local_checksum += digMSB + digLSB
 					dig = (digMSB << 8) + digLSB
 					for i in range(len(dataD)):
 						if dataD[i] == 0:
@@ -171,16 +169,13 @@ class xbee(object):
 				
 				self.digital_samples.append(dataD)
 				
-				analog_count = None
 				dataADC = [-1] * 6
 				analog_channels = self.channel_indicator_high >> 1
 				for i in range(len(dataADC)):
 					if (analog_channels & 1) == 1:
 						dataADCMSB = p[9 + i * n]
 						dataADCLSB = p[10 + i * n]
-						local_checksum += dataADCMSB + dataADCLSB
 						dataADC[i] = ((dataADCMSB << 8) + dataADCLSB) / 64
-						analog_count = i
 					analog_channels = analog_channels >> 1
 				
 				self.analog_samples.append(dataADC)
