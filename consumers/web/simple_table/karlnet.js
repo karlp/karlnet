@@ -58,6 +58,6 @@ var onerror = function(frame) {
 };
     
 
-client.connect("", "", onconnect, onerror);
+client.connect("guest", "password", onconnect, onerror);
 
 })(window);
