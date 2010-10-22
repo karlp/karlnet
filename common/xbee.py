@@ -114,7 +114,8 @@ class xbee(object):
                     options = p[3]
                     self.disable_ack = (options & 0x01) == 1
                     self.pan_broadcast = (options & 0x04) == 1
-                    self.rfdata = p[4:-1]
+                    self.frame_id = p[4]
+                    self.rfdata = p[5:-1]
                     self.checksum = p[-1]
                     log.info("xbee_tx16: %s", self)
                 
@@ -191,8 +192,8 @@ self.digital_samples, self.analog_samples))
                 basic = "<xbee {app_id: %#x, address_16: %#x, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_16, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
 		return basic + ("rfdata: %s}>" % self.rfdata)
             if self.app_id == xbee.SERIES1_TXPACKET_16:
-                basic = "<xbee_tx16 {app_id: %#x, address_16: %#x, disable_ack: %s, pan_broadcast: %s, checksum: %d, rfdata=%s}>" \
-                    % (self.app_id, self.address_16, self.disable_ack, self.pan_broadcast, self.checksum, self.rfdata)
+                basic = "<xbee_tx16 {app_id: %#x, address_16: %#x, frame_id=%#x, disable_ack: %s, pan_broadcast: %s, checksum: %d, rfdata=%s}>" \
+                    % (self.app_id, self.address_16, self.frame_id, self.disable_ack, self.pan_broadcast, self.checksum, self.rfdata)
                 return basic
             else:
                 return basic + " unknown packet type}>"
