@@ -32,7 +32,7 @@ import logging.config
 import logging.handlers
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s"
 # comment out the line below for testing :)
-#,filename="/var/log/karlnet_serial.log"
+,filename="/var/log/karlnet_serial.log"
 )
 log = logging.getLogger("main")
 
@@ -157,6 +157,7 @@ def runMainLoop():
                 log.warn("Couldn't decode: %s" % e.msg)
                 continue
         hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
+        hp.time_received = time.time()
         stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet.%d" % hp.node)
         log.info(hp)
 
