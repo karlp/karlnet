@@ -16,7 +16,7 @@ stomp = Client(host='egri')
 
 def runMain():
     stomp.connect()
-    stomp.subscribe("/topic/karlnet")
+    stomp.subscribe("/topic/karlnet.>")
     
     while True:
         message = stomp.get()
