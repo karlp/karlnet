@@ -55,6 +55,7 @@ class xbee(object):
         ESCAPE_BYTE      = 0x7D
         SERIES1_IOPACKET = 0x83
         SERIES1_RXPACKET_16 = 0x81
+        SERIES1_TXPACKET_16 = 0x01
         MAX_PACKET_LENGTH = 100  # todo - double check this.
                 
 	
@@ -106,6 +107,17 @@ class xbee(object):
 		
 		self.app_id = p[0]
                 log.debug("decoding packet type: %#x. raw=%s", self.app_id, p)
+
+                if self.app_id == xbee.SERIES1_TXPACKET_16:
+                    addrMSB = p[1]
+                    addrLSB = p[2]
+                    self.address_16 = (addrMSB << 8) + addrLSB
+                    options = p[3]
+                    self.disable_ack = (options & 0x01) == 1
+                    self.pan_broadcast = (options & 0x04) == 1
+                    self.rfdata = p[4:-1]
+                    self.checksum = p[-1]
+                    log.info("xbee_tx16: %s", self)
                 
 		if self.app_id == xbee.SERIES1_RXPACKET_16:
 			addrMSB = p[1]
@@ -114,9 +126,9 @@ class xbee(object):
 			self.rssi = p[3]
 			self.address_broadcast = ((p[4] >> 1) & 0x01) == 1
 			self.pan_broadcast = ((p[4] >> 2) & 0x01) == 1
-			self.rxdata = p[5:-1]
+			self.rfdata = p[5:-1]
 			self.checksum = p[-1]
-                        log.info("xbee packet: %s", self)
+                        log.info("xbee_rx16: %s", self)
 		
 		
 		if self.app_id == xbee.SERIES1_IOPACKET:
@@ -176,11 +188,16 @@ class xbee(object):
 			
 
 	def __str__(self):
-            basic = "<xbee {app_id: %#x, address_16: %#x, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_16, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
             if self.app_id == xbee.SERIES1_IOPACKET:
+                basic = "<xbee {app_id: %#x, address_16: %#x, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_16, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
 		return basic + ("total_samples: %s, digital: %s, analog: %s}>" % (self.total_samples,
 self.digital_samples, self.analog_samples))
             if self.app_id == xbee.SERIES1_RXPACKET_16:
-		return basic + ("rxdata: %s}>" % self.rxdata)
+                basic = "<xbee {app_id: %#x, address_16: %#x, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_16, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
+		return basic + ("rfdata: %s}>" % self.rfdata)
+            if self.app_id == xbee.SERIES1_TXPACKET_16:
+                basic = "<xbee_tx16 {app_id: %#x, address_16: %#x, disable_ack: %s, pan_broadcast: %s, checksum: %d, rfdata=%s}>" \
+                    % (self.app_id, self.address_16, self.disable_ack, self.pan_broadcast, self.checksum, self.rfdata)
+                return basic
             else:
                 return basic + " unknown packet type}>"
