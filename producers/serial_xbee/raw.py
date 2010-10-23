@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Karl Palsson, 2010
-# Listen to a serial port connected to a xbee/karlnet, just log it all to the screen
+# Listen to a serial port connected to a xbee/karlnet, and post all the data to stomp
 
 __author__="karlp"
 
@@ -11,6 +11,7 @@ sys.path.append(os.path.join(sys.path[0], "../../common"))
 
 from xbee import xbee
 import kpacket
+import jsonpickle
 import logging
 import logging.config
 import logging.handlers
@@ -25,22 +26,33 @@ def runMainLoop():
     port = None
     manualTimeout = 40
     
-
     while(1):
         if time.time() - lastgoodtime > manualTimeout:
             log.warn("XXX Reopening the serial port, no data for %d seconds!", manualTimeout)
             if port:
                 port.close()
             port = serial.Serial(config['serialPort'], 19200, timeout=10)
-
-        packet = xbee.find_packet(port)
+	packet = xbee.find_packet(port)
         if packet:
                 xb = xbee(packet)
-        else:
+	else:
                 log.warn("NO PACKET FOUND")
+		continue
+	
+	try:
+            if xb.app_id == xbee.SERIES1_RXPACKET_16:
+                kp = kpacket.wire_packet(xb.rfdata)
+            elif xb.app_id == xbee.SERIES1_TXPACKET_16:
+                kp = kpacket.wire_packet(xb.rfdata)
+            else:
+                log.warn("Received a packet, but not a normal rx, was instead: %#x", xb.app_id)
                 continue
-    
+	except kpacket.BadPacketException as e:
+		log.warn("Couldn't decode: %s" % e.msg)
+		continue
         lastgoodtime = time.time()
+        hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
+        log.info(hp)
 
 
 if __name__ == "__main__":
