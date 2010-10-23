@@ -1,0 +1,3 @@
+# USBTinyISP avr programmer, from lady ada
+# because who wants/needs to be root to use a device?
+SUBSYSTEM=="usb" SYSFS{idVendor}="1781", SYSFS{idProduct}=="0c9f", GROUP="adm", MODE="0666"
