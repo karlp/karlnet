@@ -17,110 +17,86 @@
 #define ADC_ENABLE (ADCSRA |= (1<<ADEN))
 #define ADC_DISABLE  (ADCSRA &= ~(1<<ADEN))
 
-#define ADC_PIN_CURRENT (1<<MUX0)
-#define ADC_PIN_VOLTAGE (1<<MUX1)
+#define ADC_PIN_CURRENT (0x01)
+#define ADC_PIN_VOLTAGE (0x02)
 
 #define BAUD_RATE 19200
 #define VREF_VCC  (0)
 #define VREF_AVREF  (1 << REFS0)
 
-// Magic config values derived with the arduino code for my hardware...
-#define VCAL 0.95
-#define ICAL 1.90
+// Voltage is reduced both by wall xfmr & voltage divider
+#define AC_WALL_VOLTAGE        225
+#define AC_ADAPTER_VOLTAGE     9.8
+// Ratio of the voltage divider in the circuit
+#define AC_VOLTAGE_DIV_RATIO   6.7
+// CT: Voltage depends on current, burden resistor, and turns
+#define CT_BURDEN_RESISTOR    37
+#define CT_TURNS              600
 
-#define AC_WALL_VOLTAGE 225
-#define AC_ADAPTER_VOLTAGE 9.8
-#define AC_VOLTAGE_DIV_RATIO 6.7
-#define AC_ADAPTER_RATIO (AC_WALL_VOLTAGE / AC_ADAPTER_VOLTAGE)
-#define CT_CONSTANT 16.216216
+//Calibration coeficients
+//These need to be set in order to obtain accurate results
+//Set the above values first and then calibrate futher using normal calibration method described on how to build it page.
+#define VCAL (0.95)
+#define ICAL (1.90)
+double PHASECAL = 2.4;
 
-#define V_RATIO ((AC_ADAPTER_RATIO * AC_VOLTAGE_DIV_RATIO * 5) / 1024 * VCAL)
-#define I_RATIO ((CT_CONSTANT) * 5 / 1024 * ICAL)
-#define PHASECAL 2.4
+// Initial gueses for ratios, modified by VCAL/ICAL tweaks
+#define AC_ADAPTER_RATIO       (AC_WALL_VOLTAGE / AC_ADAPTER_VOLTAGE)
+double V_RATIO = AC_ADAPTER_RATIO * AC_VOLTAGE_DIV_RATIO * 5 / 1024 * VCAL;
+double I_RATIO = (long double) CT_TURNS / CT_BURDEN_RESISTOR * 5 / 1024 * ICAL;
 
-unsigned int adc_read(unsigned char muxbits)
-{
+
+//Sample variables
+int lastSampleV, lastSampleI, sampleV, sampleI;
+
+//Filter variables
+double lastFilteredV, lastFilteredI, filteredV, filteredI;
+double filterTemp;
+
+//Stores the phase calibrated instantaneous voltage.
+double shiftedV;
+
+//Power calculation variables
+double sqI, sqV, instP, sumI, sumV, sumP;
+
+//Useful value variables
+double realPower,
+apparentPower,
+powerFactor,
+Vrms,
+Irms;
+
+int adc_read(unsigned char muxbits) {
     ADMUX = VREF_AVREF | (muxbits);
-    ADCSRA |= (1<<ADSC);               // begin the conversion
-    while (ADCSRA & (1<<ADSC)) ;     // wait for the conversion to complete
-    unsigned char lsb = ADCL;       // read the LSB first
-    return (ADCH << 8) | lsb;          // read the MSB and return 10 bit result
-}
+    ADCSRA |= (1 << ADSC); // begin the conversion
+    while (ADCSRA & (1 << ADSC)); // wait for the conversion to complete
 
+    // toss the first result and do it again...
+    ADCSRA |= (1 << ADSC); // begin the conversion
+    while (ADCSRA & (1 << ADSC)); // wait for the conversion to complete
+
+    uint8_t lsb = ADCL; // read the LSB first
+    return (ADCH << 8) | lsb; // read the MSB and return 10 bit result
+}
 
 /**
  * These two really need to go to some common code
  */
 void uart_print_short(unsigned int val) {
-        uart_putc((unsigned char)(val >> 8));
-        uart_putc((unsigned char)(val & 0xFF));
+    uart_putc((unsigned char) (val >> 8));
+    uart_putc((unsigned char) (val & 0xFF));
 }
-
 
 void init(void) {
     clock_prescale_set(0);
-    uart_init(UART_BAUD_SELECT(BAUD_RATE,F_CPU));
+    uart_init(UART_BAUD_SELECT(BAUD_RATE, F_CPU));
     // prescale down to 125khz for accuracy
-    ADCSRA = (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);  // enable ADC
-    
+    ADCSRA = (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0); // enable ADC
+
     power_adc_enable();
     ADC_ENABLE;
     // normally, lots of low power stuff...
 }
-
-// Potentially, some of this could be calculated pc side, and we just return
-// the sums and the counts, but that's harder to filter enroute
-int meterPower(double *realPowerIn, double *powerFactorIn, double *VrmsIn) {
-
-    int numSamples = 3000;
-
-    int lastSampleV, lastSampleI, sampleV, sampleI;
-    double lastFilteredV, lastFilteredI, filteredV, filteredI;
-    double instP, sumI, sumV, sumP;
-
-    for (int i = 0; i < numSamples; i++) {
-        lastSampleV = sampleV;
-        lastSampleI = sampleI;
-        
-        sampleV = adc_read(ADC_PIN_VOLTAGE);
-        sampleI = adc_read(ADC_PIN_CURRENT);
-
-        lastFilteredV = filteredV;
-        lastFilteredI = filteredI;
-        
-        // digital high pass filter to remove 2.5V DC offset...
-        filteredV = 0.996 * (lastFilteredV + sampleV - lastSampleV);
-        filteredI = 0.996 * (lastFilteredI + sampleI - lastSampleI);
-
-        double shiftedV = lastFilteredV + PHASECAL * (filteredV - lastFilteredV);
-
-        // RMS voltage
-        sumV += (filteredV * filteredV);
-        sumI += (filteredI * filteredI);
-
-        instP = shiftedV * filteredI;
-        sumP += instP;
-    }
-    
-    // Finish rms calculations
-    double Vrms;
-    Vrms = (V_RATIO) * sqrt(sumV / numSamples);
-    double Irms;
-    Irms = (I_RATIO) * sqrt(sumI / numSamples);
-
-    double realPower = V_RATIO * I_RATIO * sumP / numSamples;
-    double apparentPower = Vrms * Irms;
-    double powerFactor = realPower / apparentPower;
-
-    *realPowerIn = realPower;
-    *powerFactorIn = powerFactor;
-    *VrmsIn = Vrms;
-    return 0;
-}
-
-    
-        
-
 
 int main(void) {
     init();
@@ -129,17 +105,70 @@ int main(void) {
     packet.version = 1;
     packet.nsensors = 3;
     sei();
-    
+
     while (1) {
         double realPower;
         double powerFactor;
         double Vrms;
+        int numberOfSamples = 3000;
 
-        meterPower(&realPower, &powerFactor, &Vrms);
+        for (int n = 0; n < numberOfSamples; n++) {
 
-        ksensor rp = { 1, (uint32_t) (realPower * 100) };
-        ksensor pf = { 2, (uint32_t) (powerFactor * 1000) };
-        ksensor vrms = {3, (uint32_t) (Vrms * 100) };
+            //Used for offset removal
+            lastSampleV = sampleV;
+            lastSampleI = sampleI;
+
+            //Read in voltage and current samples.
+            sampleV = adc_read(ADC_PIN_VOLTAGE);
+            sampleI = adc_read(ADC_PIN_CURRENT);
+
+            //Used for offset removal
+            lastFilteredV = filteredV;
+            lastFilteredI = filteredI;
+
+            //Digital high pass filters to remove 2.5V DC offset.
+            filteredV = 0.996 * (lastFilteredV + sampleV - lastSampleV);
+            filteredI = 0.996 * (lastFilteredI + sampleI - lastSampleI);
+
+            //Phase calibration goes here.
+            shiftedV = lastFilteredV + PHASECAL * (filteredV - lastFilteredV);
+
+            //Root-mean-square method voltage
+            //1) square voltage values
+            sqV = filteredV * filteredV;
+            //2) sum
+            sumV += sqV;
+
+            //Root-mean-square method current
+            //1) square current values
+            sqI = filteredI * filteredI;
+            //2) sum
+            sumI += sqI;
+
+            //Instantaneous Power
+            instP = shiftedV * filteredI;
+            //Sum
+            sumP += instP;
+        }
+
+        //Calculation of the root of the mean of the voltage and current squared (rms)
+        //Calibration coeficients applied.
+        Vrms = V_RATIO * sqrt(sumV / numberOfSamples);
+        Irms = I_RATIO * sqrt(sumI / numberOfSamples);
+
+        //Calculation power values
+        realPower = V_RATIO * I_RATIO * sumP / numberOfSamples;
+        apparentPower = Vrms * Irms;
+        powerFactor = realPower / apparentPower;
+
+        //Reset accumulators
+        sumV = 0;
+        sumI = 0;
+        sumP = 0;
+
+        ksensor rp = {1, (uint32_t) (realPower * 100)};
+        ksensor pf = {2, (uint32_t) (powerFactor * 1000)};
+        ksensor vrms = {3, (uint32_t) (Vrms * 100)};
 
         packet.ksensors[0] = rp;
         packet.ksensors[1] = pf;
@@ -147,9 +176,7 @@ int main(void) {
 
         xbee_send_16(1, packet);
 
-        _delay_ms(1000);
-        
     }
 }
 
-        
+
