@@ -22,6 +22,7 @@
 
 #define BAUD_RATE 19200
 #define VREF_VCC  (0)
+#define VREF_AVREF  (1 << REFS0)
 
 // Magic config values derived with the arduino code for my hardware...
 #define VCAL 0.95
@@ -39,7 +40,7 @@
 
 unsigned int adc_read(unsigned char muxbits)
 {
-    ADMUX = VREF_VCC | (muxbits);
+    ADMUX = VREF_AVREF | (muxbits);
     ADCSRA |= (1<<ADSC);               // begin the conversion
     while (ADCSRA & (1<<ADSC)) ;     // wait for the conversion to complete
     unsigned char lsb = ADCL;       // read the LSB first
@@ -59,7 +60,7 @@ void uart_print_short(unsigned int val) {
 void init(void) {
     clock_prescale_set(0);
     uart_init(UART_BAUD_SELECT(BAUD_RATE,F_CPU));
-    // FIXME - is this the prescalar I want?
+    // prescale down to 125khz for accuracy
     ADCSRA = (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);  // enable ADC
     
     power_adc_enable();
@@ -134,18 +135,11 @@ int main(void) {
         double powerFactor;
         double Vrms;
 
-    power_adc_enable();
-    ADC_ENABLE;
-        //meterPower(&realPower, &powerFactor, &Vrms);
-        unsigned int sampleV = adc_read(ADC_PIN_VOLTAGE);
-        unsigned int sampleI = adc_read(ADC_PIN_CURRENT);
+        meterPower(&realPower, &powerFactor, &Vrms);
 
-        //ksensor rp = { 1, (unsigned int) (realPower + 0.5) };
-        ksensor rp = { 1, (unsigned int) (sampleV) };
-        //ksensor pf = { 2, (unsigned int) (powerFactor * 1000) };
-        ksensor pf = { 2, (unsigned int) (sampleI) };
-        ksensor vrms = {3, (unsigned int) (Vrms + 0.5) };
-        //ksensor vrms = {3, (unsigned int) (225.4) };
+        ksensor rp = { 1, (uint32_t) (realPower * 100) };
+        ksensor pf = { 2, (uint32_t) (powerFactor * 1000) };
+        ksensor vrms = {3, (uint32_t) (Vrms * 100) };
 
         packet.ksensors[0] = rp;
         packet.ksensors[1] = pf;
