@@ -60,10 +60,6 @@ int adc_read(unsigned char muxbits) {
     ADCSRA |= (1 << ADSC); // begin the conversion
     while (ADCSRA & (1 << ADSC)); // wait for the conversion to complete
 
-    // toss the first result and do it again...
-    ADCSRA |= (1 << ADSC); // begin the conversion
-    while (ADCSRA & (1 << ADSC)); // wait for the conversion to complete
-
     uint8_t lsb = ADCL; // read the LSB first
     return (ADCH << 8) | lsb; // read the MSB and return 10 bit result
 }
@@ -81,7 +77,7 @@ void init(void) {
 }
 
 int meter_power(kpacket* packetp) {
-    int numberOfSamples = 3000;
+    int numberOfSamples = 5000;
 
     //Stores the phase calibrated instantaneous voltage.
     double shiftedV = 0;
