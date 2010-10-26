@@ -1,6 +1,6 @@
 # Hey Emacs, this is a -*- makefile -*-
 #----------------------------------------------------------------------------
-# WinAVR Makefile Template written by Eric B. Weddington, Jörg Wunsch, et al.
+# WinAVR Makefile Template written by Eric B. Weddington, Jï¿½rg Wunsch, et al.
 #
 # Released to the Public Domain
 #
@@ -41,17 +41,13 @@
 
 
 # Target file name (without extension).
-#TARGET = analog0
-TARGET = combo555
-#TARGET = comparator
-#TARGET = comparator328
+TARGET = power
 
 
 KARLNET_COMMON = ../../common
 # List C source files here. (C dependencies are automatically generated.)
 SRC =	$(TARGET).c \
 	$(KARLNET_COMMON)/uart.c \
-	$(KARLNET_COMMON)/FreqCounter.c \
         $(KARLNET_COMMON)/xbee-api.c
 
 # MCU name, you MUST set this to match the board you are using
@@ -306,6 +302,7 @@ AVRDUDE_FLAGS += $(AVRDUDE_NO_VERIFY)
 AVRDUDE_FLAGS += $(AVRDUDE_VERBOSE)
 AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
 #AVRDUDE_FLAGS += -B 300
+AVRDUDE_FLAGS += -B 1
 
 
 

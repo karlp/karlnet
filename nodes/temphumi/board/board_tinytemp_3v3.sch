@@ -1,0 +1,201 @@
+EESchema Schematic File Version 2  date Sun 07 Mar 2010 06:26:57 PM GMT
+LIBS:power
+LIBS:device
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:interface
+LIBS:attiny
+LIBS:karl_tmp3x_to92
+LIBS:atmel
+EELAYER 24  0
+EELAYER END
+$Descr A4 11700 8267
+Sheet 1 1
+Title "Overpowered Tiny Wireless Sensor node"
+Date "7 mar 2010"
+Rev "1"
+Comp "Ekta Labs"
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+Wire Wire Line
+	8600 4350 8250 4350
+Wire Wire Line
+	8250 4350 8250 3250
+Connection ~ 7750 4950
+Wire Wire Line
+	7300 4950 7750 4950
+Wire Wire Line
+	8600 3850 7750 3850
+Wire Wire Line
+	7250 3450 7250 3000
+Wire Wire Line
+	7250 3000 7125 3000
+Wire Wire Line
+	6875 2900 6400 2900
+Wire Wire Line
+	6400 2900 6400 4250
+Wire Wire Line
+	7125 2900 7500 2900
+Wire Wire Line
+	7500 2900 7500 3850
+Wire Wire Line
+	7500 3850 6050 3850
+Wire Wire Line
+	8600 4450 8050 4450
+Wire Wire Line
+	8050 4450 7900 4050
+Wire Wire Line
+	7900 4050 7250 4050
+Connection ~ 2900 5100
+Wire Wire Line
+	2650 5100 2900 5100
+Wire Wire Line
+	2900 4700 2650 4700
+Wire Wire Line
+	7300 6150 7300 6000
+Wire Wire Line
+	6050 4850 6450 4850
+Wire Wire Line
+	6400 4250 6050 4250
+Wire Wire Line
+	7300 6000 7750 6000
+Wire Wire Line
+	7750 3850 7750 5600
+Wire Wire Line
+	2900 5250 2900 4900
+Wire Wire Line
+	6750 5450 6600 5450
+Wire Wire Line
+	6600 5450 6600 4650
+Wire Wire Line
+	6600 4650 6050 4650
+Wire Wire Line
+	6050 4050 6750 4050
+Connection ~ 6300 4050
+Wire Wire Line
+	6050 4450 7250 4450
+Wire Wire Line
+	7250 4450 7350 3950
+Wire Wire Line
+	7350 3950 8600 3950
+Wire Wire Line
+	6450 4850 6450 3000
+Wire Wire Line
+	6450 3000 6875 3000
+Wire Wire Line
+	6300 4050 6300 2800
+Wire Wire Line
+	6300 2800 6875 2800
+Wire Wire Line
+	8050 3250 7250 3250
+Connection ~ 7250 3250
+$Comp
+L CONN_2 P1
+U 1 1 4B8AFCA3
+P 8150 2900
+F 0 "P1" V 8100 2900 40  0000 C CNN
+F 1 "BATT" V 8200 2900 40  0000 C CNN
+	1    8150 2900
+	0    -1   -1   0   
+$EndComp
+$Comp
+L XBEE-ADAFRUIT CONN1
+U 1 1 4B8ADDE5
+P 8750 4350
+F 0 "CONN1" H 8750 3750 60  0000 C CNN
+F 1 "XBEE-ADAFRUIT" H 8900 4850 60  0000 C CNN
+	1    8750 4350
+	-1   0    0    1   
+$EndComp
+$Comp
+L R R1
+U 1 1 4B8ADA31
+P 7000 4050
+F 0 "R1" V 7080 4050 50  0000 C CNN
+F 1 "1K" V 7000 4050 50  0000 C CNN
+	1    7000 4050
+	0    1    1    0   
+$EndComp
+Text Label 2700 4700 0    60   ~ 0
+VCC
+$Comp
+L C C3
+U 1 1 4B8AD8A3
+P 2650 4900
+F 0 "C3" H 2700 5000 50  0000 L CNN
+F 1 "0.1uF" H 2700 4800 50  0000 L CNN
+	1    2650 4900
+	1    0    0    -1  
+$EndComp
+Text Label 7750 4950 0    60   ~ 0
+VCC
+$Comp
+L GND #PWR01
+U 1 1 4B8AD847
+P 7300 6150
+F 0 "#PWR01" H 7300 6150 30  0001 C CNN
+F 1 "GND" H 7300 6080 30  0001 C CNN
+	1    7300 6150
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR02
+U 1 1 4B8AD827
+P 2900 5250
+F 0 "#PWR02" H 2900 5250 30  0001 C CNN
+F 1 "GND" H 2900 5180 30  0001 C CNN
+	1    2900 5250
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR03
+U 1 1 4B8AD6AB
+P 7250 3450
+F 0 "#PWR03" H 7250 3450 30  0001 C CNN
+F 1 "GND" H 7250 3380 30  0001 C CNN
+	1    7250 3450
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C4
+U 1 1 4B8AD62B
+P 7750 5800
+F 0 "C4" H 7800 5900 50  0000 L CNN
+F 1 "0.1uF" H 7800 5700 50  0000 L CNN
+	1    7750 5800
+	1    0    0    -1  
+$EndComp
+$Comp
+L TMP36 Q1
+U 1 1 4B8AD52E
+P 7300 5450
+F 0 "Q1" H 7400 5700 60  0000 C CNN
+F 1 "TMP36" H 7150 5700 60  0000 C CNN
+	1    7300 5450
+	-1   0    0    -1  
+$EndComp
+$Comp
+L ATTINY25-45-85/DIP-SO U2
+U 1 1 4B8ACCA9
+P 4450 4350
+F 0 "U2" H 4425 4975 60  0000 C CNN
+F 1 "ATTINY25-45-85/DIP-SO" H 4450 5125 60  0000 C CNN
+	1    4450 4350
+	1    0    0    -1  
+$EndComp
+$Comp
+L AVR-ISP-6 CON1
+U 1 1 4B8ACAF7
+P 7000 2900
+F 0 "CON1" H 6920 3140 50  0000 C CNN
+F 1 "AVR-ISP-6" H 6760 2670 50  0000 L BNN
+F 2 "AVR-ISP-6" V 6480 2940 50  0001 C CNN
+	1    7000 2900
+	1    0    0    -1  
+$EndComp
+$EndSCHEMATC

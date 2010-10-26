@@ -22,8 +22,6 @@
 #define LED_OFF         (PORTD &= ~(1<<6))
 #define LED_CONFIG      (DDRD |= (1<<6))
 
-#define CPU_PRESCALE(n) (CLKPR = 0x80, CLKPR = (n))
-
 #define ADC_ENABLE  (ADCSRA |= (1<<ADEN))
 #define ADC_DISABLE  (ADCSRA &= ~(1<<ADEN))
 
@@ -73,7 +71,7 @@ void init(void) {
 
 
 int main(void) {
-	CPU_PRESCALE(0);
+	clock_prescale_set(0);
 	init();
 
         kpacket packet;

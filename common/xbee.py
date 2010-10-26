@@ -4,7 +4,6 @@
 # license: MIT
 # Extended and bugfixed by karlp, adding rx frames, fixing checksumming and api mode unescaping
 
-import array
 import logging
 
 class NullHandler(logging.Handler):
@@ -55,6 +54,7 @@ class xbee(object):
         ESCAPE_BYTE      = 0x7D
         SERIES1_IOPACKET = 0x83
         SERIES1_RXPACKET_16 = 0x81
+        SERIES1_TXPACKET_16 = 0x01
         MAX_PACKET_LENGTH = 100  # todo - double check this.
                 
 	
@@ -106,6 +106,18 @@ class xbee(object):
 		
 		self.app_id = p[0]
                 log.debug("decoding packet type: %#x. raw=%s", self.app_id, p)
+
+                if self.app_id == xbee.SERIES1_TXPACKET_16:
+                    addrMSB = p[1]
+                    addrLSB = p[2]
+                    self.address_16 = (addrMSB << 8) + addrLSB
+                    options = p[3]
+                    self.disable_ack = (options & 0x01) == 1
+                    self.pan_broadcast = (options & 0x04) == 1
+                    self.frame_id = p[4]
+                    self.rfdata = p[5:-1]
+                    self.checksum = p[-1]
+                    log.info("xbee_tx16: %s", self)
                 
 		if self.app_id == xbee.SERIES1_RXPACKET_16:
 			addrMSB = p[1]
@@ -114,9 +126,9 @@ class xbee(object):
 			self.rssi = p[3]
 			self.address_broadcast = ((p[4] >> 1) & 0x01) == 1
 			self.pan_broadcast = ((p[4] >> 2) & 0x01) == 1
-			self.rxdata = p[5:-1]
+			self.rfdata = p[5:-1]
 			self.checksum = p[-1]
-                        log.info("xbee packet: %s", self)
+                        log.info("xbee_rx16: %s", self)
 		
 		
 		if self.app_id == xbee.SERIES1_IOPACKET:
@@ -150,7 +162,6 @@ class xbee(object):
 				if digital:
 					digMSB = p[8]
 					digLSB = p[9]
-					local_checksum += digMSB + digLSB
 					dig = (digMSB << 8) + digLSB
 					for i in range(len(dataD)):
 						if dataD[i] == 0:
@@ -159,16 +170,13 @@ class xbee(object):
 				
 				self.digital_samples.append(dataD)
 				
-				analog_count = None
 				dataADC = [-1] * 6
 				analog_channels = self.channel_indicator_high >> 1
 				for i in range(len(dataADC)):
 					if (analog_channels & 1) == 1:
 						dataADCMSB = p[9 + i * n]
 						dataADCLSB = p[10 + i * n]
-						local_checksum += dataADCMSB + dataADCLSB
 						dataADC[i] = ((dataADCMSB << 8) + dataADCLSB) / 64
-						analog_count = i
 					analog_channels = analog_channels >> 1
 				
 				self.analog_samples.append(dataADC)
@@ -176,11 +184,16 @@ class xbee(object):
 			
 
 	def __str__(self):
-            basic = "<xbee {app_id: %#x, address_16: %#x, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_16, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
             if self.app_id == xbee.SERIES1_IOPACKET:
+                basic = "<xbee {app_id: %#x, address_16: %#x, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_16, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
 		return basic + ("total_samples: %s, digital: %s, analog: %s}>" % (self.total_samples,
 self.digital_samples, self.analog_samples))
             if self.app_id == xbee.SERIES1_RXPACKET_16:
-		return basic + ("rxdata: %s}>" % self.rxdata)
+                basic = "<xbee {app_id: %#x, address_16: %#x, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_16, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
+		return basic + ("rfdata: %s}>" % self.rfdata)
+            if self.app_id == xbee.SERIES1_TXPACKET_16:
+                basic = "<xbee_tx16 {app_id: %#x, address_16: %#x, frame_id=%#x, disable_ack: %s, pan_broadcast: %s, checksum: %d, rfdata=%s}>" \
+                    % (self.app_id, self.address_16, self.frame_id, self.disable_ack, self.pan_broadcast, self.checksum, self.rfdata)
+                return basic
             else:
                 return basic + " unknown packet type}>"

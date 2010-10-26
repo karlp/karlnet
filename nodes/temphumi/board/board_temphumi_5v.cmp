@@ -1,0 +1,108 @@
+Cmp-Mod V01 Created by CvPCB (20100221 RC4)-RC4 date = Sat 20 Mar 2010 12:31:16 AM GMT
+
+BeginCmp
+TimeStamp = /4B8AD60E;
+Reference = C1;
+ValeurCmp = 10uF;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4B8AD61B;
+Reference = C2;
+ValeurCmp = 0.1uF;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4B8AD8A3;
+Reference = C3;
+ValeurCmp = 0.1uF;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4B8AD62B;
+Reference = C4;
+ValeurCmp = 0.1uF;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4BA4146E;
+Reference = C5;
+ValeurCmp = 0.1uF;
+IdModule  = C2;
+EndCmp
+
+BeginCmp
+TimeStamp = /4B8ACAF7;
+Reference = CON1;
+ValeurCmp = AVR-ISP-6;
+IdModule  = AVR-ISP-6;
+EndCmp
+
+BeginCmp
+TimeStamp = /4B8ADDE5;
+Reference = CONN1;
+ValeurCmp = XBEE-ADAFRUIT;
+IdModule  = ;
+EndCmp
+
+BeginCmp
+TimeStamp = /4BA40EA6;
+Reference = IC1;
+ValeurCmp = MEGA48/88/168-PU;
+IdModule  = avr-4-DIL28-3;
+EndCmp
+
+BeginCmp
+TimeStamp = /4BA40DB5;
+Reference = IC2;
+ValeurCmp = LM555N;
+IdModule  = SM1206;
+EndCmp
+
+BeginCmp
+TimeStamp = /4B8AFCA3;
+Reference = P1;
+ValeurCmp = BATT;
+IdModule  = SM1206;
+EndCmp
+
+BeginCmp
+TimeStamp = /4B8AD52E;
+Reference = Q1;
+ValeurCmp = TMP36;
+IdModule  = linear4-TO92;
+EndCmp
+
+BeginCmp
+TimeStamp = /4BA41180;
+Reference = R1;
+ValeurCmp = 100K;
+IdModule  = R3;
+EndCmp
+
+BeginCmp
+TimeStamp = /4BA4117B;
+Reference = R2;
+ValeurCmp = 100K;
+IdModule  = R3;
+EndCmp
+
+BeginCmp
+TimeStamp = /4B8B01FB;
+Reference = U3;
+ValeurCmp = LM7805;
+IdModule  = linear4-TO92;
+EndCmp
+
+BeginCmp
+TimeStamp = /4BA410E8;
+Reference = U4;
+ValeurCmp = HCH1000;
+IdModule  = C2;
+EndCmp
+
+EndListe
