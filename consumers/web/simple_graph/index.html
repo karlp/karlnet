@@ -72,8 +72,10 @@ var debug = function(str) {
 var client = Stomp.client("ws://is.beeroclock.net:8080");
 client.debug = debug;
 
+var connectErrorCount = 0;
 var onreceive =  function(message) {
         hp = jQuery.parseJSON(message.body);
+        connectErrorCount = 0;
         var done = false;
         // look for the right blob of real data to append to...
         for (var current = 0; current < data.length; current++) {
@@ -93,11 +95,9 @@ var onreceive =  function(message) {
         $.plot(placeholder, data, options);
     }
 
-var connectErrorCount = 0;
 var onconnect = function(frame) {
     debug("Connected to stomp");
     client.subscribe("/topic/karlnet.>", onreceive);
-    connectErrorCount = 0;
 };
 
 var onerror = function(frame) {
@@ -108,7 +108,7 @@ var onerror = function(frame) {
         debug("Failed to connect: " + frame)
         connectErrorCount += 1;
         if (connectErrorCount < 5) {
-            client.connect("", "", onconnect, onerror);
+            client.connect("guest", "password", onconnect, onerror);
         } else {
             debug("Aborting connection after 5 attempts");
         }
@@ -117,7 +117,6 @@ var onerror = function(frame) {
 
 
 client.connect("guest", "password", onconnect, onerror);
-//client.connect("", "", onconnect, onerror);
 
 
 
