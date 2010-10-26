@@ -46,9 +46,14 @@ double V_RATIO = AC_ADAPTER_RATIO * AC_VOLTAGE_DIV_RATIO * 5 / 1024 * VCAL;
 double I_RATIO = (long double) CT_TURNS / CT_BURDEN_RESISTOR * 5 / 1024 * ICAL;
 
 
-/// All this shit is global because I hate embedded worlds and compilers :(
+// These need to be global, otherwise you have a startup inaccuracy on every reading.
+// the sliding averages needs the "prior" values, and if you reset them to zero each time,
+// you're screwed.
 //Sample variables
 int lastSampleV, lastSampleI, sampleV, sampleI;
+
+//Filter variables
+double lastFilteredV, lastFilteredI, filteredV, filteredI;
 
 int adc_read(unsigned char muxbits) {
     ADMUX = VREF_AVREF | (muxbits);
@@ -63,13 +68,6 @@ int adc_read(unsigned char muxbits) {
     return (ADCH << 8) | lsb; // read the MSB and return 10 bit result
 }
 
-/**
- * These two really need to go to some common code
- */
-void uart_print_short(unsigned int val) {
-    uart_putc((unsigned char) (val >> 8));
-    uart_putc((unsigned char) (val & 0xFF));
-}
 
 void init(void) {
     clock_prescale_set(0);
@@ -82,29 +80,13 @@ void init(void) {
     // normally, lots of low power stuff...
 }
 
-int dostuff(kpacket* packetp) {
+int meter_power(kpacket* packetp) {
     int numberOfSamples = 3000;
-
-/*
-    int lastSampleV = 0;
-    int lastSampleI = 0;
-    int sampleV = 0;
-    int sampleI = 0;
-*/
-
-    //Filter variables
-    double lastFilteredV = 0;
-    double lastFilteredI = 0;
-    double filteredV = 0;
-    double filteredI = 0;
 
     //Stores the phase calibrated instantaneous voltage.
     double shiftedV = 0;
 
     //Power calculation variables
-    double sqI = 0;
-    double sqV = 0;
-    double instP = 0;
     double sumI = 0;
     double sumV = 0;
     double sumP = 0;
@@ -138,21 +120,13 @@ int dostuff(kpacket* packetp) {
         shiftedV = lastFilteredV + PHASECAL * (filteredV - lastFilteredV);
 
         //Root-mean-square method voltage
-        //1) square voltage values
-        sqV = filteredV * filteredV;
-        //2) sum
-        sumV += sqV;
+        sumV += (filteredV * filteredV);
 
         //Root-mean-square method current
-        //1) square current values
-        sqI = filteredI * filteredI;
-        //2) sum
-        sumI += sqI;
+        sumI += (filteredI * filteredI);
 
         //Instantaneous Power
-        instP = shiftedV * filteredI;
-        //Sum
-        sumP += instP;
+        sumP += (shiftedV * filteredI);
     }
 
     //Calculation of the root of the mean of the voltage and current squared (rms)
@@ -165,12 +139,6 @@ int dostuff(kpacket* packetp) {
     apparentPower = Vrms * Irms;
     powerFactor = realPower / apparentPower;
 
-    //Reset accumulators
-
-    sumV = 0;
-    sumI = 0;
-    sumP = 0;
-
 
     ksensor rp = {1, (uint32_t) (realPower * 100)};
     ksensor pf = {2, (uint32_t) (powerFactor * 1000)};
@@ -180,7 +148,7 @@ int dostuff(kpacket* packetp) {
     packetp->ksensors[1] = pf;
     packetp->ksensors[2] = vrms;
 
-
+    return 0;
 }
 
 int main(void) {
@@ -193,7 +161,7 @@ int main(void) {
     sei();
 
     while (1) {
-        dostuff(packetp);
+        meter_power(packetp);
         xbee_send_16(1, packet);
     }
 }
