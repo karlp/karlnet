@@ -1,6 +1,6 @@
 # Hey Emacs, this is a -*- makefile -*-
 #----------------------------------------------------------------------------
-# WinAVR Makefile Template written by Eric B. Weddington, Jörg Wunsch, et al.
+# WinAVR Makefile Template written by Eric B. Weddington, Jï¿½rg Wunsch, et al.
 #
 # Released to the Public Domain
 #
@@ -48,7 +48,6 @@ KARLNET_COMMON = ../../common
 # List C source files here. (C dependencies are automatically generated.)
 SRC =	$(TARGET).c \
 	$(KARLNET_COMMON)/uart.c \
-	$(KARLNET_COMMON)/FreqCounter.c \
         $(KARLNET_COMMON)/xbee-api.c
 
 # MCU name, you MUST set this to match the board you are using
