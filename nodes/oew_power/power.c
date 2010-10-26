@@ -60,13 +60,6 @@ double shiftedV;
 //Power calculation variables
 double sqI, sqV, instP, sumI, sumV, sumP;
 
-//Useful value variables
-double realPower,
-apparentPower,
-powerFactor,
-Vrms,
-Irms;
-
 int adc_read(unsigned char muxbits) {
     ADMUX = VREF_AVREF | (muxbits);
     ADCSRA |= (1 << ADSC); // begin the conversion
@@ -123,6 +116,7 @@ int dostuff(kpacket* packetp) {
     double sumI = 0;
     double sumV = 0;
     double sumP = 0;
+*/
 
     //Useful value variables
     double realPower,
@@ -130,7 +124,6 @@ int dostuff(kpacket* packetp) {
             powerFactor,
             Vrms,
             Irms;
-*/
 
     for (int n = 0; n < numberOfSamples; n++) {
 
