@@ -2,6 +2,8 @@
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <df name="oew_arduino" root=".">
+      <df name=".dep">
+      </df>
       <in>power.c</in>
     </df>
     <logicalFolder name="ExternalFiles"

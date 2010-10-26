@@ -7,6 +7,10 @@
 *.eep
 *.map
 .dep/
+.dep.inc
+
+# netbeans
+private/
 
 # python droppings
 *.pyc
