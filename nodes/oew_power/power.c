@@ -55,10 +55,7 @@ double lastFilteredV, lastFilteredI, filteredV, filteredI;
 double filterTemp;
 
 //Stores the phase calibrated instantaneous voltage.
-double shiftedV;
-
-//Power calculation variables
-double sqI, sqV, instP, sumI, sumV, sumP;
+//double shiftedV;
 
 int adc_read(unsigned char muxbits) {
     ADMUX = VREF_AVREF | (muxbits);
@@ -105,7 +102,7 @@ int dostuff(kpacket* packetp) {
     double lastFilteredI = 0;
     double filteredV = 0;
     double filteredI = 0;
-
+*/
     //Stores the phase calibrated instantaneous voltage.
     double shiftedV = 0;
 
@@ -116,7 +113,6 @@ int dostuff(kpacket* packetp) {
     double sumI = 0;
     double sumV = 0;
     double sumP = 0;
-*/
 
     //Useful value variables
     double realPower,
