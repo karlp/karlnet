@@ -46,6 +46,7 @@ double V_RATIO = AC_ADAPTER_RATIO * AC_VOLTAGE_DIV_RATIO * 5 / 1024 * VCAL;
 double I_RATIO = (long double) CT_TURNS / CT_BURDEN_RESISTOR * 5 / 1024 * ICAL;
 
 
+/// All this shit is global because I hate embedded worlds and compilers :(
 //Sample variables
 int lastSampleV, lastSampleI, sampleV, sampleI;
 
@@ -98,84 +99,118 @@ void init(void) {
     // normally, lots of low power stuff...
 }
 
+int dostuff(kpacket* packetp) {
+    int numberOfSamples = 3000;
+
+/*
+    int lastSampleV = 0;
+    int lastSampleI = 0;
+    int sampleV = 0;
+    int sampleI = 0;
+    //Filter variables
+    double lastFilteredV = 0;
+    double lastFilteredI = 0;
+    double filteredV = 0;
+    double filteredI = 0;
+
+    //Stores the phase calibrated instantaneous voltage.
+    double shiftedV = 0;
+
+    //Power calculation variables
+    double sqI = 0;
+    double sqV = 0;
+    double instP = 0;
+    double sumI = 0;
+    double sumV = 0;
+    double sumP = 0;
+
+    //Useful value variables
+    double realPower,
+            apparentPower,
+            powerFactor,
+            Vrms,
+            Irms;
+*/
+
+    for (int n = 0; n < numberOfSamples; n++) {
+
+        //Used for offset removal
+        lastSampleV = sampleV;
+        lastSampleI = sampleI;
+
+        //Read in voltage and current samples.
+        sampleV = adc_read(ADC_PIN_VOLTAGE);
+        sampleI = adc_read(ADC_PIN_CURRENT);
+
+        //Used for offset removal
+        lastFilteredV = filteredV;
+        lastFilteredI = filteredI;
+
+        //Digital high pass filters to remove 2.5V DC offset.
+        filteredV = 0.996 * (lastFilteredV + sampleV - lastSampleV);
+        filteredI = 0.996 * (lastFilteredI + sampleI - lastSampleI);
+
+        //Phase calibration goes here.
+        shiftedV = lastFilteredV + PHASECAL * (filteredV - lastFilteredV);
+
+        //Root-mean-square method voltage
+        //1) square voltage values
+        sqV = filteredV * filteredV;
+        //2) sum
+        sumV += sqV;
+
+        //Root-mean-square method current
+        //1) square current values
+        sqI = filteredI * filteredI;
+        //2) sum
+        sumI += sqI;
+
+        //Instantaneous Power
+        instP = shiftedV * filteredI;
+        //Sum
+        sumP += instP;
+    }
+
+    //Calculation of the root of the mean of the voltage and current squared (rms)
+    //Calibration coeficients applied.
+    Vrms = V_RATIO * sqrt(sumV / numberOfSamples);
+    Irms = I_RATIO * sqrt(sumI / numberOfSamples);
+
+    //Calculation power values
+    realPower = V_RATIO * I_RATIO * sumP / numberOfSamples;
+    apparentPower = Vrms * Irms;
+    powerFactor = realPower / apparentPower;
+
+    //Reset accumulators
+
+    sumV = 0;
+    sumI = 0;
+    sumP = 0;
+
+
+    ksensor rp = {1, (uint32_t) (realPower * 100)};
+    ksensor pf = {2, (uint32_t) (powerFactor * 1000)};
+    ksensor vrms = {3, (uint32_t) (Vrms * 100)};
+
+    packetp->ksensors[0] = rp;
+    packetp->ksensors[1] = pf;
+    packetp->ksensors[2] = vrms;
+
+
+}
+
 int main(void) {
     init();
     kpacket packet;
+    kpacket* packetp = &packet;
     packet.header = 'x';
     packet.version = 1;
     packet.nsensors = 3;
     sei();
 
     while (1) {
-        double realPower;
-        double powerFactor;
-        double Vrms;
-        int numberOfSamples = 3000;
-
-        for (int n = 0; n < numberOfSamples; n++) {
-
-            //Used for offset removal
-            lastSampleV = sampleV;
-            lastSampleI = sampleI;
-
-            //Read in voltage and current samples.
-            sampleV = adc_read(ADC_PIN_VOLTAGE);
-            sampleI = adc_read(ADC_PIN_CURRENT);
-
-            //Used for offset removal
-            lastFilteredV = filteredV;
-            lastFilteredI = filteredI;
-
-            //Digital high pass filters to remove 2.5V DC offset.
-            filteredV = 0.996 * (lastFilteredV + sampleV - lastSampleV);
-            filteredI = 0.996 * (lastFilteredI + sampleI - lastSampleI);
-
-            //Phase calibration goes here.
-            shiftedV = lastFilteredV + PHASECAL * (filteredV - lastFilteredV);
-
-            //Root-mean-square method voltage
-            //1) square voltage values
-            sqV = filteredV * filteredV;
-            //2) sum
-            sumV += sqV;
-
-            //Root-mean-square method current
-            //1) square current values
-            sqI = filteredI * filteredI;
-            //2) sum
-            sumI += sqI;
-
-            //Instantaneous Power
-            instP = shiftedV * filteredI;
-            //Sum
-            sumP += instP;
-        }
-
-        //Calculation of the root of the mean of the voltage and current squared (rms)
-        //Calibration coeficients applied.
-        Vrms = V_RATIO * sqrt(sumV / numberOfSamples);
-        Irms = I_RATIO * sqrt(sumI / numberOfSamples);
-
-        //Calculation power values
-        realPower = V_RATIO * I_RATIO * sumP / numberOfSamples;
-        apparentPower = Vrms * Irms;
-        powerFactor = realPower / apparentPower;
-
-        //Reset accumulators
-        sumV = 0;
-        sumI = 0;
-        sumP = 0;
-
-        ksensor rp = {1, (uint32_t) (realPower * 100)};
-        ksensor pf = {2, (uint32_t) (powerFactor * 1000)};
-        ksensor vrms = {3, (uint32_t) (Vrms * 100)};
-
-        packet.ksensors[0] = rp;
-        packet.ksensors[1] = pf;
-        packet.ksensors[2] = vrms;
-
+        dostuff(packetp);
         xbee_send_16(1, packet);
-
     }
 }
 
