@@ -50,13 +50,6 @@ double I_RATIO = (long double) CT_TURNS / CT_BURDEN_RESISTOR * 5 / 1024 * ICAL;
 //Sample variables
 int lastSampleV, lastSampleI, sampleV, sampleI;
 
-//Filter variables
-double lastFilteredV, lastFilteredI, filteredV, filteredI;
-double filterTemp;
-
-//Stores the phase calibrated instantaneous voltage.
-//double shiftedV;
-
 int adc_read(unsigned char muxbits) {
     ADMUX = VREF_AVREF | (muxbits);
     ADCSRA |= (1 << ADSC); // begin the conversion
@@ -97,12 +90,14 @@ int dostuff(kpacket* packetp) {
     int lastSampleI = 0;
     int sampleV = 0;
     int sampleI = 0;
+*/
+
     //Filter variables
     double lastFilteredV = 0;
     double lastFilteredI = 0;
     double filteredV = 0;
     double filteredI = 0;
-*/
+
     //Stores the phase calibrated instantaneous voltage.
     double shiftedV = 0;
 
