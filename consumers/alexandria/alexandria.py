@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Karl Palsson, 2010
-# A karlnet consumer, writing into the cacti and rrd.cgi rrd files...
+# A karlnet consumer, writing into a sqlite3 database
 
 import sys, os, socket, string
 sys.path.append(os.path.join(sys.path[0], "../../common"))
