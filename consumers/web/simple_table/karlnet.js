@@ -13,7 +13,7 @@ var debug = function(str) {
 
 
 //var client = Stomp.client("ws://is.beeroclock.net:61614");
-var client = Stomp.client("ws://is.beeroclock.net:61614");
+var client = Stomp.client("ws://is.beeroclock.net:8080");
 client.debug = debug;
 
 var onreceive = function(message) {
@@ -50,7 +50,7 @@ var onerror = function(frame) {
         debug("Failed to connect: " + frame)
         connectErrorCount += 1;
         if (connectErrorCount < 5) {
-            client.connect("", "", onconnect, onerror);
+            client.connect("guest", "password", onconnect, onerror);
         } else {
             debug("Aborting connection after 5 attempts");
         }
@@ -58,6 +58,6 @@ var onerror = function(frame) {
 };
     
 
-client.connect("", "", onconnect, onerror);
+client.connect("guest", "password", onconnect, onerror);
 
 })(window);

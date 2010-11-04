@@ -2,7 +2,7 @@
 # Karl Palsson, 2010
 # A karlnet consumer, writing into the cacti and rrd.cgi rrd files...
 
-import sys, os, socket, string, time
+import sys, os, socket, string
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 import kpacket
 
@@ -50,14 +50,13 @@ def runMain():
     
     while True:
         message = stomp.get()
-        now = time.time()  # I'm well aware that this isn't the real time.  Perhaps the primary receiver should add this?
         kp = jsonpickle.decode(message.body)
         log.info("saving into the library for: %s", kp)
 
         for sensor in kp.sensors:
             log.debug("saving to db for sensor: %s", sensor)
             cur.execute('insert into karlnet_sensor (sampleTime, node, sensorType, sensorRaw, sensorValue) values (?,?,?,?,?)', 
-                (now, kp.node, sensor.type, sensor.rawValue, sensor.value))
+                (kp.time_received, kp.node, sensor.type, sensor.rawValue, sensor.value))
             conn.commit()
         
 
