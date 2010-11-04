@@ -1,0 +1,7 @@
+This node monitors power usage, following the design from http://openenergymonitor.org/emon/node/56
+
+TODO
+* add LCD output
+* refactor to run on various platforms, namely my dresden mega128rf boards
+
+
