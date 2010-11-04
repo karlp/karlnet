@@ -1,0 +1,2 @@
+nodes that measure temperature and humidity, via a HCH-1000 capacitive sensor, 
+connected to a 555 to cause a variable frequency.
