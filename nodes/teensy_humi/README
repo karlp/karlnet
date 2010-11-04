@@ -1,0 +1,3 @@
+basically identical to temphumi, just for a teensy board (atmega32u4) instead of a mega328p.
+
+The code is virtually identical, and it should be merged into that node.
