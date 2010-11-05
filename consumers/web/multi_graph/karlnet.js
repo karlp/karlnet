@@ -15,7 +15,6 @@ $(function () {
     };
     var data = [];
     var dataMap = [];
-    var placeholder = $("#placeholder");
     var rxIndex = {};
 
     var node1 = { label: 'node1', data: [[11, 25],[12,26],[13,26],[14,25],[15,22],[16,19],[17,1]] } ; 
@@ -80,14 +79,17 @@ var onreceive =  function(message) {
         
         for (var i in data) {
             var node = data[i]['label'];
-            var graphId = "#" + node;
-            var graph = $(graphId);
-            //if (graph.length == 0) {
-                // need to make one!
-            //    var newDiv = "<div id='" + node + "' style='width:600px;height:300px;'></div><br>";
-            //    $("#graphs div:last").after(newDiv);
-            //    graph = $(graphId);
-            //}
+            var newDiv = "<div id='" + node + "' class='graph'></div>";
+            var initial = $("#placeholder");
+            if (initial.length > 0) {
+                initial.replaceWith(newDiv);
+            } else {
+                if ($("#" + node).length == 0) {
+                    $("#graphs").append(newDiv);
+                }
+            }
+            // now go and get the graph!
+            var graph = $("#" + node);
             $.plot(graph, [data[i]], options);
         }
     }
