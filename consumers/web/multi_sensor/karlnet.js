@@ -12,7 +12,7 @@ $(function () {
             nodes : {
                 0x4203 : "teensyhumi",
                 0x4201 : "tinytemp",
-                0xcafe : "dummy producer"
+                0xbabe : "dummy producer"
             },
             sensors : {
                 36 : "tempC",
@@ -77,7 +77,7 @@ var onreceive =  function(message) {
         // finished with the packet, now update the graphs.
         
         for (var i in data) {
-            var newDiv = "<div id='" + i + "' class='graph'></div>";
+            var newDiv = "<div id='" + i + "'><h3>" + config.nodes[i] + "</h3><div class='graph'/></div>";
             var initial = $("#placeholder");
             if (initial.length > 0) {
                 initial.replaceWith(newDiv);
@@ -87,7 +87,7 @@ var onreceive =  function(message) {
                 }
             }
             // now go and get the graph!
-            var graph = $("#" + i);
+            var graph = $("#" + i + " div");
             $.plot(graph, data[i], options);
         }
     }
