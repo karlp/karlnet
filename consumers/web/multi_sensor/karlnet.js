@@ -29,10 +29,9 @@ $(function () {
     var options = {
         lines: { show: true },
         points: { show: true },
-        xaxis: { tickDecimals: 0, tickSize: 1 }
+        xaxis: { mode : 'time' }
     };
     var data = {}
-    var rxIndex = {};
 
  
 
@@ -59,11 +58,11 @@ var onreceive =  function(message) {
                 for (var q in data[hp.node]) {
                     var stype = hp.sensors[i].type;
                     if (data[hp.node][q].label == config.sensors[stype]) {
-                        data[hp.node][q].data.push([rxIndex[hp.node], hp.sensors[i].value]);
+                        data[hp.node][q].data.push([Math.round(hp.time_received *
+1000), hp.sensors[i].value]);
                     }
                 }
             }
-            rxIndex[hp.node]++;
             done = true;
         }
         
@@ -74,10 +73,10 @@ var onreceive =  function(message) {
             //data[hp.node].node = hp.node;
             for (var i in hp.sensors) {
                 var stype = hp.sensors[i].type;
-                data[hp.node].push({label : config.sensors[stype], data: [[0,
-hp.sensors[i].value]], yaxis : config.yaxis[stype]});
+                data[hp.node].push({label : config.sensors[stype],
+                         data: [[Math.round(hp.time_received * 1000), hp.sensors[i].value]],
+                         yaxis : config.yaxis[stype]});
             }
-            rxIndex[hp.node] = 1;
         }
 
         // finished with the packet, now update the graphs.
