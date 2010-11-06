@@ -4,7 +4,9 @@
 <title>Current status in karlnet...</title>
 <link rel="stylesheet" type="text/css" href="style.css">
 <script type="text/javascript" src='http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js'></script>
+<script language="javascript" type="text/javascript" src="../common/jquery.flot.js"></script> 
 
+<script type="text/javascript" src="../common/stomp.js"></script>
 <script type="text/javascript" src="karlnet.js"></script>
 </head>
 <body>
@@ -12,10 +14,12 @@
 <h1>Karlnet nodes</h1>
 
 <div id="graphs">
-<div id="placeholder">This text will be thrown out</div>
+<div id="placeholder">This will disappear</div>
 </div>
-<input type="text" id="nodevalue"><br>
-<input type="button" id="adddiv" value="add Div">
 
+<h4>Last 5-6 messages received...</h4>
+<ul id="debugEntries">
+<li>nothing yet...
+</ul>
 </body>
 </html>
