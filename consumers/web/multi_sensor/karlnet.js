@@ -8,42 +8,26 @@ $(function () {
         return;
     }
 
+    var config = {
+            nodes : {
+                0x4203 : "teensyhumi",
+                0x4201 : "tinytemp",
+                0xcafe : "dummy producer"
+            },
+            sensors : {
+                36 : "tempC",
+                73 : "onboard",
+                102 : "frequency"
+            }
+    };
+
     var options = {
         lines: { show: true },
         points: { show: true },
         xaxis: { tickDecimals: 0, tickSize: 1 }
     };
     var data = {}
-    var dataMap = {};
     var rxIndex = {};
-
-    var node1 = { label: 'node1', data: [[11, 25],[12,26],[13,26],[14,25],[15,22],[16,19],[17,1]] } ; 
-    var node2 = { label: 'node2', data: [[12, 9],[12.5,10],[13,16],[13.5,14],[14,12]] };
-    dataMap['node1'] = node1;
-    dataMap['node2'] = node2;
-
-    // dummy...
-    dataGood = [ { label: 'node1', data: [[11, 25],[12,26],[13,26],[14,25],[15,22],[16,19],[17,1]]} ,
-            { label: 'node2', data: [[12, 9],[12.5,10],[13,16],[13.5,14],[14,12]]}
-            ]
-    dataBad = [ { label: 'node1', data: [[11, 25],[12,26],[13,26]]},
-             { label: 'node2', data: [[12, 9],[12.5,10]]},
-             { label: 'node4', data: [[14,25],[15,22],[16,19],[17,1]]} ,
-             { label: 'node5', data: [[13,16],[13.5,14],[14,12]]},
-            ]
-
-    nodes = ["node1","node2"];
-    for (var node in nodes) {
-        //var nid = "#" + nodes[node];
-        //alert("blah blah blah" + nid);
-        //var graph = $(nid);
-        //var graph = $("#node1");
-        //$.plot(graph, [dataMap[nodes[node]]], options);
-    }
-
-
-    // we need data { [ { label=node1, data=blah} , { label=node2, dataj
-
 
  
 
@@ -68,7 +52,8 @@ var onreceive =  function(message) {
             for (var i in hp.sensors) {
                 // need to look for the right array element....
                 for (var q in data[hp.node]) {
-                    if (data[hp.node][q].label == hp.sensors[i].type) {
+                    var stype = hp.sensors[i].type;
+                    if (data[hp.node][q].label == config.sensors[stype]) {
                         data[hp.node][q].data.push([rxIndex[hp.node], hp.sensors[i].value]);
                     }
                 }
@@ -83,7 +68,8 @@ var onreceive =  function(message) {
             data[hp.node] = [];
             //data[hp.node].node = hp.node;
             for (var i in hp.sensors) {
-                data[hp.node].push({label : hp.sensors[i].type, data: [[0, hp.sensors[i].value]]});
+                var stype = hp.sensors[i].type;
+                data[hp.node].push({label : config.sensors[stype], data: [[0, hp.sensors[i].value]]});
             }
             rxIndex[hp.node] = 1;
         }
