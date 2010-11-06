@@ -15,9 +15,14 @@ $(function () {
                 0xbabe : "dummy producer"
             },
             sensors : {
-                36 : "tempC",
-                73 : "onboard",
-                102 : "frequency"
+                36 : "temp (&deg;C)",
+                73 : "internalTemp (raw)",
+                102 : "humidity (pF)"
+            },
+            yaxis : {
+                36 : 1,
+                73 : 2,
+                102 : 2
             }
     };
 
@@ -69,7 +74,8 @@ var onreceive =  function(message) {
             //data[hp.node].node = hp.node;
             for (var i in hp.sensors) {
                 var stype = hp.sensors[i].type;
-                data[hp.node].push({label : config.sensors[stype], data: [[0, hp.sensors[i].value]]});
+                data[hp.node].push({label : config.sensors[stype], data: [[0,
+hp.sensors[i].value]], yaxis : config.yaxis[stype]});
             }
             rxIndex[hp.node] = 1;
         }
