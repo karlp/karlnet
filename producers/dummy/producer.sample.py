@@ -18,11 +18,12 @@ def runMain():
     stomp.connect(clientid=clientid)
     
     while True:
+        fakeNodeId = 0xbabe
         s1 = kpacket.Sensor(type=36, raw=1234, value=random.randint(0,100))
         s2 = kpacket.Sensor(type=69, raw=4321, value=random.randint(40,80))
-        kp = kpacket.human_packet(0xcafe, s1, s2)
+        kp = kpacket.human_packet(fakeNodeId, [s1, s2])
         log.info("Producing the dummy data: %s", kp)
-        stomp.put(jsonpickle.encode(kp), destination="/topic/karlnet")
+        stomp.put(jsonpickle.encode(kp), destination="/topic/karlnet.%d" % fakeNodeId)
         time.sleep(5)
 
 
