@@ -83,7 +83,7 @@ hp.sensors[i].value]], yaxis : config.yaxis[stype]});
         // finished with the packet, now update the graphs.
         
         for (var i in data) {
-            var newDiv = "<div id='" + i + "'><h3>" + config.nodes[i] + "</h3><div class='graph'/></div>";
+            var newDiv = "<div id='" + i + "' class='node'><h3>" + config.nodes[i] + "</h3><div class='graph'/></div>";
             var initial = $("#placeholder");
             if (initial.length > 0) {
                 initial.replaceWith(newDiv);
