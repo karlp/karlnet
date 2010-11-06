@@ -29,10 +29,31 @@ $(function () {
     var options = {
         lines: { show: true },
         points: { show: true },
-        xaxis: { mode : 'time' }
+        xaxis: { mode : 'time' },
+        grid: { hoverable: true}
     };
     var data = {}
 
+// directly from flot examples...
+function showTooltip(x, y, contents) {
+        $('<div id="tooltip" class="tooltip">' + contents + '</div>').css( {
+            top: y + 5,
+            left: x + 5,
+        }).appendTo("body").fadeIn(200);
+    }
+
+function makeTooltip(event, pos, item) {
+    if (item) {
+        $("#tooltip").remove();
+        var x = item.datapoint[0].toFixed(2);
+        var y = item.datapoint[1].toFixed(2);
+        var dd = new Date(Math.round(x));
+        showTooltip(item.pageX, item.pageY,
+                item.series.label + " at " + $.plot.formatDate(dd, "%H:%M:%S") + " was " + y);
+    } else {
+        $("#tooltip").remove();
+    }
+}
  
 
 var debug = function(str) {
@@ -93,6 +114,7 @@ var onreceive =  function(message) {
             }
             // now go and get the graph!
             var graph = $("#" + i + " div");
+            graph.bind("plothover", makeTooltip);
             $.plot(graph, data[i], options);
         }
     }

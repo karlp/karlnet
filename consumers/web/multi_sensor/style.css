@@ -1,4 +1,15 @@
+div.node {
+    /*border: solid 1px red;*/
+}
 div.graph {
     width: 600px;
     height: 250px;
+}
+div.tooltip {
+            position: absolute;
+            display: none;
+            border: 1px solid #fdd;
+            padding: 2px;
+            background-color: #fee;
+            opacity: 0.80;
 }
