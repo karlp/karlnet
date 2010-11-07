@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Karl Palsson, 2010
-# Listen to a serial port connected to a xbee/karlnet, and post all the data to stomp
+# Listen to a serial port connected to a xbee/karlnet, and dump to console
 
 __author__="karlp"
 
