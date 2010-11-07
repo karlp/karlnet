@@ -17,12 +17,14 @@ $(function () {
             sensors : {
                 36 : "temp (&deg;C)",
                 73 : "internalTemp (raw)",
-                102 : "humidity (pF)"
+                102 : "humidity (pF)",
+                105 : "internalTemp (raw)",
             },
             yaxis : {
                 36 : 1,
                 73 : 2,
-                102 : 2
+                102 : 2,
+                105 : 2,
             }
     };
 
