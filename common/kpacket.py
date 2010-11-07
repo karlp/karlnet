@@ -74,6 +74,12 @@ class Sensor(object):
         (self.value,self.units) = self.__decode()
 
     
+    def __convertSensor_LM35(self, rawValue, reference):
+        rawNum = float(rawValue)
+        milliVolts = rawNum / 1024 * reference;
+        tempC = milliVolts / 10;
+        return tempC
+
     def __convertSensor_TMP36(self, rawValue, reference):
         rawNum = float(rawValue)
         milliVolts = rawNum / 1024 * reference;
@@ -92,6 +98,8 @@ class Sensor(object):
      'f' for raw frequency measurements from HCH1000 humidity sensor
         """
         self.log.debug("Decoding type:%s, raw=%s", self.type, self.rawValue)
+        if self.type == 35:
+            return (self.__convertSensor_LM35(self.rawValue, 2560), 'degreesCelsius')
         if self.type == 36:
             return (self.__convertSensor_TMP36(self.rawValue, 2560), 'degreesCelsius')
         if self.type == 37:
