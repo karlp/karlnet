@@ -39,8 +39,11 @@ class wire_packet(object):
                 if version != 1:
                     raise BadPacketException("currently only know how to handle version 1 packets")
                 num_samples = version_samples & 0xf
+                # only real sensors reported?
                 if len(arg) != 2 + (num_samples * 5):
-                    raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
+                    # or the packet is padded to MAX_SENSORS ?
+                    if len(arg) != 2 + (4 * 5):
+                        raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
                 self.log.debug("handling packet version: %d with %d samples", version, num_samples)
                 self.sensors = []
                 for i in range (0, num_samples):
