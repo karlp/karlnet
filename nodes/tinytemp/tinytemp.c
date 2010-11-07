@@ -25,13 +25,15 @@
 #define VREF_VCC  0
 #define VREF_11  (1<<REFS1)
 #define VREF_256 (1<<REFS1) | (1<<REFS2)
+#define MUXBITS_TEMP (0x03)
+#define MUXBITS_POT (0x01)
 
 #define ADC_ENABLE  (ADCSRA |= (1<<ADEN))
 #define ADC_DISABLE  (ADCSRA &= ~(1<<ADEN))
 
 
-void init_adc(void) {
-    ADMUX = VREF_256 | 0x03;  // vcc reference, and source = ADC3
+void init_adc_regular(uint8_t muxBits) {
+    ADMUX = VREF_256 | muxBits;
 }
 
 unsigned int adc_read(void)
@@ -99,24 +101,28 @@ int main(void) {
         kpacket packet;
         packet.header = 'x';
         packet.version = 1;
-        packet.nsensors = 2;
+        packet.nsensors = 3;
 
 	while (1) {
 
 		power_adc_enable();
                 _delay_us(70);  // max internal vref startup time from datasheet
                 ADC_ENABLE;
-                init_adc();
+                init_adc_regular(MUXBITS_TEMP);
 		unsigned int sensor1 = adc_read();
+                init_adc_regular(MUXBITS_POT);
+                unsigned int sensorPot = adc_read();
 		init_adc_int_temp();
-		unsigned int sensor2 = adc_read();
+                unsigned int sensor2 = adc_read();
                 ADC_DISABLE;
 		power_adc_disable();
 
                 ksensor s1 = {36, sensor1};
                 ksensor s2 = {'i', sensor2};
+                ksensor s3 = {'x', sensorPot};
                 packet.ksensors[0] = s1;
                 packet.ksensors[1] = s2;
+                packet.ksensors[2] = s3;
 
 		XBEE_ON;
 		_delay_ms(15);  // xbee manual says 2ms for sleep mode 2, 13 for sleep mode 1
