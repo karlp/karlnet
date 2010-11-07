@@ -101,9 +101,9 @@ class Sensor(object):
             return ((1e12/(self.rawValue * 300000 * 0.693)), 'picoFarads')
         # need calibration!
         if self.type == ord('i'):
-            return (self.rawValue, 'unknown')
+            return (self.rawValue  - 273, 'degreesCelsius')
         if self.type == ord('I'):
-            return (self.rawValue, 'unknown')
+            return (self.rawValue - 273, 'degreesCelsius')
         self.log.warn("Unknown sensor type: %s", self.type)
         return (0, "na")
 
