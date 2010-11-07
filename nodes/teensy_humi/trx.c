@@ -31,12 +31,15 @@
 #define VREF_256 (1<<REFS1) | (1<<REFS0)  // requires external cap at aref!
 
 void init_adc(void) {
+    ADCSRB &= ~(1<<MUX5);
     ADMUX = VREF_256 | 0;  // adc0
 }
 
 void init_adc_int_temp(void)
 {
-    ADMUX = VREF_256 | (1<<MUX5) | (1<<MUX2) | (1<<MUX1) | (1<<MUX0); // internal temp sensor
+    // internal temp sensor is mux5, 2,1,0.
+    ADCSRB |= (1<<MUX5);
+    ADMUX = VREF_256 | (1<<MUX2) | (1<<MUX1) | (1<<MUX0); // internal temp sensor
 }
 
 unsigned int adc_read(void)
@@ -91,6 +94,8 @@ int main(void) {
                 sensor1 = adc_read();
 
                 init_adc_int_temp();
+                // datasheet says it needs a second read to be accurate...
+                adc_read();
                 unsigned int sensor2 = adc_read();
                 ADC_DISABLE;
                 power_adc_disable();
