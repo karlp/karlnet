@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
+    <df name="common" root="../../common">
+      <df name="pjrc" kind="SOURCE_LOGICAL_FOLDER">
+        <in>pjrc_uart.c</in>
+        <in>pjrc_uart.h</in>
+        <in>pjrc_uart.lst</in>
+        <in>print.c</in>
+        <in>print.h</in>
+        <in>print.lst</in>
+        <in>usb_debug_only.c</in>
+        <in>usb_debug_only.h</in>
+        <in>usb_debug_only.lst</in>
+      </df>
+      <in>FreqCounter.c</in>
+      <in>FreqCounter.cpp</in>
+      <in>FreqCounter.h</in>
+      <in>FreqCounter.lst</in>
+      <in>TODO</in>
+      <in>karlnet.h</in>
+      <in>kpacket.py</in>
+      <in>uart.c</in>
+      <in>uart.h</in>
+      <in>xbee-api.c</in>
+      <in>xbee-api.h</in>
+      <in>xbee.py</in>
+    </df>
     <df name="tinytemp" root=".">
       <df name="board" kind="SOURCE_LOGICAL_FOLDER">
       </df>
@@ -19,6 +44,7 @@
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
+    <Elem>../../common</Elem>
   </sourceRootList>
   <projectmakefile>Makefile-tinytemp.mk</projectmakefile>
   <confs>

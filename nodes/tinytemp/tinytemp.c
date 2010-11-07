@@ -96,8 +96,10 @@ EMPTY_INTERRUPT(WDT_vect);
 int main(void) {
 	init();
 
-	kpacket packet;
-	packet.header = 'x';
+        kpacket packet;
+        packet.header = 'x';
+        packet.version = 1;
+        packet.nsensors = 2;
 
 	while (1) {
 
@@ -111,10 +113,11 @@ int main(void) {
                 ADC_DISABLE;
 		power_adc_disable();
 
-		packet.type1 = 36;
-		packet.value1 = sensor1;
-		packet.type2 = 'i';
-		packet.value2 = sensor2;
+                ksensor s1 = {36, sensor1};
+                ksensor s2 = {'i', sensor2};
+                packet.ksensors[0] = s1;
+                packet.ksensors[1] = s2;
+
 		XBEE_ON;
 		_delay_ms(15);  // xbee manual says 2ms for sleep mode 2, 13 for sleep mode 1
 		xbee_send_16(1, packet);  // manually set my base station to address MY = 1

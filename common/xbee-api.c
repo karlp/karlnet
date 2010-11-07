@@ -46,7 +46,8 @@ void xbee_send_16(uint16_t destination, kpacket packet) {
 	PUT_CHAR(FRAME_DELIM);
 	PUT_CHAR(0);  // we never send more than 255 bytes
         // 5 = command, frame, destination + options, 2 = kpacket header
-	PUT_CHAR(5 + 2 + (packet.nsensors * sizeof(ksensor)));
+        // actually, packet is fixed length, nsensors is just for helping decode
+	PUT_CHAR(5 + 2 + (MAX_SENSORS * sizeof(ksensor)));
 
 	uint8_t checksum;  // doesn't need to include escaping! woo
 
@@ -60,6 +61,10 @@ void xbee_send_16(uint16_t destination, kpacket packet) {
         for (int i = 0; i < packet.nsensors; i++) {
 	    checksum += escapePutChar(packet.ksensors[i].type);
 	    checksum += escapePut32(packet.ksensors[i].value);
+        }
+        for (int i = packet.nsensors; i < MAX_SENSORS; i++) {
+            checksum += escapePutChar(0);
+            checksum += escapePut32(0);
         }
 	
 	PUT_CHAR(0xff - checksum);
