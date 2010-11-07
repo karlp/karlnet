@@ -15,16 +15,18 @@ $(function () {
                 0xbabe : "dummy producer"
             },
             sensors : {
-                36 : "temp (&deg;C)",
+                35 : "lm35 (&deg;C)",
+                36 : "tmp36 (&deg;C)",
                 73 : "internalTemp (raw)",
                 102 : "humidity (pF)",
                 105 : "internalTemp (raw)",
             },
             yaxis : {
+                35 : 1,
                 36 : 1,
-                73 : 2,
+                73 : 1,
                 102 : 2,
-                105 : 2,
+                105 : 1,
             }
     };
 
@@ -32,7 +34,8 @@ $(function () {
         lines: { show: true },
         points: { show: true },
         xaxis: { mode : 'time' },
-        grid: { hoverable: true}
+        grid: { hoverable: true},
+        legend : { position: "nw" },
     };
     var data = {}
 
