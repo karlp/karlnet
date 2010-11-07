@@ -26,7 +26,7 @@
 #define VREF_11  (1<<REFS1)
 #define VREF_256 (1<<REFS1) | (1<<REFS2)
 #define MUXBITS_TEMP (0x03)
-#define MUXBITS_POT (0x01)
+#define MUXBITS_CHANNEL2 (0x01)
 
 #define ADC_ENABLE  (ADCSRA |= (1<<ADEN))
 #define ADC_DISABLE  (ADCSRA &= ~(1<<ADEN))
@@ -81,17 +81,6 @@ void init(void) {
 
 }
 
-void s_print_short(unsigned int val) {
-	putChar((unsigned char)(val >> 8));
-	putChar((unsigned char)(val & 0xff));
-}
-
-// Handle printing the sensor type opcode into the packet
-void s_print_sensor(unsigned char sensor_type, unsigned int value) {
-	putChar(sensor_type);
-	s_print_short(value);
-}
-
 EMPTY_INTERRUPT(WDT_vect);
 
 
@@ -109,17 +98,17 @@ int main(void) {
                 _delay_us(70);  // max internal vref startup time from datasheet
                 ADC_ENABLE;
                 init_adc_regular(MUXBITS_TEMP);
-		unsigned int sensor1 = adc_read();
-                init_adc_regular(MUXBITS_POT);
-                unsigned int sensorPot = adc_read();
+		unsigned int tmp36 = adc_read();
+                init_adc_regular(MUXBITS_CHANNEL2);
+                unsigned int lm35 = adc_read();
 		init_adc_int_temp();
-                unsigned int sensor2 = adc_read();
+                unsigned int internalTempSensor = adc_read();
                 ADC_DISABLE;
 		power_adc_disable();
 
-                ksensor s1 = {36, sensor1};
-                ksensor s2 = {'i', sensor2};
-                ksensor s3 = {'x', sensorPot};
+                ksensor s1 = {36, tmp36};
+                ksensor s2 = {'i', internalTempSensor};
+                ksensor s3 = {35, lm35};
                 packet.ksensors[0] = s1;
                 packet.ksensors[1] = s2;
                 packet.ksensors[2] = s3;
