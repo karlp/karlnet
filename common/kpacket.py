@@ -39,8 +39,11 @@ class wire_packet(object):
                 if version != 1:
                     raise BadPacketException("currently only know how to handle version 1 packets")
                 num_samples = version_samples & 0xf
+                # only real sensors reported?
                 if len(arg) != 2 + (num_samples * 5):
-                    raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
+                    # or the packet is padded to MAX_SENSORS ?
+                    if len(arg) != 2 + (4 * 5):
+                        raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
                 self.log.debug("handling packet version: %d with %d samples", version, num_samples)
                 self.sensors = []
                 for i in range (0, num_samples):
@@ -71,6 +74,12 @@ class Sensor(object):
         (self.value,self.units) = self.__decode()
 
     
+    def __convertSensor_LM35(self, rawValue, reference):
+        rawNum = float(rawValue)
+        milliVolts = rawNum / 1024 * reference;
+        tempC = milliVolts / 10;
+        return tempC
+
     def __convertSensor_TMP36(self, rawValue, reference):
         rawNum = float(rawValue)
         milliVolts = rawNum / 1024 * reference;
@@ -89,6 +98,8 @@ class Sensor(object):
      'f' for raw frequency measurements from HCH1000 humidity sensor
         """
         self.log.debug("Decoding type:%s, raw=%s", self.type, self.rawValue)
+        if self.type == 35:
+            return (self.__convertSensor_LM35(self.rawValue, 2560), 'degreesCelsius')
         if self.type == 36:
             return (self.__convertSensor_TMP36(self.rawValue, 2560), 'degreesCelsius')
         if self.type == 37:
@@ -98,9 +109,9 @@ class Sensor(object):
             return ((1e12/(self.rawValue * 300000 * 0.693)), 'picoFarads')
         # need calibration!
         if self.type == ord('i'):
-            return (self.rawValue, 'unknown')
+            return (self.rawValue  - 273, 'degreesCelsius')
         if self.type == ord('I'):
-            return (self.rawValue, 'unknown')
+            return (self.rawValue - 273, 'degreesCelsius')
         self.log.warn("Unknown sensor type: %s", self.type)
         return (0, "na")
 
