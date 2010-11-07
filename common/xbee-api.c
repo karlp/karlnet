@@ -62,6 +62,7 @@ void xbee_send_16(uint16_t destination, kpacket packet) {
 	    checksum += escapePutChar(packet.ksensors[i].type);
 	    checksum += escapePut32(packet.ksensors[i].value);
         }
+        // remember to write out the rest of the packet!
         for (int i = packet.nsensors; i < MAX_SENSORS; i++) {
             checksum += escapePutChar(0);
             checksum += escapePut32(0);
