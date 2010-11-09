@@ -19,14 +19,14 @@ $(function () {
                 36 : "tmp36 (&deg;C)",
                 73 : "internalTemp (raw)",
                 102 : "humidity (pF)",
-                105 : "internalTemp (raw)",
+                105 : "internalTemp (raw)"
             },
             yaxis : {
                 35 : 1,
                 36 : 1,
                 73 : 1,
                 102 : 2,
-                105 : 1,
+                105 : 1
             }
     };
 
@@ -35,15 +35,15 @@ $(function () {
         points: { show: true },
         xaxis: { mode : 'time' },
         grid: { hoverable: true},
-        legend : { position: "nw" },
+        legend : { position: "nw" }
     };
-    var data = {}
+    var data = {};
 
 // directly from flot examples...
 function showTooltip(x, y, contents) {
         $('<div id="tooltip" class="tooltip">' + contents + '</div>').css( {
             top: y + 5,
-            left: x + 5,
+            left: x + 5
         }).appendTo("body").fadeIn(200);
     }
 
@@ -63,10 +63,10 @@ function makeTooltip(event, pos, item) {
 
 var debug = function(str) {
     if ($("#debugEntries li").length > 10) {
-        $("#debugEntries li:last").remove()
+        $("#debugEntries li:last").remove();
     }
     $("#debugEntries li:first").before("<li><pre>" + str + "</pre>");
-}
+};
 
 var client = Stomp.client("ws://is.beeroclock.net:8080");
 client.debug = debug;
@@ -97,32 +97,32 @@ var onreceive =  function(message) {
             debug(" didn't find this node, needed to initialise the data structures for this node.");
             data[hp.node] = [];
             //data[hp.node].node = hp.node;
-            for (var i in hp.sensors) {
-                var stype = hp.sensors[i].type;
+            for (var j in hp.sensors) {
+                stype = hp.sensors[j].type;
                 data[hp.node].push({label : config.sensors[stype],
-                         data: [[Math.round(hp.time_received * 1000), hp.sensors[i].value]],
+                         data: [[Math.round(hp.time_received * 1000), hp.sensors[j].value]],
                          yaxis : config.yaxis[stype]});
             }
         }
 
         // finished with the packet, now update the graphs.
         
-        for (var i in data) {
-            var newDiv = "<div id='" + i + "' class='node'><h3>" + config.nodes[i] + "</h3><div class='graph'/></div>";
+        for (var k in data) {
+            var newDiv = "<div id='" + k + "' class='node'><h3>" + config.nodes[k] + "</h3><div class='graph'/></div>";
             var initial = $("#placeholder");
             if (initial.length > 0) {
                 initial.replaceWith(newDiv);
             } else {
-                if ($("#" + i).length == 0) {
+                if ($("#" + k).length === 0) {
                     $("#graphs").append(newDiv);
                 }
             }
             // now go and get the graph!
-            var graph = $("#" + i + " div");
+            var graph = $("#" + k + " div");
             graph.bind("plothover", makeTooltip);
-            $.plot(graph, data[i], options);
+            $.plot(graph, data[k], options);
         }
-    }
+};
 
 var onconnect = function(frame) {
     debug("Connected to stomp");
@@ -134,7 +134,7 @@ var onerror = function(frame) {
         debug("bang something went wrong: " + frame.message);
     } else {
         // couldn't connect at all, try a few times then give up?
-        debug("Failed to connect: " + frame)
+        debug("Failed to connect: " + frame);
         connectErrorCount += 1;
         if (connectErrorCount < 5) {
             client.connect("guest", "password", onconnect, onerror);
