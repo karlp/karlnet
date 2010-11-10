@@ -83,7 +83,7 @@ var onreceive =  function(message) {
                 // need to look for the right array element....
                 for (var q in data[hp.node]) {
                     var stype = hp.sensors[i].type;
-                    if (data[hp.node][q].label == config.sensors[stype]) {
+                    if (data[hp.node][q].label == (config.sensors[stype] + "-chan" + i)) {
                         data[hp.node][q].data.push([Math.round(hp.time_received *
 1000), hp.sensors[i].value]);
                     }
@@ -99,7 +99,7 @@ var onreceive =  function(message) {
             //data[hp.node].node = hp.node;
             for (var j in hp.sensors) {
                 stype = hp.sensors[j].type;
-                data[hp.node].push({label : config.sensors[stype],
+                data[hp.node].push({label : (config.sensors[stype] + "-chan" + j),
                          data: [[Math.round(hp.time_received * 1000), hp.sensors[j].value]],
                          yaxis : config.yaxis[stype]});
             }
