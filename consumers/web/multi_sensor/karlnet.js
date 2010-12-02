@@ -4,7 +4,7 @@
 $(function () {
 
     if (!window.WebSocket) {
-        $("#placeholder").append("Websockets not supported by this browser");
+        $("#placeholder").replaceWith("Websockets not supported by this browser");
         return;
     }
 
