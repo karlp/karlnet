@@ -10,7 +10,7 @@ import kpacket
 config = {
     'library_file': '/home/karl/src/karlnet-git/consumers/alexandria/library.alexandria.sqlite3',
     'create_sql' : """
-        create table karlnet_sensor (sampleTime text, node text, sensorType text, sensorRaw real, sensorValue real)
+        create table karlnet_sensor2 (sampleTime integer, node integer, sensorType integer, sensorRaw real, sensorValue real)
         """
 }
 
@@ -33,10 +33,10 @@ except sqlite3.OperationalError as ex:
 cur = conn.cursor()
 
 try:
-    cur.execute('select * from karlnet_sensor')
+    cur.execute('select * from karlnet_sensor2')
 except sqlite3.OperationalError as ex:
-    if string.find(str(ex), "no such table: karlnet_sensor") != -1:
-        log.info("karlnet_sensor table didn't exist, creating it!")
+    if string.find(str(ex), "no such table: karlnet_sensor2") != -1:
+        log.info("karlnet_sensor2 table didn't exist, creating it!")
         cur.execute(config['create_sql'])
 
     
@@ -55,7 +55,7 @@ def runMain():
 
         for sensor in kp.sensors:
             log.debug("saving to db for sensor: %s", sensor)
-            cur.execute('insert into karlnet_sensor (sampleTime, node, sensorType, sensorRaw, sensorValue) values (?,?,?,?,?)', 
+            cur.execute('insert into karlnet_sensor2 (sampleTime, node, sensorType, sensorRaw, sensorValue) values (?,?,?,?,?)', 
                 (kp.time_received, kp.node, sensor.type, sensor.rawValue, sensor.value))
             conn.commit()
         
