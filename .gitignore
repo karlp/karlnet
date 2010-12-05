@@ -20,3 +20,8 @@ private/
 *.*~
 *~
 .*.swp
+
+#eagle backups
+*.b#?
+*.s#?
+*.l#?
