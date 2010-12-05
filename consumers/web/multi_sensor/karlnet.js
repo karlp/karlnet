@@ -49,6 +49,10 @@ $(function () {
     };
     var data = {};
 
+    function make_key(type, channel) {
+        return "" + type + "_" + channel;
+    }
+
     // directly from flot examples...
     function showTooltip(x, y, contents) {
         $('<div id="tooltip" class="tooltip">' + contents + '</div>').css( {
@@ -82,6 +86,27 @@ $(function () {
     client.debug = debug;
 
     var connectErrorCount = 0;
+
+    // callback for historical data received from the server,
+    // needs to populate the current
+    var onreceive_historical = function(olddata) {
+        var flotd = []
+        for (var row in olddata) {
+        //    flotd.push({label : data[row]['type'] + "_" + row, data : data[row]['data']})
+            //alert("received a row of data for node " + olddata[row]['node'] + "type " + olddata[row]['type'] + "channel " + olddata[row]['channel']);
+            stype = olddata[row]['type'];
+            channel = olddata[row]['channel'];
+            oldkey = make_key(stype, channel);
+            oldnode = olddata[row]['node'];
+            data[oldnode].push({
+                    key : oldkey,
+                    label : (config.sensors[stype] + "-chan" + channel),
+                    data: olddata[row]['data'],
+                    yaxis : config.yaxis[stype]
+                    });
+        }
+    };
+
     var onreceive =  function(message) {
         var hp = jQuery.parseJSON(message.body);
         connectErrorCount = 0;
@@ -93,7 +118,8 @@ $(function () {
                 // need to look for the right array element....
                 for (var q in data[hp.node]) {
                     var stype = hp.sensors[i].type;
-                    if (data[hp.node][q].label == (config.sensors[stype] + "-chan" + i)) {
+                    var ikey = make_key(stype, i);
+                    if (data[hp.node][q].key == ikey) {
                         data[hp.node][q].data.push([Math.round(hp.time_received *
                             1000), hp.sensors[i].value]);
                     }
@@ -106,15 +132,26 @@ $(function () {
             // ok,first time for this node, need to add it outright...
             debug(" didn't find this node, needed to initialise the data structures for this node.");
             data[hp.node] = [];
+            // should go and load up the data from alexandria here...
+            $.ajax({
+                url: "http://karlnet.beeroclock.net/bottle/data/" + hp.node,
+                dataType: 'jsonp',
+                data: "",
+                success: onreceive_historical
+            });
+
             //data[hp.node].node = hp.node;
-            for (var j in hp.sensors) {
-                stype = hp.sensors[j].type;
-                data[hp.node].push({
-                    label : (config.sensors[stype] + "-chan" + j),
-                    data: [[Math.round(hp.time_received * 1000), hp.sensors[j].value]],
-                    yaxis : config.yaxis[stype]
-                    });
-            }
+            // just let the historical loader load it up, and skip this packet...
+            // Should really let the new packet still load it in....
+//            for (var j in hp.sensors) {
+//                stype = hp.sensors[j].type;
+//                data[hp.node].push({
+//                    key : make_key(stype, j),
+//                    label : (config.sensors[stype] + "-chan" + j),
+//                    data: [[Math.round(hp.time_received * 1000), hp.sensors[j].value]],
+//                    yaxis : config.yaxis[stype]
+//                    });
+//            }
         }
 
         // finished with the packet, now update the graphs.
