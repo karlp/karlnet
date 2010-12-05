@@ -8,7 +8,7 @@ import sys
 import bottle
 import json
 # ... add or import your bottle app code here ...
-from bottle import route, run, request
+from bottle import route, run, request, response
 
 sys.path.append("/home/karl/src/karlnet-git/common")
 sys.path.append("/home/karl/src/karlnet-git/consumers")
@@ -30,6 +30,7 @@ def node_data(node):
     if callback is None:
         return json.dumps(blob)
     else:
+        response.content_type = "application/javascript"
         return ("%s(%s);" % (callback, json.dumps(blob)))
         
 
