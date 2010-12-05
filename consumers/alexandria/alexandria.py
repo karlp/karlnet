@@ -10,6 +10,7 @@ from stompy.simple import Client
 import jsonpickle
 import kpacket
 import logging
+import unittest
 
 class NullHandler(logging.Handler):
     def emit(self, record):
@@ -55,27 +56,32 @@ class Researcher:
         if sensorType is None:
             self.log.debug("getting allll types")
             c.execute("""
-            select sampleTime, sensorType, sensorValue from karlnet_sensor
+            select sampleTime, sensorType, channel, sensorValue from karlnet_sensor
             where node = ?
             order by sampleTime desc limit ?
             """, (node,count,))
         else:
-            c.execute("""select sampleTime, sensorType, sensorValue
+            c.execute("""select sampleTime, sensorType, channel, sensorValue
                 from karlnet_sensor where node = ? and sensorType = ?
                 order by sampleTime desc limit ?""", (node, sensorType, count,))
 
         map = []
-        types = {}
+        data = {}
         for row in c:
             sampleTime = round(row[0] * 1000)
-            self.log.debug("pushing sampletime %s, value %s into type %s", sampleTime, row[2], row[1])
-            if (row[1] not in types):
-                types[row[1]] = []
-            types[row[1]].append([sampleTime, row[2]])
+            type = row[1]
+            channel = row[2]
+            value = row[3]
+            self.log.debug("pushing sampletime %s, value %s into type %s/%s", sampleTime, value, type, channel)
+            key = (type, channel)
+            if (key not in data):
+                data[key] = []
+            data[key].append([sampleTime, value])
 
-        for type in types:
-            self.log.debug("muxing in %s", type)
-            map.append({'node': node, 'type':type, 'data': types[type]})
+        for key in data:
+            self.log.debug("muxing in %s", key)
+            (type, channel) = (key)
+            map.append({'node': node, 'type':type, 'channel' : channel, 'data': data[key]})
         return map
     
 class Librarian:
@@ -131,3 +137,10 @@ Loop forever, saving readings into the database.  TODO: topic could be a config 
                     (kp.time_received, kp.node, sensor.type, i, sensor.rawValue, sensor.value))
                 self.conn.commit()
 
+# Keeping this as it shows me how to do it, without looking it up again
+class TestResearcher(unittest.TestCase):
+    def test_splitKey(self):
+        self.assertEqual("0", "0")
+
+if __name__ == '__main__':
+    unittest.main()
