@@ -100,7 +100,7 @@ int main(void) {
                 init_adc_regular(MUXBITS_TEMP);
 		unsigned int tmp36 = adc_read();
                 init_adc_regular(MUXBITS_CHANNEL2);
-                unsigned int lm35 = adc_read();
+                unsigned int tmp36_channel2 = adc_read();
 		init_adc_int_temp();
                 unsigned int internalTempSensor = adc_read();
                 ADC_DISABLE;
@@ -108,7 +108,7 @@ int main(void) {
 
                 ksensor s1 = {36, tmp36};
                 ksensor s2 = {'i', internalTempSensor};
-                ksensor s3 = {35, lm35};
+                ksensor s3 = {36, tmp36_channel2};
                 packet.ksensors[0] = s1;
                 packet.ksensors[1] = s2;
                 packet.ksensors[2] = s3;
