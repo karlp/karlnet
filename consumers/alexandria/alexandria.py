@@ -22,10 +22,10 @@ logging.getLogger("alexandria").addHandler(h)
 config = {
     'library_file': '/home/karl/src/karlnet-git/consumers/alexandria/library.alexandria.sqlite3',
     'create_sql' : """
-        create table karlnet_sensor2 (sampleTime integer, node integer, sensorType integer, sensorRaw
+        create table karlnet_sensor (sampleTime integer, node integer, sensorType integer, channel integer, sensorRaw
 real, sensorValue real)""",
     'create_index' : """
-        create index idx_karlnet_sensor2_sampleTime on karlnet_sensor2(sampleTime);
+        create index idx_karlnet_sensor_sampleTime on karlnet_sensor(sampleTime);
         """,
     'stomp_host' : 'egri'
 }
@@ -55,13 +55,13 @@ class Researcher:
         if sensorType is None:
             self.log.debug("getting allll types")
             c.execute("""
-            select sampleTime, sensorType, sensorValue from karlnet_sensor2
+            select sampleTime, sensorType, sensorValue from karlnet_sensor
             where node = ?
             order by sampleTime desc limit ?
             """, (node,count,))
         else:
             c.execute("""select sampleTime, sensorType, sensorValue
-                from karlnet_sensor2 where node = ? and sensorType = ?
+                from karlnet_sensor where node = ? and sensorType = ?
                 order by sampleTime desc limit ?""", (node, sensorType, count,))
 
         map = []
@@ -98,10 +98,10 @@ If the database file is not found, or does not contain the appropriate tables an
         self.log.debug("library exists, validating schema")
         self.cur = self.conn.cursor()
         try:
-            self.cur.execute('select * from karlnet_sensor2')
+            self.cur.execute('select * from karlnet_sensor')
         except sqlite3.OperationalError as ex:
-            if string.find(str(ex), "no such table: karlnet_sensor2") != -1:
-                self.log.debug("karlnet_sensor2 table didn't exist, creating it!")
+            if string.find(str(ex), "no such table: karlnet_sensor") != -1:
+                self.log.debug("karlnet_sensor table didn't exist, creating it!")
                 self.cur.execute(config['create_sql'])
                 self.cur.execute(config['create_index'])
         self.log.debug("library is valid, connecting to stomp")
@@ -124,9 +124,10 @@ Loop forever, saving readings into the database.  TODO: topic could be a config 
             kp = jsonpickle.decode(message.body)
             self.log.info("saving into the library for: %s", kp)
 
-            for sensor in kp.sensors:
-                self.log.debug("saving to db for sensor: %s", sensor)
-                self.cur.execute('insert into karlnet_sensor2 (sampleTime, node, sensorType, sensorRaw, sensorValue) values (?,?,?,?,?)', 
-                    (kp.time_received, kp.node, sensor.type, sensor.rawValue, sensor.value))
+            for i in range(len(kp.sensors)):
+                sensor = kp.sensors[i]
+                self.log.debug("saving to db for sensor %d: %s", i, sensor)
+                self.cur.execute('insert into karlnet_sensor (sampleTime, node, sensorType, channel, sensorRaw, sensorValue) values (?,?,?,?,?,?)', 
+                    (kp.time_received, kp.node, sensor.type, i, sensor.rawValue, sensor.value))
                 self.conn.commit()
 
