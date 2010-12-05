@@ -106,6 +106,7 @@ class Sensor(object):
             return (self.__convertSensor_TMP36(self.rawValue, 1100), 'degreesCelsius')
         if self.type == ord('f'):
             # 555 timer is C = 1/f / 300k / 0.693 (555 constant)
+            # seems to range from about 400pf (very dry) to about 1100pf (quite humid)
             return ((1e12/(self.rawValue * 300000 * 0.693)), 'picoFarads')
         # need calibration!
         if self.type == ord('i'):
