@@ -10,15 +10,17 @@ from stompy.simple import Client
 import jsonpickle
 import kpacket
 import logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s"
-# ,filename="/var/log/karlnet_alexandria.log"
-)
-log = logging.getLogger("main")
+
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+
+h = NullHandler()
+logging.getLogger("alexandria").addHandler(h)
 
 # Some shared config
 config = {
-    #'library_file': '/home/karl/src/karlnet-git/consumers/alexandria/library.alexandria.sqlite3',
-    'library_file': 'demo.sqlite3',
+    'library_file': '/home/karl/src/karlnet-git/consumers/alexandria/library.alexandria.sqlite3',
     'create_sql' : """
         create table karlnet_sensor2 (sampleTime integer, node integer, sensorType integer, sensorRaw
 real, sensorValue real)""",
@@ -31,12 +33,13 @@ real, sensorValue real)""",
 class Researcher:
 
     def __init__(self, file=None):
+        self.log = logging.getLogger("alexandria.Researcher")
         if file is None:
             file = config['library_file']
         try:
             self.conn = sqlite3.connect(file)
         except sqlite3.OperationalError as ex:
-            log.error(ex)
+            self.log.error(ex)
             raise ex  # reraise for the world to handle...
 
     def last_values(self, node, sensorType=None, count=100):
@@ -46,8 +49,11 @@ class Researcher:
     return data is like... map = [{node:1, type:t2, data:[[][][][]]}, {node:2...]
         """
         c = self.conn.cursor()
+        # Using limit <count> actually isn't very suitable, 
+        # if the node isn't found, it will scan the entire table, should use
+        # count, plus the sample interval, to get something like, x last seconds worth
         if sensorType is None:
-            log.debug("getting allll types")
+            self.log.debug("getting allll types")
             c.execute("""
             select sampleTime, sensorType, sensorValue from karlnet_sensor2
             where node = ?
@@ -61,44 +67,54 @@ class Researcher:
         map = []
         types = {}
         for row in c:
-            log.debug("pushing sampletime %s, value %s into type %s", row[0], row[2], row[1])
+            sampleTime = round(row[0] * 1000)
+            self.log.debug("pushing sampletime %s, value %s into type %s", sampleTime, row[2], row[1])
             if (row[1] not in types):
                 types[row[1]] = []
-            types[row[1]].append([row[0], row[2]])
+            types[row[1]].append([sampleTime, row[2]])
 
         for type in types:
-            log.debug("muxing in %s", type)
+            self.log.debug("muxing in %s", type)
             map.append({'node': node, 'type':type, 'data': types[type]})
         return map
     
 class Librarian:
 
     def __init__(self, file=None, host=None):
+        """
+Make a database writing librarian, listening to packets from host, and writing into the the sqlite3 file specified.
+Defaults provided match my own personal environment.
+If the database file is not found, or does not contain the appropriate tables and indexes, it is created
+        """
+        self.log = logging.getLogger("alexandria.Librarian")
         if file is None:
             file = config['library_file']
         try:
             self.conn = sqlite3.connect(file)
         except sqlite3.OperationalError as ex:
-            log.error(ex)
+            self.log.error(ex)
             raise ex
 
-        log.debug("library exists, validating schema")
+        self.log.debug("library exists, validating schema")
         self.cur = self.conn.cursor()
         try:
             self.cur.execute('select * from karlnet_sensor2')
         except sqlite3.OperationalError as ex:
             if string.find(str(ex), "no such table: karlnet_sensor2") != -1:
-                log.debug("karlnet_sensor2 table didn't exist, creating it!")
+                self.log.debug("karlnet_sensor2 table didn't exist, creating it!")
                 self.cur.execute(config['create_sql'])
                 self.cur.execute(config['create_index'])
-        log.debug("library is valid, connecting to stomp")
+        self.log.debug("library is valid, connecting to stomp")
 
         if host is None:
             host = config['stomp_host']
         self.stomp = Client(host=host)
-        log.info("Valid library and stomp is up, starting to write books!")
+        self.log.info("Valid library and stomp is up, starting to write books!")
 
     def save_books(self):
+        """
+Loop forever, saving readings into the database.  TODO: topic could be a config option?
+        """
         clientid = "karlnet_alexandria@%s/%d" % (socket.gethostname(), os.getpid())
         self.stomp.connect(clientid=clientid)
         self.stomp.subscribe("/topic/karlnet.>")
@@ -106,22 +122,11 @@ class Librarian:
         while True:
             message = self.stomp.get()
             kp = jsonpickle.decode(message.body)
-            log.info("saving into the library for: %s", kp)
+            self.log.info("saving into the library for: %s", kp)
 
             for sensor in kp.sensors:
-                log.debug("saving to db for sensor: %s", sensor)
+                self.log.debug("saving to db for sensor: %s", sensor)
                 self.cur.execute('insert into karlnet_sensor2 (sampleTime, node, sensorType, sensorRaw, sensorValue) values (?,?,?,?,?)', 
                     (kp.time_received, kp.node, sensor.type, sensor.rawValue, sensor.value))
                 self.conn.commit()
-
-
-if __name__ == "__main__":
-    try:
-        l = Librarian()
-        l.save_books()
-    except KeyboardInterrupt:
-        print "got a keyboard interrupt"
-        log.info("QUIT - quitting due to keyboard interrupt")
-        l.stomp.disconnect()
-        raise SystemExit
 
