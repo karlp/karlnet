@@ -43,7 +43,7 @@ class Researcher:
             self.log.error(ex)
             raise ex  # reraise for the world to handle...
 
-    def last_values(self, node, sensorType=None, count=100):
+    def last_values(self, node, sensorType=None, count=100, since=None):
         """
     Look up the last count values in the library for the given node, and optional type
     returns a list of tuples for each sensor type detected
@@ -53,17 +53,28 @@ class Researcher:
         # Using limit <count> actually isn't very suitable, 
         # if the node isn't found, it will scan the entire table, should use
         # count, plus the sample interval, to get something like, x last seconds worth
-        if sensorType is None:
+        if sensorType is None and since is None:
             self.log.debug("getting allll types")
             c.execute("""
             select sampleTime, sensorType, channel, sensorValue from karlnet_sensor
             where node = ?
             order by sampleTime desc limit ?
             """, (node,count,))
-        else:
+        elif sensorType is None and since is not None:
+            # all in the last x
+            self.log.debug("getting alll, since %s", since)
+            c.execute("""select sampleTime, sensorType, channel, sensorValue from karlnet_sensor
+            where node = ? and sampleTime > ? order by sampleTime desc""", (node, since,))
+        elif since is None:
+            # sensorType must be defined, but not since
             c.execute("""select sampleTime, sensorType, channel, sensorValue
                 from karlnet_sensor where node = ? and sensorType = ?
                 order by sampleTime desc limit ?""", (node, sensorType, count,))
+        else:
+            # sensor type defined, and also since
+            c.execute("""select sampleTime, sensorType, channel, sensorValue
+                from karlnet_sensor where node = ? and sensorType = ? and sampleTime > ?
+                order by sampleTime desc""", (node, sensorType, since,))
 
         map = []
         data = {}
@@ -72,7 +83,7 @@ class Researcher:
             type = row[1]
             channel = row[2]
             value = row[3]
-            self.log.debug("pushing sampletime %s, value %s into type %s/%s", sampleTime, value, type, channel)
+            self.log.debug("pushing sampletime %d, value %f into type %s/%s", sampleTime, value, type, channel)
             key = (type, channel)
             if (key not in data):
                 data[key] = []
@@ -81,6 +92,7 @@ class Researcher:
         for key in data:
             self.log.debug("muxing in %s", key)
             (type, channel) = (key)
+            data[key].reverse()
             map.append({'node': node, 'type':type, 'channel' : channel, 'data': data[key]})
         return map
     
