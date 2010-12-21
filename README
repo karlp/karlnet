@@ -2,13 +2,16 @@
 Hi! This is the karlnet source tree.
 karlnet consists of nodes, which are (normally) battery powered sensor devices, transmitting data at some
 interval back to a base station.  The base station handles decoding the binary wire formats, and posts all
-the data onto a stomp message bus topic. (the base station is a data producer)  Then whatever consumers
-wish, simply subscribe to the topic.
+the data onto a stomp message bus topic. (the base station is a data producer)  Then any consumer that
+wishes, simply subscribes to the topic, and receives all data from the network, from the minute the
+connect.
 
 common - headers and things for packet definitions, etc
 producers - software that can produce data to stick into karlnet, (xbee receiver)
 consumers - software that makes use of karlnet data (rrd, webpages, etc)
-nodes - firmware that runs on the wireless nodes
+nodes - firmware that runs on the wireless nodes, and the cad files for each node
+eagle - shared files for eagle cad (part libraries)
+experiments - uncategorized, or incomplete projects.
 
 
 python dependencies:

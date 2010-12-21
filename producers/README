@@ -1,0 +1,7 @@
+karlnet data producers
+
+ Producers all push jsonpickle'd "human packets" onto the stomp message bus.
+
+ Human packets are defined in ../common/kpacket.py, but basically contain a node id, a timestamp, and a
+set of sensor readings. (with type and units) The producer should also take care of any signal conditioning necessary to
+turn the raw sensor readings into humanly useful readings.
