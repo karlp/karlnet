@@ -1,6 +1,7 @@
 # Karl Palsson, 2010
 
 import logging
+import struct
 
 class human_packet(object):
     """
@@ -14,6 +15,13 @@ class human_packet(object):
         """
         self.node = node
         self.sensors = sensors
+        self.version = 1
+
+    def wire_format(self):
+        frame = struct.pack("> bb", ord('x'), (self.version << 4) | len(self.sensors) & 0x0f)
+        for s in self.sensors:
+            frame += struct.pack("> BI", s.type, s.rawValue)
+        return frame
 
     def __str__(self):
         return "human_packet[node=%#x, sensors=%s]" % (self.node, self.sensors)
@@ -63,6 +71,9 @@ class Sensor(object):
             self.type = type
             self.rawValue = raw
             self.value = value
+
+        if value is None and self.rawValue is not None:
+            (self.value, self.units) = self.__decode()
 
     def __decodeBinary(self, arg):
         """Internal method for decoding raw binary data from a wire_packet (for instance)"""
