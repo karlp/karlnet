@@ -49,6 +49,13 @@ def readAndUnescape(serial, length):
     log.debug("read %d bytes, needed to escape %d", length, escaped)
     return buf
 
+class IllegalStateException(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
 class xbee(object):
 	
     START_IOPACKET   = 0x7e
@@ -60,79 +67,56 @@ class xbee(object):
     SERIES1_TXPACKET_16 = 0x01
     MAX_PACKET_LENGTH = 100  # todo - double check this.
 
-class IllegalStateException(Exception):
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
-
-class xbee_transmitter(xbee):
-    def __init__(self, port):
-        self.port = port
-        
     def _needs_escaping(self, byte):
-        if ((byte == xbee.START_IOPACKET) or (byte == xbee.ESCAPE_BYTE) or ( byte == xbee.X_ON) | (byte == xbee.X_OFF)):
+        v = ord(byte)
+        if ((v == xbee.START_IOPACKET) or (v == xbee.ESCAPE_BYTE) or (v == xbee.X_ON) or (v == xbee.X_OFF)):
             return True
         else:
             return False
+
     def escape(self, data):
         frame = ""
         for byte in data:
             if self._needs_escaping(byte):
-                frame += xbee.ESCAPE_BYTE
-                frame += byte ^ 0x20
+                frame += chr(xbee.ESCAPE_BYTE)
+                frame += chr((ord(byte) ^ 0x20))
             else:
                 frame += byte
         return frame
 
-    def checksum(self, data):
-        total = 0
-        for b in data:
-            log.debug("adding %d to the checksum", ord(b))
-            total += ord(b)
-
-        log.debug("total before truncation = %d(%#x)", total, total)
-        total &= 0xff  # only one byte!
-        log.debug("total after truncation = %d(%#x)", total, total)
-        return 0xff - total
-
     def tx16(self, destination, data, frame_id=1, disable_ack=False, broadcast=False):
-        if self.port is None:
-            raise IllegalStateException("Trying to transmit with an object with no port!")
 
         frame = struct.pack("> b", xbee.START_IOPACKET)
         frame += struct.pack("> H", len(data)+5)
         frame += struct.pack("> b", xbee.SERIES1_TXPACKET_16)
-        checksum = xbee.SERIES1_TXPACKET_16
         frame += struct.pack("> b", (frame_id & 0xff))
-        checksum += (frame_id & 0xff)
-        log.debug("Sending apacket to %d (%#x)", destination, destination)
         frame += struct.pack("> H", destination)
-        checksum += (destination & 0xff)
-        checksum += ((destination >> 8) & 0xff)
-        for b in data:
-            checksum += ord(b)
-        log.debug("before truncation, %d, (%#x)", checksum, checksum)
-        checksum &= 0xff
-        log.debug("before subtraction, %d, (%#x)", checksum, checksum)
-        checksum = 0xff - checksum
-
         if disable_ack or broadcast:
             raise NotImplementedError("I haven't written support for these flags yet")
         else:
             frame += struct.pack("> b", 0x00)
-        frame += self.escape(data)
-        log.debug("checksum = %d(%#x)", checksum, checksum)
-        frame += struct.pack("> b", checksum)
-        log.debug("Attempting to write out packet: %s", frame)
-        #log.debug("package: %s", struct.unpack("> bhbbhs", frame))
-        self.port.write(frame)
+        frame += data
+
+        checksum = sum(map(ord, frame[3:]))
+        log.debug("before truncation and substraction: %d (%#x)", checksum, checksum)
+        checksum &= 0xff
+        log.debug("before subtraction, %d, (%#x)", checksum, checksum)
+        checksum = 0xff - checksum
+
+        # now, we've calculated checksum, and got the entire frame ready, now go through and escape it
+        log.debug("Before escaping: %s", self._pretty(frame))
+        # oh yeah, but we don't escape framing and length bytes.
+        escaped = frame[0:2] + self.escape(frame[2:])
+        log.debug("after escaping: %s", self._pretty(escaped))
+
+        escaped += struct.pack("> b", checksum)
+        return escaped
+
+    def _pretty(self, frame):
         line = ""
         for b in frame:
             line += "%#x " % (ord(b))
-        log.debug("line = %s", line)
-        return frame
+        return line
 
 class xbee_receiver(xbee):
 	def find_packet(serial):

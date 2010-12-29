@@ -10,7 +10,7 @@ import sys, os, time
 import serial
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
-from xbee import xbee, xbee_transmitter
+from xbee import xbee
 import kpacket
 #import jsonpickle
 import logging
@@ -27,7 +27,7 @@ def runMainLoop():
     port = serial.Serial(config['serialPort'], 19200, timeout=10)
     
     while(1):
-        xbtx = xbee_transmitter(port)
+        xbtx = xbee()
         fakeReadings = []
         fakeReadings.append(kpacket.Sensor(type=36, raw=0x55))
         fakeReadings.append(kpacket.Sensor(type=0xee, raw=0xff))
@@ -35,7 +35,8 @@ def runMainLoop():
         data = kpacket.human_packet(node=0x6209, sensors=fakeReadings)
         #data = "cafebabe"
         log.info("injecting a fake packet into the ether...%s", data)
-        xbtx.tx16(destination=0x4203, data=data.wire_format())
+        wiredata = xbtx.tx16(destination=0x4203, data=data.wire_format())
+        port.write(wiredata)
 
         time.sleep(1)
 
