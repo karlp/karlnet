@@ -5,6 +5,7 @@
 # Extended and bugfixed by karlp, adding rx frames, fixing checksumming and api mode unescaping
 
 import logging
+import struct
 
 class NullHandler(logging.Handler):
     def emit(self, record):
@@ -50,14 +51,90 @@ def readAndUnescape(serial, length):
 
 class xbee(object):
 	
-        START_IOPACKET   = 0x7e
-        ESCAPE_BYTE      = 0x7D
-        SERIES1_IOPACKET = 0x83
-        SERIES1_RXPACKET_16 = 0x81
-        SERIES1_TXPACKET_16 = 0x01
-        MAX_PACKET_LENGTH = 100  # todo - double check this.
-                
-	
+    START_IOPACKET   = 0x7e
+    ESCAPE_BYTE      = 0x7D
+    X_ON             = 0x11
+    X_OFF            =  0x13
+    SERIES1_IOPACKET = 0x83
+    SERIES1_RXPACKET_16 = 0x81
+    SERIES1_TXPACKET_16 = 0x01
+    MAX_PACKET_LENGTH = 100  # todo - double check this.
+
+class IllegalStateException(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+class xbee_transmitter(xbee):
+    def __init__(self, port):
+        self.port = port
+        
+    def _needs_escaping(self, byte):
+        if ((byte == xbee.START_IOPACKET) or (byte == xbee.ESCAPE_BYTE) or ( byte == xbee.X_ON) | (byte == xbee.X_OFF)):
+            return True
+        else:
+            return False
+    def escape(self, data):
+        frame = ""
+        for byte in data:
+            if self._needs_escaping(byte):
+                frame += xbee.ESCAPE_BYTE
+                frame += byte ^ 0x20
+            else:
+                frame += byte
+        return frame
+
+    def checksum(self, data):
+        total = 0
+        for b in data:
+            log.debug("adding %d to the checksum", ord(b))
+            total += ord(b)
+
+        log.debug("total before truncation = %d(%#x)", total, total)
+        total &= 0xff  # only one byte!
+        log.debug("total after truncation = %d(%#x)", total, total)
+        return 0xff - total
+
+    def tx16(self, destination, data, frame_id=1, disable_ack=False, broadcast=False):
+        if self.port is None:
+            raise IllegalStateException("Trying to transmit with an object with no port!")
+
+        frame = struct.pack("> b", xbee.START_IOPACKET)
+        frame += struct.pack("> H", len(data)+5)
+        frame += struct.pack("> b", xbee.SERIES1_TXPACKET_16)
+        checksum = xbee.SERIES1_TXPACKET_16
+        frame += struct.pack("> b", (frame_id & 0xff))
+        checksum += (frame_id & 0xff)
+        log.debug("Sending apacket to %d (%#x)", destination, destination)
+        frame += struct.pack("> H", destination)
+        checksum += (destination & 0xff)
+        checksum += ((destination >> 8) & 0xff)
+        for b in data:
+            checksum += ord(b)
+        log.debug("before truncation, %d, (%#x)", checksum, checksum)
+        checksum &= 0xff
+        log.debug("before subtraction, %d, (%#x)", checksum, checksum)
+        checksum = 0xff - checksum
+
+        if disable_ack or broadcast:
+            raise NotImplementedError("I haven't written support for these flags yet")
+        else:
+            frame += struct.pack("> b", 0x00)
+        frame += self.escape(data)
+        log.debug("checksum = %d(%#x)", checksum, checksum)
+        frame += struct.pack("> b", checksum)
+        log.debug("Attempting to write out packet: %s", frame)
+        #log.debug("package: %s", struct.unpack("> bhbbhs", frame))
+        self.port.write(frame)
+        line = ""
+        for b in frame:
+            line += "%#x " % (ord(b))
+        log.debug("line = %s", line)
+        return frame
+
+class xbee_receiver(xbee):
 	def find_packet(serial):
             """
             Try to reliably find and decode one single solitary packet from the serial port
