@@ -108,13 +108,13 @@ class xbee(object):
                 log.debug("decoding packet type: %#x. raw=%s", self.app_id, p)
 
                 if self.app_id == xbee.SERIES1_TXPACKET_16:
-                    addrMSB = p[1]
-                    addrLSB = p[2]
+                    self.frame_id = p[1]
+                    addrMSB = p[2]
+                    addrLSB = p[3]
                     self.address_16 = (addrMSB << 8) + addrLSB
-                    options = p[3]
+                    options = p[4]
                     self.disable_ack = (options & 0x01) == 1
                     self.pan_broadcast = (options & 0x04) == 1
-                    self.frame_id = p[4]
                     self.rfdata = p[5:-1]
                     self.checksum = p[-1]
                     log.info("xbee_tx16: %s", self)
