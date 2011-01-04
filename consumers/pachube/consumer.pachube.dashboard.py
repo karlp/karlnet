@@ -13,14 +13,19 @@ import socket
 import json
 import jsonpickle
 import httplib
+
+import pygame
 from stompy.simple import Client
 
 # Which node and sensor number do we want to compare against the pachube dashboard
 config = {
     'node': 0x4201,
     'probe': 2,
-    'apikey' : "68711d479b154637ab0f9def0f475306d73b87da19f3b15efa43ff61e25e5af9"
+    'apikey' : "68711d479b154637ab0f9def0f475306d73b87da19f3b15efa43ff61e25e5af9",
+    'dashboardFeed': 12484
 }
+
+unblob = {}
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s",
@@ -29,15 +34,20 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(nam
 log = logging.getLogger("main")
 
 stomp = Client(host='egri')
+pygame.init()
+#pygame.mixer.music.load("phone_2.wav")
+sound = pygame.mixer.Sound("phone_2.wav")
 
-def fetch_pachube(feedId, tag):
+def fetch_pachube(feedId):
     conn = httplib.HTTPConnection('www.pachube.com')
     headers = {"X-PachubeApiKey" : config["apikey"]}
     conn.request("GET", "/api/%d.json" % feedId, headers=headers)
     blob = conn.getresponse()
-    unblob = json.load(blob)
-    for node in unblob['datastreams']:
-        log.debug("checking datastream: %s", node['tags'])
+    return json.load(blob)
+
+def get_knob(blob, tag):
+    for node in blob['datastreams']:
+        #log.debug("checking datastream: %s", node['tags'])
         if node['tags'][0] == tag:
             return node['values'][0]['value']
     
@@ -51,11 +61,11 @@ def runMain():
     last = 0
     threshold = None
     
+    playing = False
     while True:
         if (time.time() - last > 60):
-            log.debug("Fetching current dashboard values from pachube, incase they've changed")
-            threshold = fetch_pachube(feedId=12484, tag="set temp mash")
-            log.debug("threshold = %s", threshold)
+            log.info("Fetching current dashboard values from pachube, incase they've changed")
+            unblob = fetch_pachube(feedId=config['dashboardFeed'])
             last = time.time()
 
         message = stomp.get()
@@ -65,10 +75,31 @@ def runMain():
             log.info("Current temp on probe is %d", realTemp)
 
 
-        if threshold is not None and realTemp > threshold:
+        threshold = get_knob(unblob, "set temp mash")
+        log.debug("threshold is %s", threshold)
+        if threshold is not None and realTemp > int(threshold):
             # TODO - play a sound here or something....
             log.warn("ok, it's ready!")
+            alarm = get_knob(unblob, "mash temp alarm active")
+            log.debug("alarm = %s", alarm)
+            if int(alarm) > 0 and not playing :
+                log.info("Music is on!!!!!")
+                #pygame.mixer.music.play(loop=-1) # forever!
+                sound.play(loops=-1)
+                playing = True
+            elif int(alarm) == 0 and playing:
+                log.info("alarm off, and we're already playing")
+                #pygame.mixer.music.stop()
+                sound.stop()
+                playing = False
+            elif playing:
+                log.debug("No need to do anything, alarm is on, and we're already playing")
 
+        else:
+            log.info("Turning music off.... we're below the threshold")
+            #pygame.mixer.music.stop()
+            sound.stop()
+            playing = False
 
 if __name__ == "__main__":
     try:
@@ -82,4 +113,7 @@ if __name__ == "__main__":
         log.exception("Something really bad!")
         stomp.disconnect()
         raise
+    finally:
+        pygame.mixer.stop()
+        pygame.mixer.quit()
 
