@@ -35,7 +35,6 @@ log = logging.getLogger("main")
 
 stomp = Client(host='egri')
 pygame.init()
-#pygame.mixer.music.load("phone_2.wav")
 sound = pygame.mixer.Sound("phone_2.wav")
 
 def fetch_pachube(feedId):
@@ -78,18 +77,15 @@ def runMain():
         threshold = get_knob(unblob, "set temp mash")
         log.debug("threshold is %s", threshold)
         if threshold is not None and realTemp > int(threshold):
-            # TODO - play a sound here or something....
             log.warn("ok, it's ready!")
             alarm = get_knob(unblob, "mash temp alarm active")
             log.debug("alarm = %s", alarm)
             if int(alarm) > 0 and not playing :
                 log.info("Music is on!!!!!")
-                #pygame.mixer.music.play(loop=-1) # forever!
                 sound.play(loops=-1)
                 playing = True
             elif int(alarm) == 0 and playing:
                 log.info("alarm off, and we're already playing")
-                #pygame.mixer.music.stop()
                 sound.stop()
                 playing = False
             elif playing:
@@ -97,7 +93,6 @@ def runMain():
 
         else:
             log.info("Turning music off.... we're below the threshold")
-            #pygame.mixer.music.stop()
             sound.stop()
             playing = False
 
