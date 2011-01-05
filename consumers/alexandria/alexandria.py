@@ -10,6 +10,7 @@ from stompy.simple import Client
 import jsonpickle
 import kpacket
 import logging
+import unittest
 
 class NullHandler(logging.Handler):
     def emit(self, record):
@@ -22,10 +23,10 @@ logging.getLogger("alexandria").addHandler(h)
 config = {
     'library_file': '/home/karl/src/karlnet-git/consumers/alexandria/library.alexandria.sqlite3',
     'create_sql' : """
-        create table karlnet_sensor2 (sampleTime integer, node integer, sensorType integer, sensorRaw
+        create table karlnet_sensor (sampleTime integer, node integer, sensorType integer, channel integer, sensorRaw
 real, sensorValue real)""",
     'create_index' : """
-        create index idx_karlnet_sensor2_sampleTime on karlnet_sensor2(sampleTime);
+        create index idx_karlnet_sensor_sampleTime on karlnet_sensor(sampleTime);
         """,
     'stomp_host' : 'egri'
 }
@@ -42,7 +43,7 @@ class Researcher:
             self.log.error(ex)
             raise ex  # reraise for the world to handle...
 
-    def last_values(self, node, sensorType=None, count=100):
+    def last_values(self, node, sensorType=None, count=100, since=None):
         """
     Look up the last count values in the library for the given node, and optional type
     returns a list of tuples for each sensor type detected
@@ -52,30 +53,47 @@ class Researcher:
         # Using limit <count> actually isn't very suitable, 
         # if the node isn't found, it will scan the entire table, should use
         # count, plus the sample interval, to get something like, x last seconds worth
-        if sensorType is None:
+        if sensorType is None and since is None:
             self.log.debug("getting allll types")
             c.execute("""
-            select sampleTime, sensorType, sensorValue from karlnet_sensor2
+            select sampleTime, sensorType, channel, sensorValue from karlnet_sensor
             where node = ?
             order by sampleTime desc limit ?
             """, (node,count,))
-        else:
-            c.execute("""select sampleTime, sensorType, sensorValue
-                from karlnet_sensor2 where node = ? and sensorType = ?
+        elif sensorType is None and since is not None:
+            # all in the last x
+            self.log.debug("getting alll, since %s", since)
+            c.execute("""select sampleTime, sensorType, channel, sensorValue from karlnet_sensor
+            where node = ? and sampleTime > ? order by sampleTime desc""", (node, since,))
+        elif since is None:
+            # sensorType must be defined, but not since
+            c.execute("""select sampleTime, sensorType, channel, sensorValue
+                from karlnet_sensor where node = ? and sensorType = ?
                 order by sampleTime desc limit ?""", (node, sensorType, count,))
+        else:
+            # sensor type defined, and also since
+            c.execute("""select sampleTime, sensorType, channel, sensorValue
+                from karlnet_sensor where node = ? and sensorType = ? and sampleTime > ?
+                order by sampleTime desc""", (node, sensorType, since,))
 
         map = []
-        types = {}
+        data = {}
         for row in c:
             sampleTime = round(row[0] * 1000)
-            self.log.debug("pushing sampletime %s, value %s into type %s", sampleTime, row[2], row[1])
-            if (row[1] not in types):
-                types[row[1]] = []
-            types[row[1]].append([sampleTime, row[2]])
+            type = row[1]
+            channel = row[2]
+            value = row[3]
+            self.log.debug("pushing sampletime %d, value %f into type %s/%s", sampleTime, value, type, channel)
+            key = (type, channel)
+            if (key not in data):
+                data[key] = []
+            data[key].append([sampleTime, value])
 
-        for type in types:
-            self.log.debug("muxing in %s", type)
-            map.append({'node': node, 'type':type, 'data': types[type]})
+        for key in data:
+            self.log.debug("muxing in %s", key)
+            (type, channel) = (key)
+            data[key].reverse()
+            map.append({'node': node, 'type':type, 'channel' : channel, 'data': data[key]})
         return map
     
 class Librarian:
@@ -98,10 +116,10 @@ If the database file is not found, or does not contain the appropriate tables an
         self.log.debug("library exists, validating schema")
         self.cur = self.conn.cursor()
         try:
-            self.cur.execute('select * from karlnet_sensor2')
+            self.cur.execute('select * from karlnet_sensor')
         except sqlite3.OperationalError as ex:
-            if string.find(str(ex), "no such table: karlnet_sensor2") != -1:
-                self.log.debug("karlnet_sensor2 table didn't exist, creating it!")
+            if string.find(str(ex), "no such table: karlnet_sensor") != -1:
+                self.log.debug("karlnet_sensor table didn't exist, creating it!")
                 self.cur.execute(config['create_sql'])
                 self.cur.execute(config['create_index'])
         self.log.debug("library is valid, connecting to stomp")
@@ -124,9 +142,17 @@ Loop forever, saving readings into the database.  TODO: topic could be a config 
             kp = jsonpickle.decode(message.body)
             self.log.info("saving into the library for: %s", kp)
 
-            for sensor in kp.sensors:
-                self.log.debug("saving to db for sensor: %s", sensor)
-                self.cur.execute('insert into karlnet_sensor2 (sampleTime, node, sensorType, sensorRaw, sensorValue) values (?,?,?,?,?)', 
-                    (kp.time_received, kp.node, sensor.type, sensor.rawValue, sensor.value))
+            for i in range(len(kp.sensors)):
+                sensor = kp.sensors[i]
+                self.log.debug("saving to db for sensor %d: %s", i, sensor)
+                self.cur.execute('insert into karlnet_sensor (sampleTime, node, sensorType, channel, sensorRaw, sensorValue) values (?,?,?,?,?,?)', 
+                    (kp.time_received, kp.node, sensor.type, i, sensor.rawValue, sensor.value))
                 self.conn.commit()
 
+# Keeping this as it shows me how to do it, without looking it up again
+class TestResearcher(unittest.TestCase):
+    def test_splitKey(self):
+        self.assertEqual("0", "0")
+
+if __name__ == '__main__':
+    unittest.main()
