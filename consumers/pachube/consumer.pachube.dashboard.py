@@ -75,8 +75,13 @@ def runMain():
 
 
         threshold = get_knob(unblob, "set temp mash")
-        log.debug("threshold is %s", threshold)
-        if threshold is not None and realTemp > int(threshold):
+        if threshold is not None:
+            setTemp = int(threshold)
+            cooling = setTemp < 50
+            heating = not cooling
+            log.debug("threshold is %d, mode: %s", setTemp, "cooling" if cooling else "heating")
+        # Assume cooling if the setTemp is under 50, assume heating if the set temp is over 50....
+        if (cooling and realTemp < setTemp) or (heating and realTemp > setTemp):
             log.warn("ok, it's ready!")
             alarm = get_knob(unblob, "mash temp alarm active")
             log.debug("alarm = %s", alarm)
@@ -92,7 +97,10 @@ def runMain():
                 log.debug("No need to do anything, alarm is on, and we're already playing")
 
         else:
-            log.info("Turning music off.... we're below the threshold")
+            if (heating):
+                log.info("Turning music off.... we're below the threshold")
+            else:
+                log.info("Turning music off.... we're above the threshold")
             sound.stop()
             playing = False
 
