@@ -6,9 +6,14 @@
 # I'm not real happy with how this keeps the api key in the source. But I've never really dealt with api keys before, so I'm not sure of a better
 # way... at least, not just yet.
 
+# this might be better than pygame? 
+# but is very linux specific:
+# http://www.kryogenix.org/days/2010/12/21/playing-system-sounds-from-python-programs-on-ubuntu
+
 import os
 import time
 import socket
+import ConfigParser
 
 import json
 import jsonpickle
@@ -17,12 +22,15 @@ import httplib
 import pygame
 from stompy.simple import Client
 
-# Which node and sensor number do we want to compare against the pachube dashboard
+configFile = ConfigParser.ConfigParser()
+configFile.read(['config.default.ini', 'config.ini'])
+
+# use int(xxx, 0) because configParser.getint() doesn't magically determine hex/dec
 config = {
-    'node': 0x4201,
-    'probe': 2,
-    'apikey' : "68711d479b154637ab0f9def0f475306d73b87da19f3b15efa43ff61e25e5af9",
-    'dashboardFeed': 12484
+    'node' : int(configFile.get('karlnet', 'node'), 0),
+    'probe' : int(configFile.get('karlnet', 'probe'), 0),
+    'apikey' : configFile.get('pachube', 'apikey'),
+    'dashboardFeed' : int(configFile.get('pachube', 'dashboardFeed'),0)
 }
 
 unblob = {}
@@ -42,6 +50,8 @@ def fetch_pachube(feedId):
     headers = {"X-PachubeApiKey" : config["apikey"]}
     conn.request("GET", "/api/%d.json" % feedId, headers=headers)
     blob = conn.getresponse()
+    if blob.status != httplib.OK:
+        raise httplib.HTTPException("Couldn't read from pachube dashboard, did you set the API key?: %d %s" % (blob.status, blob.reason))
     return json.load(blob)
 
 def get_knob(blob, tag):
