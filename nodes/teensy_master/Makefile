@@ -1,6 +1,6 @@
 # Hey Emacs, this is a -*- makefile -*-
 #----------------------------------------------------------------------------
-# WinAVR Makefile Template written by Eric B. Weddington, Jörg Wunsch, et al.
+# WinAVR Makefile Template written by Eric B. Weddington, Jï¿½rg Wunsch, et al.
 #
 # Released to the Public Domain
 #
@@ -49,10 +49,10 @@ PJRC_LIBS = ../../common/pjrc
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC =	$(TARGET).c \
-	$(PJRC_LIBS)/pjrc_uart.c \
 	$(PJRC_LIBS)/usb_debug_only.c \
 	$(PJRC_LIBS)/print.c \
-        $(KARLNET_COMMON)/xbee-api.c \
+	$(KARLNET_COMMON)/uart.c 
+#        $(KARLNET_COMMON)/xbee-api.c \
         $(KARLNET_COMMON)/FreqCounter.c
 
 # MCU name, you MUST set this to match the board you are using
@@ -127,7 +127,8 @@ CSTANDARD = -std=gnu99
 
 # Place -D or -U options here for C sources
 CDEFS = -DF_CPU=$(F_CPU)UL
-CDEFS += -D__PJRC_UART
+CDEFS += -D__AVR_UART
+CDEFS += -DUART_RX_BUFFER_SIZE=256
 
 
 # Place -D or -U options here for ASM sources
