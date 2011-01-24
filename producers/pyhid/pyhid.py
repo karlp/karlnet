@@ -17,7 +17,7 @@ config = {
 import sys, os, time
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
-from xbee import xbee
+from xbee import xbee, xbee_receiver
 import kpacket
 from stompy.simple import Client
 import jsonpickle
@@ -141,9 +141,9 @@ def runMainLoop():
     stomp.connect(clientid="teensy usb listener", username="karlnet", password="password")
 
     while 1:
-        packet = xbee.find_packet(serial)
+        packet = xbee_receiver.find_packet(serial)
         if packet:
-            xb = xbee(packet)
+            xb = xbee_receiver(packet)
         else:
             continue
 
