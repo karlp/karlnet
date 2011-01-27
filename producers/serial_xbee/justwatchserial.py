@@ -5,7 +5,7 @@
 __author__="karlp"
 
 #config = { 'serialPort' : "/dev/ftdi0" }
-config = { 'serialPort' : "/dev/ttyACM1" }
+config = { 'serialPort' : "/dev/ttyACM0" }
 import sys, os, time
 import serial
 sys.path.append(os.path.join(sys.path[0], "../../common"))
@@ -23,14 +23,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("main")
 
 stomp = Client(host='egri')
+#stomp = None
 
 
 def runMainLoop():
     lastgoodtime = 0
     port = None
     manualTimeout = 40
-    
-    stomp.connect(clientid="serial port listener", username="karlnet", password="password")
+
+    if stomp:
+        stomp.connect(clientid="serial port listener", username="karlnet", password="password")
 
     while(1):
         if time.time() - lastgoodtime > manualTimeout:
@@ -56,7 +58,8 @@ def runMainLoop():
 		continue
         lastgoodtime = time.time()
         hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
-        stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet.%d" % hp.node)
+        if stomp:
+            stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet.%d" % hp.node)
         log.info(hp)
 
 
