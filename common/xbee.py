@@ -85,6 +85,7 @@ class xbee(object):
         return frame
 
     def tx16(self, destination, data, frame_id=1, disable_ack=False, broadcast=False):
+        """Create a fully escaped complete frame of data for API mode 2, ready to be written to an xbee somewhere"""
 
         frame = struct.pack("> b", xbee.START_IOPACKET)
         frame += struct.pack("> H", len(data)+5)

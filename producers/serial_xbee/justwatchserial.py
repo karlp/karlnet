@@ -4,12 +4,13 @@
 
 __author__="karlp"
 
-config = { 'serialPort' : "/dev/ftdi0" }
+#config = { 'serialPort' : "/dev/ftdi0" }
+config = { 'serialPort' : "/dev/ttyACM1" }
 import sys, os, time
 import serial
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
-from xbee import xbee
+from xbee import xbee, xbee_receiver
 import kpacket
 from stompy.simple import Client
 import jsonpickle
@@ -37,16 +38,16 @@ def runMainLoop():
             if port:
                 port.close()
             port = serial.Serial(config['serialPort'], 19200, timeout=10)
-	packet = xbee.find_packet(port)
+	packet = xbee_receiver.find_packet(port)
         if packet:
-                xb = xbee(packet)
+                xb = xbee_receiver(packet)
 	else:
                 log.warn("NO PACKET FOUND")
 		continue
 	
 	try:
             if xb.app_id == xbee.SERIES1_RXPACKET_16:
-                kp = kpacket.wire_packet(xb.rxdata)
+                kp = kpacket.wire_packet(xb.rfdata)
             else:
                 log.warn("Received a packet, but not a normal rx, was instead: %#x", xb.app_id)
                 continue
