@@ -90,9 +90,13 @@ USB_ClassInfo_CDC_Device_t VirtualSerial2_CDC_Interface =
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
  */
+static FILE USBSerialStream;
+
 int main(void)
 {
 	SetupHardware();
+        // Make a stream for channel 2, so we can write more debuggy stuff to it...
+        CDC_Device_CreateStream(&VirtualSerial2_CDC_Interface, &USBSerialStream);
 
 	sei();
 
@@ -118,14 +122,19 @@ int main(void)
 
                 i++;
                 // if appropriate timing wise, also create and send our own local packet
-                uint16_t adc = ADC_GetChannelReading(ADC_CHANNEL0);
-                adc = ADC_GetChannelReading(ADC_CHANNEL0);
+                uint16_t adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
+                adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
+                adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
+                
+                uint16_t itemp = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
+/*
                 ksensor s1 = {36, adc};
                 ksensor s2 = {'f', i};
                 ksensor s3 = {'I', 0};
                 packet.ksensors[0] = s1;
                 packet.ksensors[1] = s2;
                 packet.ksensors[2] = s3;
+*/
 
 
                 if (i > 10000) {
@@ -133,7 +142,11 @@ int main(void)
                     // FIXME - this works, ish, but because it's sending the _kpacket_,
                     // not the xbee frame, none of my reciever code can understand
                     // needs the src address and so forth at least!
-                    CDC_Device_SendString(&VirtualSerial2_CDC_Interface, (char *)&packet, sizeof(kpacket));
+                    //CDC_Device_SendString(&VirtualSerial2_CDC_Interface, (char *)&packet, sizeof(kpacket));
+
+                    fprintf(&USBSerialStream, "ADC channel = %d\r\n", adc);
+                    fprintf(&USBSerialStream, "internal temp sensor = %d\r\n", itemp);
+                    
                 }
 
 		CDC_Device_USBTask(&VirtualSerial1_CDC_Interface);
