@@ -35,6 +35,7 @@ Karl Palsson, 2010
 */
 
 #include "local_plus_rfrx.h"
+#include "karlnet.h"
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -95,6 +96,13 @@ int main(void)
 
 	sei();
 
+        kpacket packet;
+        packet.header = 'x';
+        packet.version = 1;
+        packet.nsensors = 3;
+
+        int i = 0;
+
         char mychar;
 	for (;;)
 	{
@@ -108,8 +116,25 @@ int main(void)
                     CDC_Device_SendByte(&VirtualSerial1_CDC_Interface, mychar);
                 }
 
+                i++;
                 // if appropriate timing wise, also create and send our own local packet
-                
+                uint16_t adc = ADC_GetChannelReading(ADC_CHANNEL0);
+                adc = ADC_GetChannelReading(ADC_CHANNEL0);
+                ksensor s1 = {36, adc};
+                ksensor s2 = {'f', i};
+                ksensor s3 = {'I', 0};
+                packet.ksensors[0] = s1;
+                packet.ksensors[1] = s2;
+                packet.ksensors[2] = s3;
+
+
+                if (i > 10000) {
+                    i = 0;
+                    // FIXME - this works, ish, but because it's sending the _kpacket_,
+                    // not the xbee frame, none of my reciever code can understand
+                    // needs the src address and so forth at least!
+                    CDC_Device_SendString(&VirtualSerial2_CDC_Interface, (char *)&packet, sizeof(kpacket));
+                }
 
 		CDC_Device_USBTask(&VirtualSerial1_CDC_Interface);
 		CDC_Device_USBTask(&VirtualSerial2_CDC_Interface);
@@ -129,6 +154,7 @@ void SetupHardware(void)
 
 	/* Hardware Initialization */
         Serial_Init(19200, false);
+        ADC_Init(ADC_PRESCALE_128);
 	USB_Init();
 }
 

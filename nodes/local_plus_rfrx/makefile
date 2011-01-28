@@ -129,13 +129,15 @@ LUFA_OPTS += -D USE_STATIC_OPTIONS="(USB_DEVICE_OPT_FULLSPEED | USB_OPT_REG_ENAB
 # Create the LUFA source path variables by including the LUFA root makefile
 include $(LUFA_PATH)/LUFA/makefile
 
+KARLNET_COMMON = ../../common
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c                                                 \
 	  Descriptors.c                                               \
 	  $(LUFA_SRC_USB)                                             \
 	  $(LUFA_SRC_USBCLASS)	\
-	  $(LUFA_SRC_SERIAL)
+	  $(LUFA_SRC_SERIAL)	\
+	  $(LUFA_SRC_ADC)
 
 
 # List C++ source files here. (C dependencies are automatically generated.)
@@ -169,7 +171,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = $(LUFA_PATH)/
+EXTRAINCDIRS = $(LUFA_PATH)/ $(KARLNET_COMMON)
 
 
 # Compiler flag to set the C Standard level.
