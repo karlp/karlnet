@@ -36,6 +36,8 @@ Karl Palsson, 2010
 
 #include "local_plus_rfrx.h"
 #include "karlnet.h"
+#include "FreqCounter2.h"
+
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -105,9 +107,10 @@ int main(void)
         packet.version = 1;
         packet.nsensors = 3;
 
-        int i = 0;
-
         char mychar;
+        char waitingForFreq = 0;
+        unsigned long frq = 0;
+
 	for (;;)
 	{
 		/* Discard all received data on both CDC interfaces */
@@ -120,25 +123,25 @@ int main(void)
                     CDC_Device_SendByte(&VirtualSerial1_CDC_Interface, mychar);
                 }
 
-                i++;
                 // if appropriate timing wise, also create and send our own local packet
                 uint16_t adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
                 adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
                 adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
                 
                 uint16_t itemp = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
-/*
-                ksensor s1 = {36, adc};
-                ksensor s2 = {'f', i};
-                ksensor s3 = {'I', 0};
-                packet.ksensors[0] = s1;
-                packet.ksensors[1] = s2;
-                packet.ksensors[2] = s3;
-*/
 
+                // primitive state machine
+                if (!waitingForFreq) {
+                    FreqCounter__start(1, 1000);            // Start counting with gatetime of 100ms
+                    waitingForFreq = 1;
+                    frq = 0;
+                }
+                if (waitingForFreq && f_ready) {
+                    frq = f_freq;
+                    waitingForFreq = 0;
+                }
 
-                if (i > 10000) {
-                    i = 0;
+                if (frq > 0) {
                     // FIXME - this works, ish, but because it's sending the _kpacket_,
                     // not the xbee frame, none of my reciever code can understand
                     // needs the src address and so forth at least!
@@ -146,7 +149,8 @@ int main(void)
 
                     fprintf(&USBSerialStream, "ADC channel = %d\r\n", adc);
                     fprintf(&USBSerialStream, "internal temp sensor = %d\r\n", itemp);
-                    
+                    fprintf(&USBSerialStream, "freq = %u\r\n", frq);
+                    frq = 0;
                 }
 
 		CDC_Device_USBTask(&VirtualSerial1_CDC_Interface);

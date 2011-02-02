@@ -132,7 +132,8 @@ include $(LUFA_PATH)/LUFA/makefile
 KARLNET_COMMON = ../../common
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c                                                 \
+SRC = $(TARGET).c							\
+	$(KARLNET_COMMON)/FreqCounter2.c \
 	  Descriptors.c                                               \
 	  $(LUFA_SRC_USB)                                             \
 	  $(LUFA_SRC_USBCLASS)	\
