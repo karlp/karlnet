@@ -36,7 +36,7 @@ Karl Palsson, 2010
 
 #include "local_plus_rfrx.h"
 #include "karlnet.h"
-#include "FreqCounter2.h"
+#include "FreqCounter.h"
 
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is

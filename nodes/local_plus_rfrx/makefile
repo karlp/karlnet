@@ -133,7 +133,7 @@ KARLNET_COMMON = ../../common
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c							\
-	$(KARLNET_COMMON)/FreqCounter2.c \
+	$(KARLNET_COMMON)/FreqCounter.c \
 	  Descriptors.c                                               \
 	  $(LUFA_SRC_USB)                                             \
 	  $(LUFA_SRC_USBCLASS)	\
