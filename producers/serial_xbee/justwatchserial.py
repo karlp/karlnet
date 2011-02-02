@@ -22,6 +22,7 @@ import logging.handlers
 parser = OptionParser()
 parser.add_option("-t", "--test", dest="testmode", action="store_true",
                   help="Run in test mode (don't post any reports to stomp, log to console)", default=False)
+parser.add_option("-p", "--port", dest="port", help="Serial port to use [default: %default]", default=config['serialPort'])
 
 (options, args) = parser.parse_args()
 
@@ -47,7 +48,7 @@ def runMainLoop():
             log.warn("XXX Reopening the serial port, no data for %d seconds!", manualTimeout)
             if port:
                 port.close()
-            port = serial.Serial(config['serialPort'], 19200, timeout=10)
+            port = serial.Serial(options.port, 19200, timeout=10)
 	packet = xbee_receiver.find_packet(port)
         if packet:
                 xb = xbee_receiver(packet)
