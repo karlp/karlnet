@@ -106,7 +106,7 @@ void FreqCounter__start(unsigned int comp, int ms) {
 }
 
 unsigned long blockingRead(unsigned int comp, int ms) {
-	start(comp, ms);
+	FreqCounter__start(comp, ms);
 	while (f_ready == 0) {
 		;
 	}          // wait until counter ready
