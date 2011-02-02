@@ -119,9 +119,11 @@ int main(void)
 
                 // Serial1 listens for rf data from the serially connected xbee
                 if (Serial_IsCharReceived()) {
-                    mychar = Serial_RxByte();
-                    CDC_Device_SendByte(&VirtualSerial1_CDC_Interface, mychar);
-                }
+                    do {
+                        mychar = Serial_RxByte();
+                        CDC_Device_SendByte(&VirtualSerial1_CDC_Interface, mychar);
+                    } while (Serial_IsCharReceived());
+                } 
 
                 // if appropriate timing wise, also create and send our own local packet
                 uint16_t adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
