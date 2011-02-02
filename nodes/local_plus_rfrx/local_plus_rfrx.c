@@ -122,9 +122,9 @@ int main(void)
                 } 
 
                 // if appropriate timing wise, also create and send our own local packet
-                uint16_t adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
-                adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
-                adc = ADC_GetChannelReading(ADC_REFERENCE_AVCC | ADC_CHANNEL0);
+                uint16_t adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
+                adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
+                adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
                 
                 uint16_t itemp = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
 
