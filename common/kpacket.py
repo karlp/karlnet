@@ -45,7 +45,7 @@ class wire_packet(object):
                 version_samples = arg[1];
                 version = version_samples >> 4
                 if version != 1:
-                    raise BadPacketException("currently only know how to handle version 1 packets")
+                    raise BadPacketException("currently only know how to handle version 1 packets, not %d" % version)
                 num_samples = version_samples & 0xf
                 # only real sensors reported?
                 if len(arg) != 2 + (num_samples * 5):
@@ -56,6 +56,50 @@ class wire_packet(object):
                 self.sensors = []
                 for i in range (0, num_samples):
                     self.sensors.append(Sensor(binary=arg[2+(i*5):7+(i*5)]))
+
+
+class wire_receiver(object):
+
+    log = logging.getLogger("WireReceiver")
+    def find_raw_packet(self, serial):
+        """
+        Try to reliably find and decode one single solitary packet from the serial port
+        Rejects invalid lengths.
+        Call this in a loop until you get a packet back, rather than None
+
+        Shamelessly ripped from xbee.py, and needs to be put somewhere better,
+        like maybe kpacket.py
+        """
+        self.log.debug("Starting to look for a packet")
+        char = serial.read()
+        if not char:
+            self.log.debug("SERIAL READ TIMEOUT")
+            return None
+
+        data = None
+        if char == 'x':
+            # note, no guarantee that these are good packets!
+            version_and_sensorCount = ord(serial.read())
+            version = (version_and_sensorCount) & 0x0f
+            self.log.debug("Appears to be version: %#x", version)
+            sensorCount = (version_and_sensorCount) >> 4
+            self.log.debug("Sensor count: %d", sensorCount)
+            # This is some fugly shit to make it look the same as the xbee wire packets
+            buf = []
+            buf.append(ord('x'))
+            buf.append(version << 4 | sensorCount)
+            for i in range (0, sensorCount):
+                buf.append(ord(serial.read()))
+                sensor = struct.unpack("< L", serial.read(4))[0]
+                buf.append(sensor >> 24)
+                buf.append(sensor >> 16)
+                buf.append(sensor >> 8)
+                buf.append(sensor & 0xff)
+            self.log.debug("data = %s", buf)
+            return buf
+        else:
+            self.log.debug("Found instead: %#x", ord(char))
+            return None
 
 class Sensor(object):
     """
