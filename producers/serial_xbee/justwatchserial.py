@@ -8,6 +8,7 @@ __author__="karlp"
 config = { 'serialPort' : "/dev/ttyACM0" }
 import sys, os, time
 import serial
+from optparse import OptionParser # argparse looks nice, but I only have py2.6
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
 from xbee import xbee, xbee_receiver
@@ -17,14 +18,21 @@ import jsonpickle
 import logging
 import logging.config
 import logging.handlers
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s"
-,filename="/var/log/karlnet_serial.log"
-)
+
+parser = OptionParser()
+parser.add_option("-t", "--test", dest="testmode", action="store_true",
+                  help="Run in test mode (don't post any reports to stomp, log to console)", default=False)
+
+(options, args) = parser.parse_args()
+
+if options.testmode:
+    stomp = None
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+else:
+    stomp = Client(host='egri')
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s",filename="/var/log/karlnet_serial.log")
+
 log = logging.getLogger("main")
-
-stomp = Client(host='egri')
-#stomp = None
-
 
 def runMainLoop():
     lastgoodtime = 0
