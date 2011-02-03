@@ -115,7 +115,8 @@ OBJDIR = .
 
 
 # Path to the LUFA library
-LUFA_PATH = ../../common/lufa/trunk
+# MUST BE RELATIVE! (why?!)
+LUFA_PATH = ../../../lufa-git/trunk
 
 
 # LUFA library compile-time options and predefined tokens
