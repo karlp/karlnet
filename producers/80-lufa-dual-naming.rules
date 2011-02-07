@@ -1,0 +1,7 @@
+# the dual CDC interfaces provided by the new lufa driven teensy 
+# usb local + rf head end
+# Found with udevadm info -a -n /dev/ttyACM0 / ACM1
+# (I was having problems with ttyUSB0 vs ttyUSB1)
+# currently untested.  I hate udev reloading rules. it never fucking works.
+SUBSYSTEM=="tty" ATTRS{product}=="EKTA_local_rx" ATTRS{bInterfaceNumber}=="00" SYMLINK+="ektaLRF%n"
+SUBSYSTEM=="tty" ATTRS{product}=="EKTA_local_rx" ATTRS{bInterfaceNumber}=="02" SYMLINK+="ektaLRX%n"
