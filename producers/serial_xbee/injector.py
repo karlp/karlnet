@@ -31,7 +31,7 @@ def runMainLoop():
         fakeReadings = []
         fakeReadings.append(kpacket.Sensor(type=36, raw=0x55))
         fakeReadings.append(kpacket.Sensor(type=0xee, raw=0xff))
-        fakeReadings.append(kpacket.Sensor(type=0xaa, raw=0xbb))
+        fakeReadings.append(kpacket.Sensor(type=0xaa, raw=0x12345678))
         data = kpacket.human_packet(node=0x6209, sensors=fakeReadings)
         #data = "cafebabe"
         log.info("injecting a fake packet into the ether...%s", data)
