@@ -41,7 +41,7 @@ def runMainLoop():
     manualTimeout = 40
 
     if stomp:
-        stomp.connect(clientid="serial port listener", username="karlnet", password="password")
+        stomp.connect(clientid="serial port local listener", username="karlnet", password="password")
 
     while(1):
         if time.time() - lastgoodtime > manualTimeout:
