@@ -1,17 +1,17 @@
 #!/usr/bin/python
-# Karl Palsson, 2010
-# Listen to a serial port connected to a xbee/karlnet, and post all the data to stomp
+# Karl Palsson, 2011
+# Listen to a node dumping raw kpackets over a serial pipe
+# Virtually identical to justwatchserial.py, only the scanning for 
+# the packet is different
 
 __author__="karlp"
 
-#config = { 'serialPort' : "/dev/ftdi0" }
-config = { 'serialPort' : "/dev/ttyACM0" }
+config = { 'serialPort' : "/dev/ttyACM1" }
 import sys, os, time
 import serial
 from optparse import OptionParser # argparse looks nice, but I only have py2.6
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
-from xbee import xbee, xbee_receiver
 import kpacket
 from stompy.simple import Client
 import jsonpickle
@@ -28,7 +28,7 @@ parser.add_option("-p", "--port", dest="port", help="Serial port to use [default
 
 if options.testmode:
     stomp = None
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 else:
     stomp = Client(host='egri')
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s",filename="/var/log/karlnet_serial.log")
@@ -49,27 +49,25 @@ def runMainLoop():
             if port:
                 port.close()
             port = serial.Serial(options.port, 19200, timeout=10)
-	packet = xbee_receiver.find_packet(port)
-        if packet:
-                xb = xbee_receiver(packet)
-	else:
+
+        wireRx = kpacket.wire_receiver()
+        raw = wireRx.find_raw_packet(port)
+        if not raw:
                 log.warn("NO PACKET FOUND")
 		continue
-	
-	try:
-            if xb.app_id == xbee.SERIES1_RXPACKET_16:
-                kp = kpacket.wire_packet(xb.rfdata)
-            else:
-                log.warn("Received a packet, but not a normal rx, was instead: %#x", xb.app_id)
-                continue
+
+        try:
+            kp = kpacket.wire_packet(raw)
 	except kpacket.BadPacketException as e:
 		log.warn("Couldn't decode: %s" % e.msg)
 		continue
         lastgoodtime = time.time()
-        hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
+        hp = kpacket.human_packet(node=0x0001, sensors=kp.sensors)
         if stomp:
             stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet.%d" % hp.node)
         log.info(hp)
+
+
 
 
 if __name__ == "__main__":

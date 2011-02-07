@@ -4,7 +4,7 @@
   Using Timer2 for Gatetime generation
 
   Martin Nawrath KHM LAB3
-  Kunsthochschule für Medien Köln
+  Kunsthochschule fï¿½r Medien Kï¿½ln
   Academy of Media Arts
   http://www.khm.de
   http://interface.khm.de/index.php/labor/experimente/
@@ -45,7 +45,7 @@ volatile unsigned int f_comp;
 
 
 
-void start(unsigned int comp, int ms) {
+void FreqCounter__start(unsigned int comp, int ms) {
 
 #if defined (__AVR_ATmega168__) || defined (__AVR_ATmega328P__) || defined (__AVR_ATmega32U4__)
 
@@ -106,7 +106,7 @@ void start(unsigned int comp, int ms) {
 }
 
 unsigned long blockingRead(unsigned int comp, int ms) {
-	start(comp, ms);
+	FreqCounter__start(comp, ms);
 	while (f_ready == 0) {
 		;
 	}          // wait until counter ready

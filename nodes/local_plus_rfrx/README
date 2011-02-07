@@ -1,0 +1,4 @@
+A firmware designed to both receive karlnet packets over the wireless, as well as report from local
+sensors
+
+Initially, targetted at teensy + xbee

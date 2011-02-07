@@ -1,11 +1,12 @@
-The main, and normally, the only producer.  This code expects to listen to a
-serial port with a directly connected xbee.  It listens for rx 16bit
-addressing frames (as sent by of the karlnet nodes) and decodes the wire
-formats and applies any dataprocessing, before posting it all to the message
-bus.
+Code for dealing with serial streams to and from xbees.
+
+justwatchserial.py - watches for xbee rx 16bit addressing frames on a serial port, decodes them
+and posts all messages to the bus
+injector.py - creates xbee tx 16 bit address frames, and sends them out via a serially connected
+xbee.
 
 An upstart script is included to get this started, and keep it started. 
 
 Requirements:
-  * serial port with xbee attached
-  * stomp broker active. (activemq or similar)
+  * serial port with xbee attached, or xbee compatible emulator
+  * stomp broker active. (activemq or similar) (if you want to run in live mode)

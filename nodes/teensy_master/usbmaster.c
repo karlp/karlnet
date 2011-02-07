@@ -9,8 +9,8 @@
 // usb hid...
 #include "usb_debug_only.h"
 #include "print.h"
-// pjrc uart!
-#include "pjrc_uart.h"
+// standard avr uart
+#include "uart.h"
 
 #include "karlnet.h"
 #include "xbee-api.h"
@@ -51,6 +51,8 @@ unsigned int adc_read(void)
 
 unsigned int readSensorFreq(void) {
         // this gives you an answer in hz, but only up to 32k :)
+        // this will ABSOLUTELY not work with rx rf data streaming in!
+        // the rx ring buffer will massively overflow!
         return blockingRead(1, 1000);
 }
 
@@ -59,8 +61,7 @@ unsigned int readSensorFreq(void) {
 void init(void) {
 
 	usb_init();
-	
-	uart_init(BAUD_RATE);
+        uart_init(UART_BAUD_SELECT(BAUD_RATE, F_CPU));
 
         ADCSRA = (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);  // enable ADC
 
@@ -69,6 +70,8 @@ void init(void) {
 	// Advised to wait a bit longer by pjrc.com
 	// as not all drivers will be ready even after host is up
 	_delay_ms(500);
+        ADC_ENABLE;
+        init_adc();
 }
 
 
@@ -77,26 +80,16 @@ int main(void) {
 	init();
 
 	print("woke up...woo\n");
-        sei();
 	while (1) {
-		/*
-                power_adc_enable();
-                _delay_us(270);  // not mentioned in 32u4 datasheet, value from tiny85 and mega328p
-                ADC_ENABLE;
-                init_adc();
-                unsigned int sensor1 = adc_read();
-                sensor1 = adc_read();
-                sensor1 = adc_read();
 
-                init_adc_int_temp();
-                unsigned int sensor2 = adc_read();
-                ADC_DISABLE;
-                power_adc_disable();
-		*/
-
-		uint8_t c;
-		c = GET_CHAR();
-                usb_debug_putchar(c);
+            // For starters,  just use the uart library, and do the same as before, echo it all...
+            uint16_t rxc = uart_getc();
+            while (rxc == UART_NO_DATA) {
+                rxc = uart_getc();
+            }
+            usb_debug_putchar(rxc & 0xff);
+            // is there anyway I can not implement xbee packet parsing here?
+            // Can I use usb magic endpoints to send my local station "out of band" ?
 
 	}
 }

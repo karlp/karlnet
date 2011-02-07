@@ -15,9 +15,10 @@ config = {
 }
 
 import sys, os, time
+from optparse import OptionParser # argparse looks nice, but I only have py2.6
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
-from xbee import xbee
+from xbee import xbee, xbee_receiver
 import kpacket
 from stompy.simple import Client
 import jsonpickle
@@ -30,10 +31,19 @@ import usb.util
 import logging
 import logging.config
 import logging.handlers
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s"
-# comment out the line below for testing :)
-,filename="/var/log/karlnet_serial.log"
-)
+
+parser = OptionParser()
+parser.add_option("-t", "--test", dest="testmode", action="store_true",
+                  help="Run in test mode (don't post any reports to stomp, log to console)", default=False)
+
+(options, args) = parser.parse_args()
+
+if options.testmode:
+    stomp = None
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+else:
+    stomp = Client(host='egri')
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s",filename="/var/log/karlnet_serial.log")
 log = logging.getLogger("main")
 
 
@@ -137,13 +147,13 @@ def runMainLoop():
 
     serial = FakeSerial(data_queue)
 
-    stomp = Client(host="egri")
-    stomp.connect(clientid="teensy usb listener", username="karlnet", password="password")
+    if stomp:
+        stomp.connect(clientid="teensy usb listener", username="karlnet", password="password")
 
     while 1:
-        packet = xbee.find_packet(serial)
+        packet = xbee_receiver.find_packet(serial)
         if packet:
-            xb = xbee(packet)
+            xb = xbee_receiver(packet)
         else:
             continue
 
@@ -158,7 +168,8 @@ def runMainLoop():
                 continue
         hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
         hp.time_received = time.time()
-        stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet.%d" % hp.node)
+        if stomp:
+            stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet.%d" % hp.node)
         log.info(hp)
 
         

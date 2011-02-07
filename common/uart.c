@@ -204,7 +204,7 @@ Date        Description
  #define UART0_UDRIE    UDRIE
 #elif defined(__AVR_ATmega48__) ||defined(__AVR_ATmega88__) || defined(__AVR_ATmega168__) || \
       defined(__AVR_ATmega48P__) ||defined(__AVR_ATmega88P__) || defined(__AVR_ATmega168P__) || \
-      defined(__AVR_ATmega328P__) 
+      defined(__AVR_ATmega328P__)
  /* TLS-Added 48P/88P/168P/328P */
  /* ATmega with one USART */
  #define ATMEGA_USART0
@@ -235,7 +235,7 @@ Date        Description
   #define UART0_DATA     UDR0
   #define UART0_UDRIE    UDRIE0
 #elif defined(__AVR_ATmega3290__) ||\
-      defined(__AVR_ATmega6490__) ||
+      defined(__AVR_ATmega6490__)
   /* TLS-Separated these two from the previous group because of inconsistency in the USART_RX */
   /* ATmega with one USART */
   #define ATMEGA_USART0
@@ -286,6 +286,26 @@ Date        Description
  #define UART1_CONTROL  UCSR1B
  #define UART1_DATA     UDR1
  #define UART1_UDRIE    UDRIE1
+#elif defined(__AVR_ATmega16U4__) || defined(__AVR_ATmega32U4__)
+// For some reason, avr-gcc starts with 1 for these single usart devices
+ #define ATMEGA_USART0
+// hacktastic!
+ #define FE0 FE1
+ #define DOR0 DOR1
+ #define U2X0 U2X1
+ #define UBRR0H UBRR1H
+ #define UBRR0L UBRR1L
+ #define RXCIE0 RXCIE1
+ #define RXEN0 RXEN1
+ #define TXEN0 TXEN1
+ #define UCSR0C UCSR1C
+ #define UCSZ00 UCSZ10
+ #define UART0_RECEIVE_INTERRUPT   USART1_RX_vect
+ #define UART0_TRANSMIT_INTERRUPT  USART1_UDRE_vect
+ #define UART0_STATUS   UCSR1A
+ #define UART0_CONTROL  UCSR1B
+ #define UART0_DATA     UDR1
+ #define UART0_UDRIE    UDRIE1
 #else
  #error "no UART definition for MCU available"
 #endif

@@ -5,6 +5,7 @@
 # Extended and bugfixed by karlp, adding rx frames, fixing checksumming and api mode unescaping
 
 import logging
+import struct
 
 class NullHandler(logging.Handler):
     def emit(self, record):
@@ -48,16 +49,77 @@ def readAndUnescape(serial, length):
     log.debug("read %d bytes, needed to escape %d", length, escaped)
     return buf
 
+class IllegalStateException(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
 class xbee(object):
 	
-        START_IOPACKET   = 0x7e
-        ESCAPE_BYTE      = 0x7D
-        SERIES1_IOPACKET = 0x83
-        SERIES1_RXPACKET_16 = 0x81
-        SERIES1_TXPACKET_16 = 0x01
-        MAX_PACKET_LENGTH = 100  # todo - double check this.
-                
-	
+    START_IOPACKET   = 0x7e
+    ESCAPE_BYTE      = 0x7D
+    X_ON             = 0x11
+    X_OFF            =  0x13
+    SERIES1_IOPACKET = 0x83
+    SERIES1_RXPACKET_16 = 0x81
+    SERIES1_TXPACKET_16 = 0x01
+    MAX_PACKET_LENGTH = 100  # todo - double check this.
+
+    def _needs_escaping(self, byte):
+        v = ord(byte)
+        if ((v == xbee.START_IOPACKET) or (v == xbee.ESCAPE_BYTE) or (v == xbee.X_ON) or (v == xbee.X_OFF)):
+            return True
+        else:
+            return False
+
+    def escape(self, data):
+        frame = ""
+        for byte in data:
+            if self._needs_escaping(byte):
+                frame += chr(xbee.ESCAPE_BYTE)
+                frame += chr((ord(byte) ^ 0x20))
+            else:
+                frame += byte
+        return frame
+
+    def tx16(self, destination, data, frame_id=1, disable_ack=False, broadcast=False):
+        """Create a fully escaped complete frame of data for API mode 2, ready to be written to an xbee somewhere"""
+
+        frame = struct.pack("> b", xbee.START_IOPACKET)
+        frame += struct.pack("> H", len(data)+5)
+        frame += struct.pack("> b", xbee.SERIES1_TXPACKET_16)
+        frame += struct.pack("> b", (frame_id & 0xff))
+        frame += struct.pack("> H", destination)
+        if disable_ack or broadcast:
+            raise NotImplementedError("I haven't written support for these flags yet")
+        else:
+            frame += struct.pack("> b", 0x00)
+        frame += data
+
+        checksum = sum(map(ord, frame[3:]))
+        log.debug("before truncation and substraction: %d (%#x)", checksum, checksum)
+        checksum &= 0xff
+        log.debug("before subtraction, %d, (%#x)", checksum, checksum)
+        checksum = 0xff - checksum
+
+        # now, we've calculated checksum, and got the entire frame ready, now go through and escape it
+        log.debug("Before escaping: %s", self._pretty(frame))
+        # oh yeah, but we don't escape framing and length bytes.
+        escaped = frame[0:2] + self.escape(frame[2:])
+        log.debug("after escaping: %s", self._pretty(escaped))
+
+        escaped += struct.pack("> b", checksum)
+        return escaped
+
+    def _pretty(self, frame):
+        line = ""
+        for b in frame:
+            line += "%#x " % (ord(b))
+        return line
+
+class xbee_receiver(xbee):
 	def find_packet(serial):
             """
             Try to reliably find and decode one single solitary packet from the serial port
@@ -108,13 +170,13 @@ class xbee(object):
                 log.debug("decoding packet type: %#x. raw=%s", self.app_id, p)
 
                 if self.app_id == xbee.SERIES1_TXPACKET_16:
-                    addrMSB = p[1]
-                    addrLSB = p[2]
+                    self.frame_id = p[1]
+                    addrMSB = p[2]
+                    addrLSB = p[3]
                     self.address_16 = (addrMSB << 8) + addrLSB
-                    options = p[3]
+                    options = p[4]
                     self.disable_ack = (options & 0x01) == 1
                     self.pan_broadcast = (options & 0x04) == 1
-                    self.frame_id = p[4]
                     self.rfdata = p[5:-1]
                     self.checksum = p[-1]
                     log.info("xbee_tx16: %s", self)
