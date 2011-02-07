@@ -331,7 +331,7 @@ USB_Descriptor_String_t PROGMEM ProductString =
 {
 	.Header                 = {.Size = USB_STRING_LEN(13), .Type = DTYPE_String},
 
-	.UnicodeString          = L"LUFA Dual CDC Demo"
+	.UnicodeString          = L"EKTA_local_rx"
 };
 
 /** This function is called by the library when in device mode, and must be overridden (see library "USB Descriptors"
