@@ -31,8 +31,7 @@ if options.testmode:
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 else:
     stomp = Client(host='egri')
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s
-%(name)s - %(message)s",filename="/var/log/karlnet_serial_local.log")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s",filename="/var/log/karlnet_serial_local.log")
 
 log = logging.getLogger("main")
 
