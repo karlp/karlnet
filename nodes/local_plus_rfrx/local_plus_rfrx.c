@@ -38,6 +38,7 @@ Karl Palsson, 2010
 #include "karlnet.h"
 #include "FreqCounter.h"
 
+#define LOCAL_REPORT_FREQUENCY  3
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -108,6 +109,7 @@ int main(void)
         char mychar;
         char waitingForFreq = 0;
         uint32_t frq = 0;
+        int localReportCounter = 0;
 
 	for (;;)
 	{
@@ -124,11 +126,19 @@ int main(void)
                 } 
 
                 // if appropriate timing wise, also create and send our own local packet
+                // See avr121 - decimation and oversampling.
+                // Not super high performance....
                 uint32_t adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
-                adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
-                adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
+                adc += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
+                adc += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
+                adc += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
+                adc >>=1;  // presto, 11bits.
                 
                 uint32_t itemp = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
+                itemp += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
+                itemp += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
+                itemp += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
+                itemp >>= 1;  // presto, 11 bits.
 
                 // primitive state machine
                 if (!waitingForFreq) {
@@ -144,13 +154,16 @@ int main(void)
                 if (frq > 0) {
                     // Remember, this sort of raw string will need a special parser,
                     // it won't have any escaping, rf frame type, or node id
-                    ksensor s1 = {36, adc};
-                    ksensor s2 = {'I', itemp};
-                    ksensor s3 = {'f', frq};
-                    packet.ksensors[0] = s1;
-                    packet.ksensors[1] = s2;
-                    packet.ksensors[2] = s3;
-                    CDC_Device_SendString(&VirtualSerial2_CDC_Interface, (char *)&packet, 2 + 5 * 3);
+                    if (localReportCounter++ > LOCAL_REPORT_FREQUENCY) {
+                        localReportCounter = 0;
+                        ksensor s1 = {36, adc};
+                        ksensor s2 = {'I', itemp};
+                        ksensor s3 = {'f', frq};
+                        packet.ksensors[0] = s1;
+                        packet.ksensors[1] = s2;
+                        packet.ksensors[2] = s3;
+                        CDC_Device_SendString(&VirtualSerial2_CDC_Interface, (char *)&packet, 2 + 5 * 3);
+                    }
                     frq = 0;
                 }
 
