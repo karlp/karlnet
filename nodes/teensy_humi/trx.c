@@ -50,7 +50,7 @@ unsigned int adc_read(void)
     return (ADCH << 8) | lsb;          // read the MSB and return 10 bit result
 }
 
-unsigned int readSensorFreq(void) {
+unsigned long readSensorFreq(void) {
         // this gives you an answer in hz, but only up to 32k :)
         return blockingRead(1, 1000);
 }
@@ -100,7 +100,7 @@ int main(void) {
                 ADC_DISABLE;
                 power_adc_disable();
 
-                unsigned int freq1 = readSensorFreq();
+                unsigned long freq1 = readSensorFreq();
 
                 ksensor s1 = {36, sensor1};
                 ksensor s2 = {'f', freq1};

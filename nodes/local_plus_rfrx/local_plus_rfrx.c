@@ -92,20 +92,22 @@ USB_ClassInfo_CDC_Device_t VirtualSerial2_CDC_Interface =
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
  */
+static FILE USBSerialStream;
 int main(void)
 {
 	SetupHardware();
+        // Make a stream for channel 2, so we can write more debuggy stuff to it...
+        CDC_Device_CreateStream(&VirtualSerial2_CDC_Interface, &USBSerialStream);
 
 	sei();
 
-        kpacket packet;
+        kpacket2 packet;
         packet.header = 'x';
-        packet.version = 1;
-        packet.nsensors = 3;
+        packet.versionCount = VERSION_COUNT(1,3);
 
         char mychar;
         char waitingForFreq = 0;
-        unsigned long frq = 0;
+        uint32_t frq = 0;
 
 	for (;;)
 	{
@@ -122,11 +124,11 @@ int main(void)
                 } 
 
                 // if appropriate timing wise, also create and send our own local packet
-                uint16_t adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
+                uint32_t adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
                 adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
                 adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
                 
-                uint16_t itemp = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
+                uint32_t itemp = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
 
                 // primitive state machine
                 if (!waitingForFreq) {
@@ -148,8 +150,7 @@ int main(void)
                     packet.ksensors[0] = s1;
                     packet.ksensors[1] = s2;
                     packet.ksensors[2] = s3;
-
-                    CDC_Device_SendString(&VirtualSerial2_CDC_Interface, (char *)&packet, sizeof(kpacket));
+                    CDC_Device_SendString(&VirtualSerial2_CDC_Interface, (char *)&packet, 2 + 5 * 3);
                     frq = 0;
                 }
 

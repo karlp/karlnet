@@ -24,6 +24,14 @@ typedef struct _kpacket {
         ksensor         ksensors[MAX_SENSORS];
 } kpacket;
 
+// a collection of sensor readings
+typedef struct _kpacket2 {
+        uint8_t 	header;
+        uint8_t         versionCount;
+        ksensor         ksensors[MAX_SENSORS];
+} kpacket2;
+
+#define VERSION_COUNT(x,y)  (((x) << 4) | ((y) & 0x0f))
 
 #endif
 	

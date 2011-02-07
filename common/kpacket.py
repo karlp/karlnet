@@ -80,20 +80,22 @@ class wire_receiver(object):
         if char == 'x':
             # note, no guarantee that these are good packets!
             version_and_sensorCount = ord(serial.read())
-            version = (version_and_sensorCount) & 0x0f
+            version = version_and_sensorCount >> 4
             self.log.debug("Appears to be version: %#x", version)
-            sensorCount = (version_and_sensorCount) >> 4
+            sensorCount = version_and_sensorCount & 0x0f
             self.log.debug("Sensor count: %d", sensorCount)
             # This is some fugly shit to make it look the same as the xbee wire packets
             buf = []
             buf.append(ord('x'))
-            buf.append(version << 4 | sensorCount)
+            buf.append(version_and_sensorCount)
+            # xbees are big endian, but avrs are little endian, so raw received
+            # packets have longs in reversed byte ordering.
             for i in range (0, sensorCount):
                 buf.append(ord(serial.read()))
                 sensor = struct.unpack("< L", serial.read(4))[0]
                 buf.append(sensor >> 24)
-                buf.append(sensor >> 16)
-                buf.append(sensor >> 8)
+                buf.append((sensor & 0x00ff0000) >> 16)
+                buf.append((sensor & 0x0000ff00) >> 8)
                 buf.append(sensor & 0xff)
             self.log.debug("data = %s", buf)
             return buf
@@ -173,7 +175,7 @@ class Sensor(object):
 
 
     def __repr__(self):
-        return "sensor[t:%d, raw=%d, val=%f]" % (self.type, self.rawValue, self.value)
+        return "sensor[t:%d, raw=%d(%#x), val=%f]" % (self.type, self.rawValue, self.rawValue, self.value)
         
 
 class BadPacketException(Exception):
