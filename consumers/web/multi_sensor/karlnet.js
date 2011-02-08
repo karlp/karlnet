@@ -12,7 +12,8 @@ $(function () {
         nodes : {
             0x4203 : "teensyhumi",
             0x4201 : "tinytemp",
-            0xbabe : "dummy producer"
+            0xbabe : "dummy producer",
+            0x0001 : "receiver station"
         },
         sensors : {
             35 : "lm35 (&deg;C)",
