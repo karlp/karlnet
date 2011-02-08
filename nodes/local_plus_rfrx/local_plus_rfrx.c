@@ -126,19 +126,8 @@ int main(void)
                 } 
 
                 // if appropriate timing wise, also create and send our own local packet
-                // See avr121 - decimation and oversampling.
-                // Not super high performance....
                 uint32_t adc = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
-                adc += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
-                adc += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
-                adc += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_CHANNEL0);
-                adc >>=1;  // presto, 11bits.
-                
                 uint32_t itemp = ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
-                itemp += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
-                itemp += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
-                itemp += ADC_GetChannelReading(ADC_REFERENCE_INT2560MV | ADC_INT_TEMP_SENS);
-                itemp >>= 1;  // presto, 11 bits.
 
                 // primitive state machine
                 if (!waitingForFreq) {

@@ -1,11 +1,13 @@
 # Karl Palsson, 2010
 
-import logging
 import struct
+
+import logging
 
 class human_packet(object):
     """
-    Defines the human post processed packet. Something that client applications would use
+    Defines the human post processed packet.
+    Something that client applications would use
     """
     def __init__(self, node, sensors):
         """Make a human packet from some basic data
@@ -18,7 +20,8 @@ class human_packet(object):
         self.version = 1
 
     def wire_format(self):
-        frame = struct.pack("> bb", ord('x'), (self.version << 4) | len(self.sensors) & 0x0f)
+        frame = struct.pack("> bb", ord('x'),
+            (self.version << 4) | len(self.sensors) & 0x0f)
         for s in self.sensors:
             frame += struct.pack("> BI", s.type, s.rawValue)
         return frame
@@ -27,35 +30,36 @@ class human_packet(object):
         return "human_packet[node=%#x, sensors=%s]" % (self.node, self.sensors)
 
 class wire_packet(object):
-	"""
-	Defines the packet format used in my sensor network, and handles decoding it from an xbee frame
-	"""
-        log = logging.getLogger("WirePacket")
-	def __init__(self, arg):
-		if arg[0] != ord('x'):
-			raise BadPacketException("this isn't a kpacket: %s" % arg[0])
-                if len(arg) == 11:
-                    # Handle original packet format here?!!!
-                    self.log.warn("Handling legacy packet format!")
-                    self.sensors = []
-                    self.sensors.append(Sensor(binary=arg[1:6]))
-                    self.sensors.append(Sensor(binary=arg[6:11]))
-                    return
+    """
+    Defines the packet format used in my sensor network, and handles
+    decoding it from an xbee frame
+    """
+    log = logging.getLogger("WirePacket")
+    def __init__(self, arg):
+        if arg[0] != ord('x'):
+            raise BadPacketException("this isn't a kpacket: %s" % arg[0])
+        if len(arg) == 11:
+            # Handle original packet format here?!!!
+            self.log.warn("Handling legacy packet format!")
+            self.sensors = []
+            self.sensors.append(Sensor(binary=arg[1:6]))
+            self.sensors.append(Sensor(binary=arg[6:11]))
+            return
 
-                version_samples = arg[1];
-                version = version_samples >> 4
-                if version != 1:
-                    raise BadPacketException("currently only know how to handle version 1 packets, not %d" % version)
-                num_samples = version_samples & 0xf
-                # only real sensors reported?
-                if len(arg) != 2 + (num_samples * 5):
-                    # or the packet is padded to MAX_SENSORS ?
-                    if len(arg) != 2 + (4 * 5):
-                        raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
-                self.log.debug("handling packet version: %d with %d samples", version, num_samples)
-                self.sensors = []
-                for i in range (0, num_samples):
-                    self.sensors.append(Sensor(binary=arg[2+(i*5):7+(i*5)]))
+        version_samples = arg[1]
+        version = version_samples >> 4
+        if version != 1:
+            raise BadPacketException("currently only know how to handle version 1 packets, not %d" % version)
+        num_samples = version_samples & 0xf
+        # only real sensors reported?
+        if len(arg) != 2 + (num_samples * 5):
+            # or the packet is padded to MAX_SENSORS ?
+            if len(arg) != 2 + (4 * 5):
+                raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
+        self.log.debug("handling packet version: %d with %d samples", version, num_samples)
+        self.sensors = []
+        for i in range (0, num_samples):
+            self.sensors.append(Sensor(binary=arg[2 + (i * 5):7 + (i * 5)]))
 
 
 class wire_receiver(object):
@@ -63,7 +67,7 @@ class wire_receiver(object):
     log = logging.getLogger("WireReceiver")
     def find_raw_packet(self, serial):
         """
-        Try to reliably find and decode one single solitary packet from the serial port
+        Try to reliably find and decode one single packet from the serial port
         Rejects invalid lengths.
         Call this in a loop until you get a packet back, rather than None
 
@@ -122,26 +126,26 @@ class Sensor(object):
             (self.value, self.units) = self.__decode()
 
     def __decodeBinary(self, arg):
-        """Internal method for decoding raw binary data from a wire_packet (for instance)"""
+        """Internal method for decoding raw binary data from a wire_packet"""
         if len(arg) != 5:
             raise BadPacketException("sensor readings should be 5 bytes! 5!=%d" % len(arg))
         self.log.debug("Decoding bytes into a sensor object: *%s*", arg)
         self.type = arg[0]
         self.rawValue = (arg[1] << 24) + (arg[2] << 16) + (arg[3] << 8) + arg[4]
-        (self.value,self.units) = self.__decode()
+        (self.value, self.units) = self.__decode()
 
     
     def __convertSensor_LM35(self, rawValue, reference):
         rawNum = float(rawValue)
-        milliVolts = rawNum / 1024 * reference;
-        tempC = milliVolts / 10;
+        milliVolts = rawNum / 1024 * reference
+        tempC = milliVolts / 10
         return tempC
 
     def __convertSensor_TMP36(self, rawValue, reference):
         rawNum = float(rawValue)
-        milliVolts = rawNum / 1024 * reference;
-        lessOffset = (milliVolts - 750) / 10;
-        tempC = 25 + lessOffset;
+        milliVolts = rawNum / 1024 * reference
+        lessOffset = (milliVolts - 750) / 10
+        tempC = 25 + lessOffset
         return tempC
         
     def __decode(self):
@@ -164,7 +168,7 @@ class Sensor(object):
         if self.type == ord('f'):
             # 555 timer is C = 1/f / 300k / 0.693 (555 constant)
             # seems to range from about 400pf (very dry) to about 1100pf (quite humid)
-            return ((1e12/(self.rawValue * 300000 * 0.693)), 'picoFarads')
+            return ((1e12 / (self.rawValue * 300000 * 0.693)), 'picoFarads')
         # need calibration!
         if self.type == ord('i'):
             return (self.rawValue  - 273, 'degreesCelsius')
@@ -175,10 +179,11 @@ class Sensor(object):
 
 
     def __repr__(self):
-        return "sensor[t:%d, raw=%d(%#x), val=%f]" % (self.type, self.rawValue, self.rawValue, self.value)
+        return ("sensor[t:%d, raw=%d(%#x), val=%f]" %
+            (self.type, self.rawValue, self.rawValue, self.value))
         
 
 class BadPacketException(Exception):
-	"""thrown when you attempt to create a kpacket from an illegal rx frame"""
-	def __init__(self, msg):
-	        self.msg = msg
+    """thrown when you attempt to create a kpacket from an illegal rx frame"""
+    def __init__(self, msg):
+        self.msg = msg
