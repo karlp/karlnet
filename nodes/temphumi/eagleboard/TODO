@@ -1,0 +1,5 @@
+* Make possible option for connecting preregulated 3.3V
+
+* Make possible option for powering input channels from MCU, instead of
+permanently wired to VCC
+
