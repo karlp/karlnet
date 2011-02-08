@@ -3,8 +3,6 @@
 # pyusb based hid listener for a pjrc.com teensy board.
 # the teensy is just dumping xbee packet data out the usb bus.
 
-__author__="karlp"
-
 # Not actually used yet, as I just made these the defaults anyway...
 config = {
     'hiddevice': {
@@ -14,8 +12,11 @@ config = {
     }
 }
 
-import sys, os, time
+import sys
+import time
+
 from optparse import OptionParser # argparse looks nice, but I only have py2.6
+import os
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
 from xbee import xbee, xbee_receiver
@@ -34,92 +35,97 @@ import logging.handlers
 
 parser = OptionParser()
 parser.add_option("-t", "--test", dest="testmode", action="store_true",
-                  help="Run in test mode (don't post any reports to stomp, log to console)", default=False)
+    help="Run in test mode (don't post any reports to stomp, log to console)",
+    default=False)
 
 (options, args) = parser.parse_args()
 
 if options.testmode:
     stomp = None
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+    logging.basicConfig(level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 else:
     stomp = Client(host='egri')
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s",filename="/var/log/karlnet_serial.log")
+    logging.basicConfig(level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+        filename="/var/log/karlnet_serial.log")
 log = logging.getLogger("main")
 
 
 class Usbreader(Thread):
-  """
-  Class that reads in from a teensy usb, and stuffs all the data into a queue, for someone else to look at
-  """
-
-  def __init__(self, queue):
-    Thread.__init__(self)
-    self.data = queue
-    self.log = logging.getLogger("Usbreader")
-
-  def openPort(self, vendor=0x16c0, product=0x0479, detachKernel=True):
     """
-    Attempt to open a HID device with the given vendor and product ids
-    unless requested not to, any kernel driver will be detached
+    Class that reads in from a teensy usb, and stuffs all the
+    data into a queue, for someone else to look at
     """
-    teensy = usb.core.find(idVendor=vendor, idProduct=product)
-    if teensy is None:
-        self.log.info('no matching hid board found found: %s, %s', vendor, product)
-        return None
 
-    # more magic because we know all about this particular HID device
-    cfg = teensy[0]
-    intf = cfg[(0,0)]
-    ep = intf[0]
+    def __init__(self, queue):
+        Thread.__init__(self)
+        self.data = queue
+        self.log = logging.getLogger("Usbreader")
 
-    if ep is None:
-        self.log.warn("Valid hid device, but invalid endpoint?")
-        return None
+    def openPort(self, vendor=0x16c0, product=0x0479, detachKernel=True):
+        """
+        Attempt to open a HID device with the given vendor and product ids
+        unless requested not to, any kernel driver will be detached
+        """
+        teensy = usb.core.find(idVendor=vendor, idProduct=product)
+        if teensy is None:
+            self.log.info('no matching hid board found found: %s, %s', vendor, product)
+            return None
 
-    if (detachKernel):
-        try :
-            teensy.detach_kernel_driver(0)
-        except usb.core.USBError as e:
-            # already detached...
-            pass
+        # more magic because we know all about this particular HID device
+        cfg = teensy[0]
+        intf = cfg[(0, 0)]
+        ep = intf[0]
 
-    return (teensy, intf, ep)
+        if ep is None:
+            self.log.warn("Valid hid device, but invalid endpoint?")
+            return None
+
+        if (detachKernel):
+            try:
+                teensy.detach_kernel_driver(0)
+            except usb.core.USBError as e:
+                # already detached...
+                pass
+
+        return (teensy, intf, ep)
 
 
-  def run(self):
+    def run(self):
 
-    new_data = []
-    lastgoodtime = 0
-    manualTimeout = 40
-    blob = None
-    teensy = {}
-    intf = {}
-    ep = {}
+        new_data = []
+        lastgoodtime = 0
+        manualTimeout = 40
+        blob = None
+        teensy = {}
+        intf = {}
+        ep = {}
 
-    while 1:
-        if time.time() - lastgoodtime > manualTimeout:
-            blob = self.openPort()
-            if blob is None:
-                self.log.info("Couldn't open the device, will try again shortly....")
+        while 1:
+            if time.time() - lastgoodtime > manualTimeout:
+                blob = self.openPort()
+                if blob is None:
+                    self.log.info("Couldn't open the device, will try again shortly....")
+                    time.sleep(2)
+                    continue
+                (teensy, intf, ep) = blob
+            try:
+                # at most 32 bytes, 6000ms timeout
+                new_data = teensy.read(ep.bEndpointAddress, 32, intf.bInterfaceNumber, 6000)
+            except usb.core.USBError as e:
+                self.log.error("oops: %s", e)  # oh well, try again in a bit...
+                lastgoodtime = 0
+                # this lets us survive through plug/unplug but not device reset for some reason
+                usb.util.dispose_resources(teensy)
                 time.sleep(2)
                 continue
-            (teensy, intf, ep) = blob
-        try :
-            # at most 32 bytes, 6000ms timeout
-            new_data = teensy.read(ep.bEndpointAddress, 32, intf.bInterfaceNumber, 6000);
-        except usb.core.USBError as e:
-            self.log.error("oops: %s", e)  # oh well, try and open it again in a bit...
-            lastgoodtime = 0
-            # this lets us survive through plug/unplug but not device reset for some reason
-            usb.util.dispose_resources(teensy)
-            time.sleep(2)
-            continue
 	
-        lastgoodtime = time.time()
-        self.log.debug("usb data is %d items long: %s", len(new_data), new_data)
+            lastgoodtime = time.time()
+            self.log.debug("usb data is %d items long: %s", len(new_data), new_data)
         
-        for x in new_data:
-            self.data.put(chr(x))
+            for x in new_data:
+                self.data.put(chr(x))
         
 
 #### END OF Usbreader class
@@ -133,8 +139,14 @@ class FakeSerial():
         self.queue = new_queue    
 
     def read(self, length=1):
+        """
+        read length items from the queue
+
+        Arguments:
+        length -- the number of items to read
+        """
         try:
-            return self.queue.get(True, 1)
+            return self.queue.get(True, length)
         except Queue.Empty:
             return None
     
@@ -164,15 +176,13 @@ def runMainLoop():
                 log.warn("Received a packet, but not a normal rx, was instead: %#x", xb.app_id)
                 continue
         except kpacket.BadPacketException as e:
-                log.warn("Couldn't decode: %s" % e.msg)
-                continue
+            log.warn("Couldn't decode: %s" % e.msg)
+            continue
         hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
         hp.time_received = time.time()
         if stomp:
-            stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet.%d" % hp.node)
+            stomp.put(jsonpickle.encode(hp), destination="/topic/karlnet.%d" % hp.node)
         log.info(hp)
-
-        
 
 
 

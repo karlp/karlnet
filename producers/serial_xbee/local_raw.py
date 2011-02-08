@@ -4,12 +4,13 @@
 # Virtually identical to justwatchserial.py, only the scanning for 
 # the packet is different
 
-__author__="karlp"
+config = {'serialPort': "/dev/ttyACM1"}
+import sys
+import time
 
-config = { 'serialPort' : "/dev/ttyACM1" }
-import sys, os, time
+from optparse import OptionParser
+import os
 import serial
-from optparse import OptionParser # argparse looks nice, but I only have py2.6
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
 import kpacket
@@ -21,17 +22,23 @@ import logging.handlers
 
 parser = OptionParser()
 parser.add_option("-t", "--test", dest="testmode", action="store_true",
-                  help="Run in test mode (don't post any reports to stomp, log to console)", default=False)
-parser.add_option("-p", "--port", dest="port", help="Serial port to use [default: %default]", default=config['serialPort'])
+    help="Run in test mode (don't post any reports to stomp, log to console)",
+    default=False)
+parser.add_option("-p", "--port", dest="port", 
+    help="Serial port to use [default: %default]",
+    default=config['serialPort'])
 
 (options, args) = parser.parse_args()
 
 if options.testmode:
     stomp = None
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+    logging.basicConfig(level=logging.DEBUG,
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 else:
     stomp = Client(host='egri')
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s",filename="/var/log/karlnet_serial.log")
+    logging.basicConfig(level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+        filename="/var/log/karlnet_serial.log")
 
 log = logging.getLogger("main")
 
@@ -53,18 +60,18 @@ def runMainLoop():
         wireRx = kpacket.wire_receiver()
         raw = wireRx.find_raw_packet(port)
         if not raw:
-                log.warn("NO PACKET FOUND")
-		continue
+            log.warn("NO PACKET FOUND")
+            continue
 
         try:
             kp = kpacket.wire_packet(raw)
-	except kpacket.BadPacketException as e:
-		log.warn("Couldn't decode: %s" % e.msg)
-		continue
+        except kpacket.BadPacketException as e:
+            log.warn("Couldn't decode: %s" % e.msg)
+            continue
         lastgoodtime = time.time()
         hp = kpacket.human_packet(node=0x0001, sensors=kp.sensors)
         if stomp:
-            stomp.put(jsonpickle.encode(hp), destination = "/topic/karlnet.%d" % hp.node)
+            stomp.put(jsonpickle.encode(hp), destination="/topic/karlnet.%d" % hp.node)
         log.info(hp)
 
 
