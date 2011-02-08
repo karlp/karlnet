@@ -2,8 +2,8 @@
 # Karl Palsson, 2010
 # A karlnet consumer, publishing to pachube every so often...
 
-# I'm not real happy with how this keeps the api key in the source. But I've never really dealt with api keys before, so I'm not sure of a better
-# way... at least, not just yet.
+# api key here is limited to only uploading from my home computer,
+# you'll definitely need your own
 
 import sys, os, socket
 sys.path.append(os.path.join(sys.path[0], "../../common"))
@@ -20,7 +20,7 @@ config = {
     0x0001 : {
         "feedId" : 6447
         },
-    'apikey' : "68711d479b154637ab0f9def0f475306d73b87da19f3b15efa43ff61e25e5af9"
+    'apikey' : "cmG5jxylcl9geEUPe1psgko-aGs8bEXhLpOaHNmeXEE"
 }
 
 from stompy.simple import Client
