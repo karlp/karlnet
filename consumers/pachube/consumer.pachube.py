@@ -17,7 +17,7 @@ config = {
     0x4202 : {
         "feedId" : 6234
         },
-    0x4203 : {
+    0x0001 : {
         "feedId" : 6447
         },
     'apikey' : "68711d479b154637ab0f9def0f475306d73b87da19f3b15efa43ff61e25e5af9"
@@ -50,7 +50,9 @@ def upload(node, running):
     conn = httplib.HTTPConnection('www.pachube.com')
     headers = {"X-PachubeApiKey" : config["apikey"]}
     conn.request("PUT", "/api/%d.csv" % config[node]['feedId'], csv, headers) 
-    log.info("uploaded node:%#x: csv:: %s with response: %s", node, csv, conn.getresponse())
+    response = conn.getresponse()
+    log.info("uploaded node:%#x: csv:: %s with response: %d - %s",
+        node, csv, response.status, response.reason)
 
 
 def runMain():
