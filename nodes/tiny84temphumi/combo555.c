@@ -57,6 +57,8 @@ void init(void) {
         clock_prescale_set(0);
         ADCSRA = (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);  // enable ADC
 
+        TX_CONFIG;
+
 
         // turn off things we don't ever need...
 
