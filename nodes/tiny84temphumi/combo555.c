@@ -58,10 +58,8 @@ void init(void) {
         // turn off things we don't ever need...
 
         // turn off analog comparator
-/*
         ACSR &= ~(1<<ACIE);
         ACSR |= (1<<ACD);
-*/
 
         // disable all digital input buffers, we only use analog inputs...
         DIDR0 = 0xff;
@@ -133,11 +131,11 @@ int main(void) {
                 xbee_send_16(0x4202, packet);
 		XBEE_OFF;
 
-                // Now sleeeep
-                _delay_ms(3000);
-
-                //sleep_mode();
-                //sleep_disable();
+		// now sleep!
+		sei();
+		sleep_mode();
+		sleep_disable();
+		cli();
 	}
 }
 
