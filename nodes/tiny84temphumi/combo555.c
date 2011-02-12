@@ -21,14 +21,22 @@
 #define ADC_ENABLE  (ADCSRA |= (1<<ADEN))
 #define ADC_DISABLE  (ADCSRA &= ~(1<<ADEN))
 
+#define PROBE_CHANNEL1_ENABLED_PIN      PINB0
+#define PROBE_CHANNEL2_ENABLED_PIN      PINB1
+
 #define BAUD_RATE 19200
 
 
 #define VREF_VCC  0
 #define VREF_11  (1<<REFS1) | (1<<REFS0) // requires external cap at aref!
 
-void init_adc(void) {
-    ADMUX = VREF_11 | 0;  // adc0
+void init_adc_regular(uint8_t muxBits) {
+    ADMUX = VREF_VCC | muxBits;
+}
+
+void init_adc_int_temp(void)
+{
+    ADMUX = VREF_11 | (1<<MUX5) | (1<<MUX1); // internal temp sensor
 }
 
 unsigned int adc_read(void)
@@ -39,32 +47,21 @@ unsigned int adc_read(void)
     return (ADCH << 8) | lsb;          // read the MSB and return 10 bit result
 }
 
-void uart_print_short(unsigned int val) {
-        uart_putc((unsigned char)(val >> 8));
-        uart_putc((unsigned char)(val & 0xFF));
-}
-
-/*
-unsigned long readSensorFreq(void) {
-	// this gives you an answer in hz, but only up to 32k :)
-	return blockingRead(1, 1000);
-}
-*/
-
 void init(void) {
 	XBEE_CONFIG;
         XBEE_OFF;
         clock_prescale_set(0);
-        ADCSRA = (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);  // enable ADC
+        ADCSRA = (1<<ADPS2) | (1<<ADPS1); // 8Mhz / 64 = 125khz => good
 
         TX_CONFIG;
-
 
         // turn off things we don't ever need...
 
         // turn off analog comparator
+/*
         ACSR &= ~(1<<ACIE);
         ACSR |= (1<<ACD);
+*/
 
         // disable all digital input buffers, we only use analog inputs...
         DIDR0 = 0xff;
@@ -95,33 +92,46 @@ int main(void) {
         packet.nsensors = 3;
 
         sei();
-        unsigned long prior = 0;
-	while (1) {
+        unsigned int sensor1;
+        uint32_t sensor2;
+        ksensor s1 = { 0, 0 };
+        ksensor s2 = { 0, 0 };
+
+        while (1) {
                 power_adc_enable();
                 _delay_us(70);  // bandgap wakeup time from datasheet (worst case)
                 ADC_ENABLE;
-                init_adc();
-		unsigned int sensor1 = adc_read();
+                // Switches are normally closed
+                if (!(PINB & (1<<PROBE_CHANNEL1_ENABLED_PIN))) {
+                    init_adc_regular(1);
+                    adc_read();  // toss first result
+                    sensor1 = adc_read();
+                    s1.type = NTC_10K_3V3;
+                    s1.value = sensor1;
+                } else {
+                    s1.type = SENSOR_TEST;
+                    s1.value = 0xbabe;
+                }
+
+                s2.type = SENSOR_TEST;
+                s2.value = 0xface;
+
+                init_adc_int_temp();
+                adc_read();
+                unsigned int internalTemp = adc_read();
                 ADC_DISABLE;
                 power_adc_disable();
-                
-//		uint32_t freq1 = readSensorFreq();
 
-                ksensor s1 = { 37, sensor1};
-                ksensor s2 = { 'k', 0xaabbccdd};
-                ksensor s3 = { 99, prior };
+                ksensor s3 = { TEMP_INT_VREF11, internalTemp };
                 packet.ksensors[0] = s1;
                 packet.ksensors[1] = s2;
                 packet.ksensors[2] = s3;
 
-                TCCR1B = (1<<CS11);
-                TCNT1 = 0;
 		XBEE_ON;
 		_delay_ms(2); // xbee manual says 2ms for sleep mode 2, 13 for sm1
                 //xbee_send_16(1, packet);
                 xbee_send_16(0x4202, packet);
 		XBEE_OFF;
-                prior = TCNT1;
 
                 // Now sleeeep
                 _delay_ms(3000);
