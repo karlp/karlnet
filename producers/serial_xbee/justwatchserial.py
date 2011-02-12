@@ -67,6 +67,9 @@ def runMainLoop():
                 kp = kpacket.wire_packet(xb.rfdata)
             else:
                 log.warn("Received a packet, but not a normal rx, was instead: %#x", xb.app_id)
+                qq = kpacket.wire_packet(xb.rfdata)
+                qqhp = kpacket.human_packet(node=xb.address_16, sensors=qq.sensors)
+                log.info("was actually: %s", qqhp)
                 continue
         except kpacket.BadPacketException as e:
             log.warn("Couldn't decode: %s" % e.msg)

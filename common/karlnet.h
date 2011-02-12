@@ -33,5 +33,18 @@ typedef struct _kpacket2 {
 
 #define VERSION_COUNT(x,y)  (((x) << 4) | ((y) & 0x0f))
 
+#define LM35_VREF256        35
+#define TMP36_VREF256       36
+#define TMP36_VREF11        37
+// HCH1000 with 555, reporting humidity as a frequency
+#define FREQ_1SEC           'f'
+// internal temperature sensor, for devices that measure against 1.1vref
+#define TEMP_INT_VREF11     'i'
+// internal temperature sensor, for devices that measure against 2.56vref
+#define TEMP_INT_VREF256    'I'
+// 10k NTC probe, with 10k resistor divider, measured against 3.3v VCC
+#define NTC_10K_3V3         'a'
+#define SENSOR_TEST         'z'
+
 #endif
 	

@@ -174,6 +174,10 @@ class Sensor(object):
             return (self.rawValue  - 273, 'degreesCelsius')
         if self.type == ord('I'):
             return (self.rawValue - 273, 'degreesCelsius')
+        if self.type == ord('a'):
+            return (self.rawValue, 'raw ntc reading')
+        if self.type == ord('z'):
+            return (self.rawValue, 'sensor test value')
         self.log.warn("Unknown sensor type: %s", self.type)
         return (0, "na")
 
