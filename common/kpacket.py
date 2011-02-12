@@ -168,6 +168,8 @@ class Sensor(object):
         if self.type == ord('f'):
             # 555 timer is C = 1/f / 300k / 0.693 (555 constant)
             # seems to range from about 400pf (very dry) to about 1100pf (quite humid)
+            if (self.rawValue == 0):
+                return (0, 'uninitialised counter');
             return ((1e12 / (self.rawValue * 300000 * 0.693)), 'picoFarads')
         # need calibration!
         if self.type == ord('i'):
