@@ -4,6 +4,8 @@ import struct
 
 import logging
 
+import curve
+
 class human_packet(object):
     """
     Defines the human post processed packet.
@@ -147,6 +149,14 @@ class Sensor(object):
         lessOffset = (milliVolts - 750) / 10
         tempC = 25 + lessOffset
         return tempC
+
+    def __convertNTC_10K_3V3(self, rawValue):
+            vout = float(rawValue) / 1023 * 3.3
+            r1_r2 = vout/(3.3-vout)
+            ntc = r1_r2 * 10000
+            # Fuck this shit, perhaps the curve should be embedded literal python code instead?
+            cc = curve.curve("/home/karl/src/karlnet-git/common/ntc.10kz.curve.csv")
+            return (cc.find_temp(ntc), 'degreesCelsius')
         
     def __decode(self):
         """
@@ -177,7 +187,7 @@ class Sensor(object):
         if self.type == ord('I'):
             return (self.rawValue - 273, 'degreesCelsius')
         if self.type == ord('a'):
-            return (self.rawValue, 'raw ntc reading')
+            return (self.__convertNTC_10K_3V3(self.rawValue))
         if self.type == ord('z'):
             return (self.rawValue, 'sensor test value')
         self.log.warn("Unknown sensor type: %s", self.type)
