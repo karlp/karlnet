@@ -154,8 +154,7 @@ class Sensor(object):
             vout = float(rawValue) / 1023 * 3.3
             r1_r2 = vout/(3.3-vout)
             ntc = r1_r2 * 10000
-            # Fuck this shit, perhaps the curve should be embedded literal python code instead?
-            cc = curve.curve("/home/karl/src/karlnet-git/common/ntc.10kz.curve.csv")
+            cc = curve.curve("ntc.10kz.curve.csv")
             return (cc.find_temp(ntc), 'degreesCelsius')
         
     def __decode(self):
