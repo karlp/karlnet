@@ -89,11 +89,10 @@ int main(void) {
         packet.version = 1;
         packet.nsensors = 3;
 
-        sei();
         unsigned int sensor1;
-        uint32_t sensor2;
         ksensor s1 = { 0, 0 };
         ksensor s2 = { 0, 0 };
+        sei();
 
         while (1) {
                 FreqCounter__start(1, 1000); // start, gate time 1000ms
@@ -124,6 +123,10 @@ int main(void) {
 
 
                 while (f_ready == 0) {
+                    // FIXME, this burns ~3mA spinning idle.
+                    // reduce gate time to 100ms for starters!
+                    // look at setting up a timer? interrupt to wake it up again
+                    // (can use the 2ms gate interrupt to see if it's done?
                     ;
                 }          // wait until counter ready
 
@@ -142,14 +145,9 @@ int main(void) {
                 //xbee_send_16(0x4202, packet);
 		XBEE_OFF;
 
-		// now sleep!
-                _delay_ms(3000);
-/*
-		sei();
+		// sleep for about 4 seconds with the WDT
 		sleep_mode();
 		sleep_disable();
-		cli();
-*/
 	}
 }
 
