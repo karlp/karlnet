@@ -62,7 +62,6 @@ class Researcher:
             """, (node,count,))
         elif sensorType is None and since is not None:
             # all in the last x
-            self.log.debug("getting alll, since %s", since)
             c.execute("""select sampleTime, sensorType, channel, sensorValue from karlnet_sensor
             where node = ? and sampleTime > ? order by sampleTime desc""", (node, since,))
         elif since is None:
