@@ -1,5 +1,15 @@
 * Make possible option for connecting preregulated 3.3V
+* add pins for the 3v3/ground, so you can use the onboard reg, or supply your
+own regulated supply
 
 * Make possible option for powering input channels from MCU, instead of
 permanently wired to VCC
+
+
+* avrdude doesn't recognise the board when the xbee is plugged in.  Something to do with the SPI lines :(
+
+* Channel value pins should have been wired to the sleeve in the schematic,
+but are wired to the tip.  (For compatibility with the other probes I made.
+ (fixed in v2e)
+
 

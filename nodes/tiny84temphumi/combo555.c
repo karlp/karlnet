@@ -12,7 +12,7 @@
 #include "karlnet.h"
 #include "xbee-api.h"
 
-//#include "FreqCounter.h"
+#include "FreqCounter.h"
 
 #define XBEE_OFF        (PORTA |= (1<<PINA7))
 #define XBEE_ON         (PORTA &= ~(1<<PINA7))
@@ -62,7 +62,7 @@ void init(void) {
         ACSR |= (1<<ACD);
 
         // disable all digital input buffers, we only use analog inputs...
-        DIDR0 = 0xff;
+        //DIDR0 = 0xff; lies, damn lies! T1 is on an ADC channel!
         
 /*
         power_timer0_disable();
@@ -89,13 +89,13 @@ int main(void) {
         packet.version = 1;
         packet.nsensors = 3;
 
-        sei();
         unsigned int sensor1;
-        uint32_t sensor2;
         ksensor s1 = { 0, 0 };
         ksensor s2 = { 0, 0 };
+        sei();
 
         while (1) {
+                FreqCounter__start(1, 1000); // start, gate time 1000ms
                 power_adc_enable();
                 _delay_us(70);  // bandgap wakeup time from datasheet (worst case)
                 ADC_ENABLE;
@@ -113,7 +113,6 @@ int main(void) {
 
                 s2.type = SENSOR_TEST;
                 s2.value = 0xface;
-
                 init_adc_int_temp();
                 adc_read();
                 unsigned int internalTemp = adc_read();
@@ -121,21 +120,34 @@ int main(void) {
                 power_adc_disable();
 
                 ksensor s3 = { TEMP_INT_VREF11, internalTemp };
+
+
+                while (f_ready == 0) {
+                    // FIXME, this burns ~3mA spinning idle.
+                    // reduce gate time to 100ms for starters!
+                    // look at setting up a timer? interrupt to wake it up again
+                    // (can use the 2ms gate interrupt to see if it's done?
+                    ;
+                }          // wait until counter ready
+
+                uint32_t myfreq = f_freq;
+                s2.type = FREQ_1SEC;
+                s2.value = myfreq;
+
+
                 packet.ksensors[0] = s1;
                 packet.ksensors[1] = s2;
                 packet.ksensors[2] = s3;
 
 		XBEE_ON;
 		_delay_ms(2); // xbee manual says 2ms for sleep mode 2, 13 for sm1
-                //xbee_send_16(1, packet);
-                xbee_send_16(0x4202, packet);
+                xbee_send_16(1, packet);
+                //xbee_send_16(0x4202, packet);
 		XBEE_OFF;
 
-		// now sleep!
-		sei();
+		// sleep for about 4 seconds with the WDT
 		sleep_mode();
 		sleep_disable();
-		cli();
 	}
 }
 

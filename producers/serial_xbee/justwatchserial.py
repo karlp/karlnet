@@ -31,7 +31,7 @@ parser.add_option("-p", "--port", dest="port",
 
 if options.testmode:
     stomp = None
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 else:
     stomp = Client(host='egri')
@@ -70,6 +70,7 @@ def runMainLoop():
                 qq = kpacket.wire_packet(xb.rfdata)
                 qqhp = kpacket.human_packet(node=xb.address_16, sensors=qq.sensors)
                 log.info("was actually: %s", qqhp)
+                lastgoodtime = time.time()
                 continue
         except kpacket.BadPacketException as e:
             log.warn("Couldn't decode: %s" % e.msg)

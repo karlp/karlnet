@@ -3,6 +3,7 @@
 # The library of alexandria, providing a Librarian that writes karlnet data into a datbase
 # and also a Researcher() that provides methods for getting data back out again
 
+from common.kpacket import Sensor
 import sys, os, socket, string
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 import sqlite3
@@ -143,6 +144,10 @@ Loop forever, saving readings into the database.  TODO: topic could be a config 
 
             for i in range(len(kp.sensors)):
                 sensor = kp.sensors[i]
+                # @type sensor Sensor
+                if sensor.type == ord('z'):
+                    self.log.debug("Skipping archiving of sensor test value: %s", sensor)
+                    continue
                 self.log.debug("saving to db for sensor %d: %s", i, sensor)
                 self.cur.execute('insert into karlnet_sensor (sampleTime, node, sensorType, channel, sensorRaw, sensorValue) values (?,?,?,?,?,?)', 
                     (kp.time_received, kp.node, sensor.type, i, sensor.rawValue, sensor.value))

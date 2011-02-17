@@ -17,7 +17,7 @@
 #include <util/delay.h>
 
 
-	extern unsigned long f_freq;
+	extern volatile unsigned long f_freq;
 	extern volatile unsigned char f_ready;
 	extern volatile unsigned char f_mlt;
 	extern volatile unsigned int f_tics;

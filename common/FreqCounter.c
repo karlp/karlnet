@@ -35,7 +35,7 @@
 #include "FreqCounter.h"
 
 
-unsigned long f_freq;
+volatile unsigned long f_freq;
 
 volatile unsigned char f_ready;
 volatile unsigned char f_mlt;
@@ -47,24 +47,21 @@ volatile unsigned int f_comp;
 
 void FreqCounter__start(unsigned int comp, int ms) {
 
-#if defined (__AVR_ATmega168__) || defined (__AVR_ATmega328P__) || defined (__AVR_ATmega32U4__)
+    f_period = ms / 2;
+    f_comp = comp;
 
-  f_period=ms/2;
-  f_comp=comp;
-	
-	// hardware counter setup ( refer atmega168.pdf chapter 16-bit counter1)
-  TCCR1A=0;                 // reset timer/counter1 control register A
+    f_ready = 0; // reset period measure flag
+    f_tics = 0; // reset interrupt counter
+
+    // all devices use 16 bit timer1 for counting...
+    // Set up timer1
+    TCCR1A = 0;
     // reset timer1 to external clock source on T1, rising edge.
-  // set timer/counter1 hardware as counter , counts events on pin T1 ( arduino pin 5)
-  TCCR1B = (1<<CS10) | (1<<CS11) | (1<<CS12);
-  TCNT1=0;           		// counter value = 0
-
-#endif
-
-  f_ready=0;          		// reset period measure flag
-  f_tics=0;                 // reset interrupt counter
+    TCCR1B = (1 << CS10) | (1 << CS11) | (1 << CS12);
 
 #if defined (__AVR_ATmega168__) || defined (__AVR_ATmega328P__)
+	// hardware counter setup ( refer atmega168.pdf chapter 16-bit counter1)
+  TCNT1=0;           		// counter value = 0
   // timer2 setup / is used for frequency measurement gatetime generation
   // timer 2 presaler set to 256 / timer 2 clock = 16Mhz / 256 = 62500 Hz
   TCCR2A=0;
@@ -89,19 +86,33 @@ void FreqCounter__start(unsigned int comp, int ms) {
 
   TCCR1B = TCCR1B | 7;      //  Counter Clock source = pin T1 , start counting now
 #elif defined (__AVR_ATmega32U4__)
-    // mega32u4 doesn't have timer2, but it has timer0 as an 8bit counter...
 
+  // TODO - try and merge this with tiny84
+
+    // mega32u4 doesn't have timer2, but it has timer0 as an 8bit counter...
     // Setup timer0 as an 8 bit gate counter...
     // we want 2ms or so,
     TCCR0A = (1<<WGM01);  // CTC mode, normal (no Output compare)
+    GTCCR |= (1<<PSRASY);  // reset prescaler (undocumented bit in mega32u4?)
     TCCR0B = (1<<CS02);  // timer0 on clk/256 == 16MHZ / 256 = 62500hz..
     OCR0A = 124;  // 125 counts of 62500 Hz before an output compare interrupt...
 
-    GTCCR |= (1<<PSRASY);  // reset prescaler (undocumented bit in mega32u4?)
     TCNT1 = 0;
     TCNT0 = 0;
 
     TIMSK0 = (1<<OCIE0A);
+#elif defined (__AVR_ATtiny84__)
+    // Setup timer0 as an 8 bit gate counter...
+    // we want 2ms or so,
+    TCCR0A = (1 << WGM01); // CTC mode, normal (no Output compare)
+    TCCR0B = (1 << CS01) | (1 << CS00); // timer 0 on clk/64 == (Mhz / 64 = 125khz
+    OCR0A = 249; // 250 counts of 125khz equals 2ms
+
+    // reset gate counter, unmask it's interrupt, starting both timers
+    TCNT1 = 0;
+    TCNT0 = 0;
+    TIMSK0 = (1 << OCIE0A);
+
 #endif
 }
 
@@ -125,34 +136,36 @@ ISR(TIMER2_COMPA_vect) {
 #define GATE_CONTROL        TIMSK2
 #define GATE_INTERRUPT_FLAG OCIE2A
 #elif defined (__AVR_ATmega32U4__)
-
 ISR(TIMER0_COMPA_vect) {
+#define GATE_CONTROL        TIMSK0
+#define GATE_INTERRUPT_FLAG OCIE0A
+#elif  defined (__AVR_ATtiny84__)
+ISR(TIM0_COMPA_vect) {
 #define GATE_CONTROL        TIMSK0
 #define GATE_INTERRUPT_FLAG OCIE0A
 #else
 #error You need one of them?!
 #endif
 
-// multiple 2ms = gate time = 100 ms
-if (f_tics >= f_period) {         	
-    // end of gate time, measurement ready
+    // multiple 2ms = gate time = 100 ms
+    if (f_tics >= f_period) {
+        // end of gate time, measurement ready
 
-    // GateCalibration Value, set to zero error with reference frequency counter
-    _delay_us(f_comp); // 0.01=1/ 0.1=12 / 1=120 sec 
-    TCCR1B = TCCR1B & ~7;   			// Gate Off  / Counter T1 stopped 
-    GATE_CONTROL &= ~(1<<GATE_INTERRUPT_FLAG);// disable Timer2 Interrupt
-    sbi (TIMSK0,TOIE0);     			// enable Timer0 again // millis and delay
-    f_ready=1;             // set global flag for end count period
-    
-    // calculate now frequeny value
-    f_freq=0x10000 * f_mlt;  // mult #overflows by 65636
-    f_freq += TCNT1;      	// add counter1 value
-    f_mlt=0;
-
-  }
-  f_tics++;            	// count number of interrupt events
-  if (TIFR1 & 1) {          			// if Timer/Counter 1 overflow flag
-    f_mlt++;               // count number of Counter1 overflows
-    sbi(TIFR1,TOV1);        			// clear Timer/Counter 1 overflow flag
-  }
+        // GateCalibration Value, set to zero error with reference frequency counter
+        _delay_us(f_comp); // 0.01=1/ 0.1=12 / 1=120 sec
+        TCCR1B &= ~((1 << CS10) | (1 << CS11) | (1 << CS12)); // Stop event counter
+        GATE_CONTROL &= ~(1 << GATE_INTERRUPT_FLAG); // disable gate count timer
+        // FIXME - not needed for non-arduino - sbi(TIMSK0, TOIE0); // enable Timer0 again // millis and delay
+        // calculate now frequeny value
+        f_freq = 0x10000 * f_mlt; // mult #overflows by 65636
+        f_freq += TCNT1; // add counter1 value
+        f_mlt = 0;
+        // duh, not until you're DONE calculating!
+        f_ready = 1; // set global flag for end count period
+    }
+    f_tics++; // count number of interrupt events
+    if (TIFR1 & 1) { // if Timer/Counter 1 overflow flag
+        f_mlt++; // count number of Counter1 overflows
+        TIFR1 |= (1<<TOV1); // clear timer1 overflow flag
+    }
 }
