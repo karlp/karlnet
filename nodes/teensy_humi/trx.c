@@ -7,10 +7,10 @@
 #include <avr/power.h>
 #include <util/delay.h>
 // usb hid...
-#include "usb_debug_only.h"
-#include "print.h"
+#include "pjrc/usb_debug_only.h"
+#include "pjrc/print.h"
 // pjrc uart!
-#include "pjrc_uart.h"
+#include "pjrc/pjrc_uart.h"
 
 #include "karlnet.h"
 #include "xbee-api.h"
@@ -101,6 +101,11 @@ int main(void) {
                 power_adc_disable();
 
                 unsigned long freq1 = readSensorFreq();
+                print("frequency = ");
+                phex16(freq1 >> 16);
+                phex16(freq1 & 0xffff);
+                print("\n\r");
+/*
 
                 ksensor s1 = {36, sensor1};
                 ksensor s2 = {'f', freq1};
@@ -111,8 +116,9 @@ int main(void) {
 
                 xbee_send_16(1, packet);
                 xbee_send_16(0x4202, packet);
+*/
 
-                _delay_ms(4000);
+//                _delay_ms(4000);
 	}
 }
 
