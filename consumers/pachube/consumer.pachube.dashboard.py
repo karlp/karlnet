@@ -82,6 +82,8 @@ def runMain():
         if (kp['node'] == config['node']):
             realTemp = kp['sensors'][config['probe']]['value']
             log.info("Current temp on probe is %d", realTemp)
+        else:
+            continue
 
 
         threshold = get_knob(unblob, "set temp mash")
