@@ -3,7 +3,9 @@
 # parse the ntc curve data...
 
 import csv
+import os
 import sys
+
 class curve(object):
     """
     Parses a ntc curves file, to help provide the nearest temperature for a resistance
@@ -11,7 +13,9 @@ class curve(object):
 
     def __init__(self, curvefile):
         """create the curve decoder, reading in the curve file"""
-        raw = csv.reader(open(curvefile, 'rb'), delimiter=',')
+        this_dir, this_filename = os.path.split(__file__)
+        curvefile_with_path = os.path.join(this_dir, curvefile)
+        raw = csv.reader(open(curvefile_with_path, 'rb'), delimiter=',')
         self.curve = {}
         for row in raw:
             # save full precision resistance, and whole decimal degrees

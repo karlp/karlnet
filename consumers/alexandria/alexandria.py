@@ -3,7 +3,6 @@
 # The library of alexandria, providing a Librarian that writes karlnet data into a datbase
 # and also a Researcher() that provides methods for getting data back out again
 
-from common.kpacket import Sensor
 import sys, os, socket, string
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 import sqlite3
@@ -63,7 +62,6 @@ class Researcher:
             """, (node,count,))
         elif sensorType is None and since is not None:
             # all in the last x
-            self.log.debug("getting alll, since %s", since)
             c.execute("""select sampleTime, sensorType, channel, sensorValue from karlnet_sensor
             where node = ? and sampleTime > ? order by sampleTime desc""", (node, since,))
         elif since is None:
@@ -145,7 +143,6 @@ Loop forever, saving readings into the database.  TODO: topic could be a config 
 
             for i in range(len(kp.sensors)):
                 sensor = kp.sensors[i]
-                # @type sensor Sensor
                 if sensor.type == ord('z'):
                     self.log.debug("Skipping archiving of sensor test value: %s", sensor)
                     continue

@@ -38,7 +38,7 @@ else:
     stomp = Client(host='egri')
     logging.basicConfig(level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-        filename="/var/log/karlnet_serial.log")
+        filename="/var/log/karlnet_serial_local.log")
 
 log = logging.getLogger("main")
 

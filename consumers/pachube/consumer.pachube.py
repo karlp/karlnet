@@ -8,6 +8,13 @@
 import sys, os, socket
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 import kpacket
+from optparse import OptionParser
+from stompy.simple import Client
+import jsonpickle
+import httplib
+import time
+
+import logging
 
 # The keys are the node id, which is the 16bit xbee address at the moment.
 config = {
@@ -23,19 +30,24 @@ config = {
     'apikey' : "cmG5jxylcl9geEUPe1psgko-aGs8bEXhLpOaHNmeXEE"
 }
 
-from stompy.simple import Client
-import jsonpickle
-import httplib
-import time
+parser = OptionParser()
+parser.add_option("-t", "--test", dest="testmode", action="store_true",
+    help="Run in test mode (don't post any data anywhere, log to console)",
+    default=False)
 
-import logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-filename="/var/log/karlnet_pachube.log")
-#filename="karlnet_pachube.log")
+(options, args) = parser.parse_args()
+
+if options.testmode:
+    logging.basicConfig(level=logging.DEBUG,
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s")
+else:
+    logging.basicConfig(level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+        filename="/var/log/karlnet_pachube.log")
+
 log = logging.getLogger("main")
 
 stomp = Client(host='egri')
-
 
 def upload(node, running):
     """Average a set of data and upload to pachube. Assumes that a config exists for the node id."""
@@ -49,10 +61,14 @@ def upload(node, running):
     log.debug("Derived averages, trying to upload: %s", csv)
     conn = httplib.HTTPConnection('www.pachube.com')
     headers = {"X-PachubeApiKey" : config["apikey"]}
-    conn.request("PUT", "/api/%d.csv" % config[node]['feedId'], csv, headers) 
-    response = conn.getresponse()
-    log.info("uploaded node:%#x: csv:: %s with response: %d - %s",
-        node, csv, response.status, response.reason)
+    url = "/api/%d.csv" % config[node]['feedId']
+    if options.testmode:
+        log.info("TEST: Would have uploaded %s to: %s with headers: %s", csv, url, headers)
+    else:
+        conn.request("PUT", url, csv, headers)
+        response = conn.getresponse()
+        log.info("uploaded node:%#x: csv:: %s with response: %d - %s",
+            node, csv, response.status, response.reason)
 
 
 def runMain():
