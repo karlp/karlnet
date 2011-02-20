@@ -8,6 +8,8 @@ __author__="karlp"
 config = { 'serialPort' : "/dev/ftdi0" }
 import sys, os, time
 import serial
+import optparse
+
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
 from xbee import xbee
@@ -20,6 +22,17 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(nam
 #,filename="/var/log/karlnet_serial.log"
 )
 log = logging.getLogger("main")
+
+parser = optparse.OptionParser()
+parser.add_option("-p", "--port", dest="port",
+    help="Serial port to use [default: %default]", default=config['serialPort'])
+parser.add_option("-m", "--manual", dest="manual", action="store_true",
+    help="Inject packets one at a time, on keyboard input [default=%default]", default=True)
+parser.add_option("-a", "--auto", dest="manual", action="store_false",
+    help="Inject packets one per second, no user intervention required (opposite of manual)")
+
+(options, args) = parser.parse_args()
+
 
 
 def runMainLoop():
@@ -34,11 +47,18 @@ def runMainLoop():
         fakeReadings.append(kpacket.Sensor(type=0xaa, raw=0x12345678))
         data = kpacket.human_packet(node=0x6209, sensors=fakeReadings)
         #data = "cafebabe"
-        log.info("injecting a fake packet into the ether...%s", data)
-        wiredata = xbtx.tx16(destination=0x4203, data=data.wire_format())
-        port.write(wiredata)
+        if options.manual:
+            log.debug("Press enter to send the packet")
+            sys.stdin.readline()
+            log.info("injecting a fake packet into the ether...%s", data)
+            wiredata = xbtx.tx16(destination=0x6001, data=data.wire_format())
+            port.write(wiredata)
+        else:
+            log.info("injecting a fake packet into the ether...%s", data)
+            wiredata = xbtx.tx16(destination=0x6001, data=data.wire_format())
+            port.write(wiredata)
+            time.sleep(1)
 
-        time.sleep(1)
 
 
 if __name__ == "__main__":
