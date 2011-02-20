@@ -236,7 +236,10 @@ void mrf_pan_write(uint16_t panid) {
 
 void mrf_set_interrupts(void) {}
 
-void mrf_set_channel(void) {}
+// Set the channel to 12, 2.41Ghz, xbee channel 0xC
+void mrf_set_channel(void) {
+    mrf_write_long(MRF_RFCON0, 0x13);
+}
 
 void mrf_init(void) {
 /*
@@ -278,17 +281,15 @@ int main(void) {
     print("woke up...woo\n");
     uint8_t tmp;
     mrf_reset();
-    _delay_ms(100);
 
     mrf_init();
 
     mrf_pan_write(0xcafe);
-    _delay_ms(500);
     while (1) {
         // start by reading all control registers
         uint16_t pan = mrf_pan_read();
         phex16(pan);
-        tmp = mrf_read_short(MRF_TXMCR);
+        tmp = mrf_read_long(MRF_WAKETIMEL);
         phex(tmp);
         print("\r\n");
         _delay_ms(500);
