@@ -49,6 +49,7 @@ PJRC_LIBS = ../../common/pjrc
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC =	$(TARGET).c \
+	lib_mrf24j.c \
 	$(PJRC_LIBS)/usb_debug_only.c \
 	$(PJRC_LIBS)/print.c \
 	$(KARLNET_COMMON)/uart.c 
