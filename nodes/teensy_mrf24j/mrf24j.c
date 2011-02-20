@@ -91,26 +91,18 @@ int main(void) {
     while (1) {
         phex(last_interrupt);
         if (gotrx) {
+            LED_ON;
             gotrx = 0;
             last_interrupt = 0;
-            print("Received a packet!\n\r");
-            LED_ON;
+            // skip the full datasheet recommended read cycle fr now, just dump the entire packet buffer
             cli();
-            mrf_write_short(MRF_BBREG1, 0x04);  // RXDECINV - disable receiver
-            uint8_t frame_length = mrf_read_long(0x300);  // read start of rxfifo for
-            phex(frame_length);
-            print("\r\nPacket data:\r\n");
-            for (int i = 1; i <= frame_length; i++) {
-                tmp = mrf_read_short(0x300 + i);
-                phex(tmp);
+            print("Received a packet!\n\r");
+            for (int i = 0x300; i < 0x300+128;i++) {
+                phex(mrf_read_long(i));
             }
-            print("\r\nLQI/RSSI=");
-            uint8_t lqi = mrf_read_short(0x300 + frame_length + 1);
-            uint8_t rssi = mrf_read_short(0x300 + frame_length + 2);
-            phex(lqi);
-            phex(rssi);
-            mrf_write_short(MRF_BBREG1, 0x00);  // RXDECINV - enable receiver
+            print("END\r\n");
             sei();
+            LED_OFF;
         } else {
             LED_OFF;
         }
