@@ -5,6 +5,7 @@
 #include <avr/io.h> 
 #include <avr/pgmspace.h>
 #include <avr/power.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 // usb hid...
 #include "usb_debug_only.h"
@@ -144,6 +145,8 @@
 #define MRF_UPNONCE11 0x24B
 #define MRF_UPNONCE12 0x24C
 
+#define MRF_I_RXIF 0b00001000
+
 
 
 void SPI_MasterInit(void) {
@@ -162,6 +165,9 @@ void init(void) {
     SPI_CONFIG;
     LED_CONFIG;
     SPI_MasterInit();
+
+    // interrupt pin from mrf
+    EIMSK |= (1<<INT0);
 
     while (!usb_configured()) {
     }
@@ -234,7 +240,16 @@ void mrf_pan_write(uint16_t panid) {
     mrf_write_short(MRF_PANIDL, panid & 0xff);
 }
 
-void mrf_set_interrupts(void) {}
+void mrf_address16_write(uint16_t address16) {
+    mrf_write_short(MRF_SADRH, address16 >> 8);
+    mrf_write_short(MRF_SADRL, address16 & 0xff);
+}
+
+
+void mrf_set_interrupts(void) {
+    // interrupts for rx and tx normal complete
+    mrf_write_short(MRF_INTCON, 0b11110110);
+}
 
 // Set the channel to 12, 2.41Ghz, xbee channel 0xC
 void mrf_set_channel(void) {
@@ -273,7 +288,16 @@ void mrf_init(void) {
     _delay_us(500); // delay at least 192usec
 }
 
+volatile uint8_t gotrx;
+volatile uint8_t last_interrupt;
 
+ISR(INT0_vect) {
+    // read and clear from the radio
+    last_interrupt = mrf_read_short(MRF_INTSTAT);
+    if (last_interrupt & MRF_I_RXIF) {
+        gotrx = 1;
+    }
+}
 
 int main(void) {
     init();
@@ -285,14 +309,20 @@ int main(void) {
     mrf_init();
 
     mrf_pan_write(0xcafe);
+    mrf_address16_write(0x6001);
+    mrf_write_short(MRF_RXMCR, 0x01); // promiscuous!
+    sei();
     while (1) {
-        // start by reading all control registers
-        uint16_t pan = mrf_pan_read();
-        phex16(pan);
-        tmp = mrf_read_long(MRF_WAKETIMEL);
-        phex(tmp);
-        print("\r\n");
-        _delay_ms(500);
+        phex(last_interrupt);
+        if (gotrx) {
+            print("Received a packet!\n\r");
+            LED_ON;
+            _delay_ms(500);
+            gotrx = 0;
+        } else {
+            LED_OFF;
+        }
+        _delay_ms(250);
     }
 }
 
