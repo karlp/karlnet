@@ -37,10 +37,12 @@
 #define MRF_TXMCR   0x11
 
 void SPI_MasterInit(void) {
-    /* Enable SPI, Master, set clock rate fck/16 */
-    SPCR = (1 << SPE) | (1 << MSTR) | (1 << SPR0);
-    // So, that's either 1Mhz, or 500khz, depending on whether Fosc is 16mhz crystal, or 8mhz clock prescaled?
-    // If I can read the mrf24j sheet properly, this should work right up to 10Mhz, but let's start realll slow
+    /* Enable SPI, Master, set clock rate fck/4 */
+    SPCR = (1 << SPE) | (1 << MSTR);
+    // So, that's either 4Mhz, or 2Mhz, depending on whether Fosc is
+    // 16mhz crystal, or 8mhz clock prescaled?
+    // If I can read the mrf24j sheet properly, this should work right
+    // up to 10Mhz, but let's not push it.... (yet)
 }
 
 void init(void) {
@@ -73,15 +75,13 @@ void mrf_reset(void) {
     _delay_ms(20);  // from manual
 }
 
-uint8_t mrf_read(uint8_t address) {
+uint8_t mrf_read_short(uint8_t address) {
     MRF_SELECT;
-    spi_tx(address<<1 & 0b01111110);  // 0 top for short addressing, 0 bottom for read
-    // now send anything for another byte
+    // 0 top for short addressing, 0 bottom for read
+    spi_tx(address<<1 & 0b01111110);
     spi_tx(0x0);
     MRF_DESELECT;
-    // reading now, should have their data shifted in?
-    uint8_t tmp = SPDR;
-    return tmp;
+    return SPDR;
 }
 
 int main(void) {
@@ -94,15 +94,16 @@ int main(void) {
     while (1) {
         // start by reading all control registers
 
-        for (uint8_t i = 0; i< 0x3f; i++) {
-            tmp = mrf_read(i);
+        for (uint8_t i = 0; i <= 0x3f; i++) {
+            tmp = mrf_read_short(i);
             print("tmp");
             phex(i);
             print(" = ");
             phex(tmp);
-            print("\r\n");
-            _delay_ms(50);
+            print(" ");
         }
+        _delay_ms(500);
+        print("\r\n");
     }
 }
 
