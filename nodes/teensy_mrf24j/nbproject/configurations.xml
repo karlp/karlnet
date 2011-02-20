@@ -4,6 +4,8 @@
     <df name="teensy_mrf24j" root=".">
       <df name=".dep">
       </df>
+      <in>lib_mrf24j.c</in>
+      <in>lib_mrf24j.h</in>
       <in>mrf24j.c</in>
     </df>
     <logicalFolder name="ExternalFiles"
