@@ -1,9 +1,9 @@
 * Make possible option for connecting preregulated 3.3V
 * add pins for the 3v3/ground, so you can use the onboard reg, or supply your
-own regulated supply
+own regulated supply (fixed in v3b)
 
 * Make possible option for powering input channels from MCU, instead of
-permanently wired to VCC
+permanently wired to VCC (fixed in v3b)
 
 
 * avrdude doesn't recognise the board when the xbee is plugged in.  Something to do with the SPI lines :(
