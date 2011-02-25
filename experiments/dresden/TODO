@@ -1,0 +1,10 @@
+v02 bugs
+* avr mosi connected to ICSP 5v pin
+* ICSP MOSI pin disconnected
+* breakout drills are too small for regular pin headers
+* board is too wide to plug into a breadboard
+* dresden drills are too small for socket pins!
+* samtec headers are much taller than necessary (about twice as much)
+* samtec headers have much longer pins than necessary (about twice as much)
+
+all but headers fixed for v3c. 
