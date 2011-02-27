@@ -65,6 +65,7 @@ void spi_tx(uint8_t cData) {
 
 
 volatile uint8_t gotrx;
+volatile uint8_t txok;
 volatile uint8_t last_interrupt;
 
 ISR(INT0_vect) {
@@ -73,6 +74,54 @@ ISR(INT0_vect) {
     if (last_interrupt & MRF_I_RXIF) {
         gotrx = 1;
     }
+    if (last_interrupt & MRF_I_TXNIF) {
+        txok = 1;
+    }
+}
+
+void mrf_tx(void) {
+    // Fill tx normal fifo with data,
+    // 1 byte header length first (m)
+    // 1 byte frame length (m+n)
+    // then header (m)
+    // then data (n)
+
+    // set acknowledgements on
+    // mrf_write_short(TXNCON, 0x04);
+//#define FC_TX_NORMAL  (0b00100000)   // let's seee which bit order we're in...
+    
+// let's see how bit orders go...
+// data frame, no ack, no data pending, no security, pan id compression
+#define FC_BYTE0 (0b01000001) // or the other bit order
+// let's skip
+    mrf_write_long(0x02, FC_BYTE0); // first byte of Frame Control
+
+// 16 bit source, version 1, 16 bit dest,
+#define FC_BYTE1 (0b10011000)
+    mrf_write_long(0x03, FC_BYTE1); // second byte of frame control
+    mrf_write_long(0x04, 1);  // sequence number 1
+    mrf_write_long(0x05, 0xfe);  // dest panid
+    mrf_write_long(0x06, 0xca);
+    mrf_write_long(0x07, 0x02);  // dest 16high
+    mrf_write_long(0x08, 0x42); // dest 16low
+    mrf_write_long(0x09, 0x01); // src16 low
+    mrf_write_long(0x0a, 0x60); // src16 high
+    mrf_write_long(0x00, 9);  // header length
+    //mrf_write_long(0x01, 9+4); // header + data
+    mrf_write_long(0x01, 9+4+2); // header + data?
+    // seems I've got header calculation lengthw rong somewhere?
+
+    // xbee sees this as valid, but only seems to see 'c' and 'd', not a and b
+    mrf_write_long(0x0b, 'a');
+    mrf_write_long(0x0c, 'b');
+    mrf_write_long(0x0d, 'c');
+    mrf_write_long(0x0e, 'd');
+    mrf_write_long(0x0f, 'e');
+    mrf_write_long(0x10, 'f');
+
+
+    mrf_write_short(MRF_TXNCON, 0x01); // set tx trigger bit, will be cleared by hardware
+
 }
 
 int main(void) {
@@ -89,34 +138,10 @@ int main(void) {
     //mrf_write_short(MRF_RXMCR, 0x01); // promiscuous!
     sei();
     while (1) {
-        phex(last_interrupt);
-        if (gotrx) {
-            LED_ON;
-            gotrx = 0;
-            last_interrupt = 0;
-            // skip the full datasheet recommended read cycle fr now, just dump the entire packet buffer
-            cli();
-            print("Received a packet!\n\r");
-            mrf_write_short(MRF_BBREG1, 0x04);  // RXDECINV - disable receiver
-
-            uint8_t frame_length = mrf_read_long(0x300);  // read start of rxfifo for
-            phex(frame_length);
-            print("\r\nPacket data:\r\n");
-            for (int i = 1; i <= frame_length; i++) {
-                tmp = mrf_read_long(0x300 + i);
-                phex(tmp);
-            }
-            print("\r\nLQI/RSSI=");
-            uint8_t lqi = mrf_read_long(0x300 + frame_length + 1);
-            uint8_t rssi = mrf_read_long(0x300 + frame_length + 2);
-            phex(lqi);
-            phex(rssi);
-
-            mrf_write_short(MRF_BBREG1, 0x00);  // RXDECINV - enable receiver
-            sei();
-            LED_OFF;
-        } else {
-            LED_OFF;
+        print ("txxxing...\r\n");
+        mrf_tx();
+        if (txok) {
+            print("tx went ok...\r\n");
         }
         _delay_ms(250);
     }
