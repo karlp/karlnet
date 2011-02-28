@@ -62,7 +62,15 @@ extern "C" {
 #define MRF_PACON2 0x18
 //#define MRF_Reserved 0x19
 #define MRF_TXBCON0 0x1A
-#define MRF_TXNCON 0x1B
+
+// TXNCON: TRANSMIT NORMAL FIFO CONTROL REGISTER (ADDRESS: 0x1B)
+#define MRF_TXNCON      0x1B
+#define MRF_TXNTRIG     0
+#define MRF_TXNSECEN    1
+#define MRF_TXNACKREQ   2
+#define MRF_INDIRECT    3
+#define MRF_FPSTAT      4
+
 #define MRF_TXG1CON 0x1C
 #define MRF_TXG2CON 0x1D
 #define MRF_ESLOTG23 0x1E
@@ -71,7 +79,17 @@ extern "C" {
 #define MRF_TXPEND 0x21
 #define MRF_WAKECON 0x22
 #define MRF_FRMOFFSET 0x23
+// TXSTAT: TX MAC STATUS REGISTER (ADDRESS: 0x24)
 #define MRF_TXSTAT 0x24
+#define TXNRETRY1       7
+#define TXNRETRY0       6
+#define CCAFAIL         5
+#define TXG2FNT         4
+#define TXG1FNT         3
+#define TXG2STAT        2
+#define TXG1STAT        1
+#define TXNSTAT         0
+
 #define MRF_TXBCON1 0x25
 #define MRF_GATECLK 0x26
 #define MRF_TXTIME 0x27
@@ -148,6 +166,7 @@ extern "C" {
 
 #define MRF_I_RXIF  0b00001000
 #define MRF_I_TXNIF 0b00000001
+
 
 
 #include <stdint.h>

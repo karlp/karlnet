@@ -74,7 +74,7 @@ uint16_t mrf_address16_read(void) {
 }
 
 /**
- * Simple send 16, no acks, not much of anything.. assumes src16 and local pan only.
+ * Simple send 16, with acks, not much of anything.. assumes src16 and local pan only.
  * @param data
  */
 void mrf_send16(uint16_t dest16, uint8_t len, char * data) {
@@ -83,10 +83,10 @@ void mrf_send16(uint16_t dest16, uint8_t len, char * data) {
     mrf_write_long(i++, 9);  // header length
     mrf_write_long(i++, 9+2+len); //+2 is because module seems to ignore 2 bytes after the header?!
 
-// pan compression, no security, no data pending, no ack, data frame
-    mrf_write_long(i++, 0b01000001); // first byte of Frame Control
-// 16 bit source, 802.15.4 (2006), 16 bit dest,
-    mrf_write_long(i++, 0b10011000); // second byte of frame control
+// 0 | pan compression | ack | no security | no data pending | data frame[3 bits]
+    mrf_write_long(i++, 0b01100001); // first byte of Frame Control
+// 16 bit source, 802.15.4 (2003), 16 bit dest,
+    mrf_write_long(i++, 0b10001000); // second byte of frame control
     mrf_write_long(i++, 1);  // sequence number 1
 
     uint16_t panid = mrf_pan_read();
@@ -104,7 +104,8 @@ void mrf_send16(uint16_t dest16, uint8_t len, char * data) {
     for (int q = 0; q < len; q++) {
         mrf_write_long(i++, data[q]);
     }
-    mrf_write_short(MRF_TXNCON, 0x01); // set tx trigger bit, will be cleared by hardware
+    // ack on, and go!
+    mrf_write_short(MRF_TXNCON, (1<<MRF_TXNACKREQ | 1<<MRF_TXNTRIG));
 }
 
 void mrf_set_interrupts(void) {

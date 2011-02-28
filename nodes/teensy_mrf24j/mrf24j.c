@@ -95,10 +95,43 @@ int main(void) {
     while (1) {
         print ("txxxing...\r\n");
         mrf_send16(0x4202, 4, "abcd");
-        if (txok) {
-            print("tx went ok...\r\n");
-        }
         _delay_ms(500);
+        if (txok) {
+            txok = 0;
+            print("tx went ok:");
+            tmp = mrf_read_short(MRF_TXSTAT);
+            phex(tmp);
+            if (!(tmp & ~(1<<TXNSTAT))) {  // 1 = failed
+                print("...And we got an ACK");
+            } else {
+                print("retried ");
+                phex(tmp >> 6);
+            }
+            print ("\r\n");
+        }
+        if (gotrx) {
+            gotrx = 0;
+            cli();
+            print("Received a packet!\n\r");
+            mrf_write_short(MRF_BBREG1, 0x04);  // RXDECINV - disable receiver
+
+            uint8_t frame_length = mrf_read_long(0x300);  // read start of rxfifo for
+            phex(frame_length);
+            print("\r\nPacket data:\r\n");
+            for (int i = 1; i <= frame_length; i++) {
+                tmp = mrf_read_long(0x300 + i);
+                phex(tmp);
+            }
+            print("\r\nLQI/RSSI=");
+            uint8_t lqi = mrf_read_long(0x300 + frame_length + 1);
+            uint8_t rssi = mrf_read_long(0x300 + frame_length + 2);
+            phex(lqi);
+            phex(rssi);
+
+            mrf_write_short(MRF_BBREG1, 0x00);  // RXDECINV - enable receiver
+            sei();
+
+        }
     }
 }
 
