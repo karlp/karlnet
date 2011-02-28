@@ -64,6 +64,7 @@ def runMainLoop():
 
         try:
             if xb.app_id == xbee.SERIES1_RXPACKET_16:
+                lastgoodtime = time.time()
                 kp = kpacket.wire_packet(xb.rfdata)
             else:
                 log.warn("Received a packet, but not a normal rx, was instead: %#x", xb.app_id)
