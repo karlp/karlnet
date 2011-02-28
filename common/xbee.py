@@ -64,6 +64,7 @@ class xbee(object):
     X_ON             = 0x11
     X_OFF = 0x13
     SERIES1_IOPACKET = 0x83
+    SERIES1_RXPACKET_64 = 0x80
     SERIES1_RXPACKET_16 = 0x81
     SERIES1_TXPACKET_16 = 0x01
     MAX_PACKET_LENGTH = 100  # todo - double check this.
@@ -193,6 +194,15 @@ class xbee_receiver(xbee):
             self.checksum = p[-1]
             log.info("xbee_rx16: %s", self)
 		
+        if self.app_id == xbee.SERIES1_RXPACKET_64:
+            self.address_64 = ("%#x:%#x:%#x:%#x:%#x:%#x:%#x:%#x") % (p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8])
+            self.rssi = p[9]
+            self.address_broadcast = ((p[10] >> 1) & 0x01) == 1
+            self.pan_broadcast = ((p[10] >> 2) & 0x01) == 1
+            self.rfdata = p[11:-1]
+            self.checksum = p[-1]
+            log.info("xbee_rx64: %s", self)
+
 		
         if self.app_id == xbee.SERIES1_IOPACKET:
             addrMSB = p[1]
@@ -253,6 +263,9 @@ class xbee_receiver(xbee):
                             self.digital_samples, self.analog_samples))
         if self.app_id == xbee.SERIES1_RXPACKET_16:
             basic = "<xbee {app_id: %#x, address_16: %#x, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_16, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
+            return basic + ("rfdata: %s}>" % self.rfdata)
+        if self.app_id == xbee.SERIES1_RXPACKET_64:
+            basic = "<xbee {app_id: %#x, address_64: %s, rssi: %s, address_broadcast: %s, pan_broadcast: %s, checksum: %d, " % (self.app_id, self.address_64, self.rssi, self.address_broadcast, self.pan_broadcast, self.checksum)
             return basic + ("rfdata: %s}>" % self.rfdata)
         if self.app_id == xbee.SERIES1_TXPACKET_16:
             basic = "<xbee_tx16 {app_id: %#x, address_16: %#x, frame_id=%#x, disable_ack: %s, pan_broadcast: %s, checksum: %d, rfdata=%s}>" \
