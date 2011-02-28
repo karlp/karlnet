@@ -38,6 +38,8 @@ class wire_packet(object):
     """
     log = logging.getLogger("WirePacket")
     def __init__(self, arg):
+        if len(arg) == 0:
+            raise BadPacketException("Packet contains no data!")
         if arg[0] != ord('x'):
             raise BadPacketException("this isn't a kpacket: %s" % arg[0])
         if len(arg) == 11:
