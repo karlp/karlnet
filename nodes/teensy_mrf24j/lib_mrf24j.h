@@ -146,7 +146,8 @@ extern "C" {
 #define MRF_UPNONCE11 0x24B
 #define MRF_UPNONCE12 0x24C
 
-#define MRF_I_RXIF 0b00001000
+#define MRF_I_RXIF  0b00001000
+#define MRF_I_TXNIF 0b00000001
 
 
 #include <stdint.h>
@@ -166,13 +167,14 @@ uint16_t mrf_pan_read(void);
 void mrf_pan_write(uint16_t panid);
 
 void mrf_address16_write(uint16_t address16);
+uint16_t mrf_address16_read(void);
 
 void mrf_set_interrupts(void);
 
 // Set the channel to 12, 2.41Ghz, xbee channel 0xC
 void mrf_set_channel(void);
 
-
+void mrf_send16(uint16_t dest16, uint8_t len, char * data);
 
 
 

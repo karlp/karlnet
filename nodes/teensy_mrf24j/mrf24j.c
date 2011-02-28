@@ -79,51 +79,6 @@ ISR(INT0_vect) {
     }
 }
 
-void mrf_tx(void) {
-    // Fill tx normal fifo with data,
-    // 1 byte header length first (m)
-    // 1 byte frame length (m+n)
-    // then header (m)
-    // then data (n)
-
-    // set acknowledgements on
-    // mrf_write_short(TXNCON, 0x04);
-//#define FC_TX_NORMAL  (0b00100000)   // let's seee which bit order we're in...
-    
-// let's see how bit orders go...
-// data frame, no ack, no data pending, no security, pan id compression
-#define FC_BYTE0 (0b01000001) // or the other bit order
-// let's skip
-    mrf_write_long(0x02, FC_BYTE0); // first byte of Frame Control
-
-// 16 bit source, version 1, 16 bit dest,
-#define FC_BYTE1 (0b10011000)
-    mrf_write_long(0x03, FC_BYTE1); // second byte of frame control
-    mrf_write_long(0x04, 1);  // sequence number 1
-    mrf_write_long(0x05, 0xfe);  // dest panid
-    mrf_write_long(0x06, 0xca);
-    mrf_write_long(0x07, 0x02);  // dest 16high
-    mrf_write_long(0x08, 0x42); // dest 16low
-    mrf_write_long(0x09, 0x01); // src16 low
-    mrf_write_long(0x0a, 0x60); // src16 high
-    mrf_write_long(0x00, 9);  // header length
-    //mrf_write_long(0x01, 9+4); // header + data
-    mrf_write_long(0x01, 9+4+2); // header + data?
-    // seems I've got header calculation lengthw rong somewhere?
-
-    // xbee sees this as valid, but only seems to see 'c' and 'd', not a and b
-    mrf_write_long(0x0b, 'a');
-    mrf_write_long(0x0c, 'b');
-    mrf_write_long(0x0d, 'c');
-    mrf_write_long(0x0e, 'd');
-    mrf_write_long(0x0f, 'e');
-    mrf_write_long(0x10, 'f');
-
-
-    mrf_write_short(MRF_TXNCON, 0x01); // set tx trigger bit, will be cleared by hardware
-
-}
-
 int main(void) {
     init();
 
@@ -139,11 +94,11 @@ int main(void) {
     sei();
     while (1) {
         print ("txxxing...\r\n");
-        mrf_tx();
+        mrf_send16(0x4202, 4, "abcd");
         if (txok) {
             print("tx went ok...\r\n");
         }
-        _delay_ms(250);
+        _delay_ms(500);
     }
 }
 

@@ -68,6 +68,44 @@ void mrf_address16_write(uint16_t address16) {
     mrf_write_short(MRF_SADRL, address16 & 0xff);
 }
 
+uint16_t mrf_address16_read(void) {
+    uint8_t a16h = mrf_read_short(MRF_SADRH);
+    return a16h << 8 | mrf_read_short(MRF_SADRL);
+}
+
+/**
+ * Simple send 16, no acks, not much of anything.. assumes src16 and local pan only.
+ * @param data
+ */
+void mrf_send16(uint16_t dest16, uint8_t len, char * data) {
+
+    int i = 0;
+    mrf_write_long(i++, 9);  // header length
+    mrf_write_long(i++, 9+2+len); //+2 is because module seems to ignore 2 bytes after the header?!
+
+// pan compression, no security, no data pending, no ack, data frame
+    mrf_write_long(i++, 0b01000001); // first byte of Frame Control
+// 16 bit source, 802.15.4 (2006), 16 bit dest,
+    mrf_write_long(i++, 0b10011000); // second byte of frame control
+    mrf_write_long(i++, 1);  // sequence number 1
+
+    uint16_t panid = mrf_pan_read();
+
+    mrf_write_long(i++, panid & 0xff);  // dest panid
+    mrf_write_long(i++, panid >> 8);
+    mrf_write_long(i++, dest16 & 0xff);  // dest16 low
+    mrf_write_long(i++, dest16 >> 8); // dest16 high
+
+    uint16_t src16 = mrf_address16_read();
+    mrf_write_long(i++, src16 & 0xff); // src16 low
+    mrf_write_long(i++, src16 >> 8); // src16 high
+
+    i+=2;  // All testing seems to indicate that the next two bytes are ignored.
+    for (int q = 0; q < len; q++) {
+        mrf_write_long(i++, data[q]);
+    }
+    mrf_write_short(MRF_TXNCON, 0x01); // set tx trigger bit, will be cleared by hardware
+}
 
 void mrf_set_interrupts(void) {
     // interrupts for rx and tx normal complete
