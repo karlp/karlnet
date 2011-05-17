@@ -6,21 +6,58 @@
 #include <util/delay.h>
 
 
-
-void mrf_reset(void) {
-    PORTD &= ~(1<<MRF_RESET);
+/**
+ * use with mrf_reset(&PORTB, PINB5);
+ */
+void mrf_reset(volatile uint8_t *port, uint8_t pin) {
+    *port &= ~(1 << pin);
     _delay_ms(10);  // just my gut
-    PORTD |= (1<<MRF_RESET);  // active low biatch!
+    *port |= (1 << pin);  // active low biatch!
     _delay_ms(20);  // from manual
 }
+
+
+/**
+ * Internal spi handling, works on both avr tiny, with USI,
+ * and also regular hardware SPI.
+ *
+ * For regular hardware spi, requires the spi hardware to already be setup!
+ * (TODO, you can handle that yourself, or even, have a compile time flag that
+ * determines whether to use internal, or provided spi_tx/rx routines)
+ */
+uint8_t spi_tx(uint8_t cData) {
+
+#if defined(SPDR)
+    // AVR platforms with "regular" SPI hardware
+
+    /* Start transmission */
+    SPDR = cData;
+    /* Wait for transmission complete */
+    while (!(SPSR & (1 << SPIF)))
+        ;
+    return SPDR;
+#elif defined (USIDR)
+    // AVR platforms with USI interfaces, capable of SPI
+        /* Start transmission */
+    USIDR = cData;
+    USISR = (1 << USIOIF);
+    do {
+        USICR = (1 << USIWM0) | (1 << USICS1) | (1 << USICLK) | (1 << USITC);
+    } while ((USISR & (1 << USIOIF)) == 0);
+    return USIDR;
+//#else - stupid netbeans doesn't find the right defines :(
+//#error "You don't seem to have any sort of spi hardware!"
+#endif
+}
+
 
 uint8_t mrf_read_short(uint8_t address) {
     MRF_SELECT;
     // 0 top for short addressing, 0 bottom for read
     spi_tx(address<<1 & 0b01111110);
-    spi_tx(0x0);
+    uint8_t res = spi_tx(0x0);
     MRF_DESELECT;
-    return SPDR;
+    return res;
 }
 
 uint8_t mrf_read_long(uint16_t address) {
@@ -29,9 +66,9 @@ uint8_t mrf_read_long(uint16_t address) {
     uint8_t alow = address << 5;
     spi_tx(0x80 | ahigh);  // high bit for long
     spi_tx(alow);
-    spi_tx(0);
+    uint8_t res = spi_tx(0);
     MRF_DESELECT;
-    return SPDR;
+    return res;
 }
 
 

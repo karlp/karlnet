@@ -12,27 +12,18 @@
 extern "C" {
 #endif
 
-
-
-// public config!!
-#define DDR_MRF     DDRD
-#define MRF_INT     PIND0
-#define MRF_RESET   PIND1
-#define MRF_CS      PIND2
-
-
-#define MRF_CONFIG  (DDR_MRF = (1<<MRF_RESET) | (1<<MRF_CS))
-#define MRF_SELECT  (PORTD &= ~(1<<MRF_CS))  // active low
-#define MRF_DESELECT (PORTD |= (1<<MRF_CS))
-
-
-
-
-
-/////////////
-
-
-
+    // PUBLIC CONFIG
+    // TODO: make these externable somehow, probably via inlining externed functions?
+    
+#define BOARD_FRIDGE
+//#define BOARD_TEENSY_DEMO
+#if defined (BOARD_FRIDGE)
+#define MRF_PORT (PORTB)
+#define MRF_PIN_CS      (PINB0)
+#elif defined (BOARD_TEENSY_DEMO)
+#define MRF_PORT  (PORTD)
+#define MRF_PIN_CS (PIND2)
+#endif
 
 
 #define MRF_RXMCR 0x00
@@ -171,9 +162,7 @@ extern "C" {
 
 #include <stdint.h>
 
-extern void spi_tx(uint8_t cData);
-
-void mrf_reset(void);
+void mrf_reset(volatile uint8_t *port, uint8_t pin);
 void mrf_init(void);
 
 uint8_t mrf_read_short(uint8_t address);
@@ -194,6 +183,20 @@ void mrf_set_interrupts(void);
 void mrf_set_channel(void);
 
 void mrf_send16(uint16_t dest16, uint8_t len, char * data);
+
+
+
+#if defined (MRF_SELECT) && defined (MRF_DESELECT)
+//wee :)
+#else
+#if defined (MRF_PORT) && defined (MRF_PIN_CS)
+#define MRF_SELECT MRF_PORT &= ~(1<<MRF_PIN_CS)
+#define MRF_DESELECT MRF_PORT |= (1<<MRF_PIN_CS)
+#else
+#error "MRF_SELECT/DESELECT must be defined for chipselect, or MRF_PORT and MRF_PIN_CS"
+#endif
+#endif
+
 
 
 

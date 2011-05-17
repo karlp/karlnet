@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
+    <logicalFolder name="common" displayName="common" projectFiles="true">
+      <logicalFolder name="pjrc" displayName="pjrc" projectFiles="true">
+        <itemPath>../../common/pjrc/print.c</itemPath>
+        <itemPath>../../common/pjrc/usb_debug_only.c</itemPath>
+      </logicalFolder>
+      <itemPath>../../common/lib_mrf24j.c</itemPath>
+      <itemPath>../../common/uart.c</itemPath>
+    </logicalFolder>
     <df name="teensy_mrf24j" root=".">
       <df name=".dep">
       </df>
-      <in>lib_mrf24j.c</in>
-      <in>lib_mrf24j.h</in>
       <in>mrf24j.c</in>
     </df>
     <logicalFolder name="ExternalFiles"
@@ -33,23 +39,56 @@
           <buildCommand>$(MAKE) -f Makefile</buildCommand>
           <cleanCommand>$(MAKE) -f Makefile clean</cleanCommand>
           <executablePath></executablePath>
-          <cTool>
-            <incDir>
-              <pElem>/usr/lib/avr/include/util</pElem>
-              <pElem>.</pElem>
-            </incDir>
-          </cTool>
         </makeTool>
       </makefileType>
-      <item path="mrf24j.c" ex="false" tool="0">
+      <folder path="common">
         <cTool>
+          <incDir>
+            <pElem>../../common</pElem>
+            <pElem>../../common/pjrc</pElem>
+            <pElem>.</pElem>
+          </incDir>
+          <inheritIncValues>false</inheritIncValues>
           <preprocessorList>
+            <Elem>F_CPU=8000000UL</Elem>
             <Elem>UART_RX_BUFFER_SIZE=256</Elem>
             <Elem>__AVR_UART</Elem>
-            <Elem>F_CPU=8000000UL</Elem>
           </preprocessorList>
+          <inheritPreValues>false</inheritPreValues>
         </cTool>
-      </item>
+      </folder>
+      <folder path="common/pjrc">
+        <cTool>
+          <incDir>
+            <pElem>../../common</pElem>
+            <pElem>../../common/pjrc</pElem>
+            <pElem>.</pElem>
+          </incDir>
+          <inheritIncValues>false</inheritIncValues>
+          <preprocessorList>
+            <Elem>F_CPU=8000000UL</Elem>
+            <Elem>UART_RX_BUFFER_SIZE=256</Elem>
+            <Elem>__AVR_UART</Elem>
+          </preprocessorList>
+          <inheritPreValues>false</inheritPreValues>
+        </cTool>
+      </folder>
+      <folder path="teensy_mrf24j">
+        <cTool>
+          <incDir>
+            <pElem>../../common</pElem>
+            <pElem>../../common/pjrc</pElem>
+            <pElem>.</pElem>
+          </incDir>
+          <inheritIncValues>false</inheritIncValues>
+          <preprocessorList>
+            <Elem>F_CPU=8000000UL</Elem>
+            <Elem>UART_RX_BUFFER_SIZE=256</Elem>
+            <Elem>__AVR_UART</Elem>
+          </preprocessorList>
+          <inheritPreValues>false</inheritPreValues>
+        </cTool>
+      </folder>
     </conf>
   </confs>
 </configurationDescriptor>

@@ -19,6 +19,11 @@
 #define LED_OFF         (PORTD &= ~(1<<6))
 #define LED_CONFIG      (DDRD |= (1<<6))
 
+#define MRF_DDR DDRD
+#define MRF_PIN_RESET PIND1
+#define MRF_PIN_CS PIND2
+#define MRF_CONFIG  (MRF_DDR = (1<<MRF_PIN_RESET) | (1<<MRF_PIN_CS))
+
 
 #define DDR_SPI     DDRB
 #define MISO        PINB3
@@ -55,14 +60,6 @@ void init(void) {
     _delay_ms(500);
 }
 
-void spi_tx(uint8_t cData) {
-    /* Start transmission */
-    SPDR = cData;
-    /* Wait for transmission complete */
-    while (!(SPSR & (1 << SPIF)))
-        ;
-}
-
 
 volatile uint8_t gotrx;
 volatile uint8_t txok;
@@ -84,7 +81,7 @@ int main(void) {
 
     print("woke up...woo\n");
     uint8_t tmp;
-    mrf_reset();
+    mrf_reset(DDRD, MRF_PIN_RESET);
 
     mrf_init();
 
