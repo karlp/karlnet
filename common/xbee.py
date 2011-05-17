@@ -68,6 +68,7 @@ class xbee(object):
     SERIES1_RXPACKET_16 = 0x81
     SERIES1_TXPACKET_16 = 0x01
     SERIES1_MODEM_STATUS = 0x8a
+    SERIES1_TX_STATUS   = 0x89
     MAX_PACKET_LENGTH = 100  # todo - double check this.
 
     def _needs_escaping(self, byte):
@@ -208,6 +209,11 @@ class xbee_receiver(xbee):
             self.flags = p[1]
             self.checksum = p[2]
             log.info("xbee_modem_status: %s", self)
+
+        if self.app_id == xbee.SERIES1_TX_STATUS:
+            self.frame_id = p[1]
+            self.status = p[2]
+            log.info("xbee_tx_status: %s", self)
 		
         if self.app_id == xbee.SERIES1_IOPACKET:
             addrMSB = p[1]
@@ -278,5 +284,14 @@ class xbee_receiver(xbee):
             return basic
         if self.app_id == xbee.SERIES1_MODEM_STATUS:
             return "<xbee_modem_status {app_id=%#x, flags:%#x, checksum: %d}>" % (self.app_id, self.flags, self.checksum)
+        if self.app_id == xbee.SERIES1_TX_STATUS:
+            status_decode = "success"
+            if self.status == 1:
+                status_decode = "no ACK"
+            if self.status == 2:
+                status_decode = "CCA Failure"
+            if self.status == 3:
+                status_decode = "Purged"
+            return "<xbee_tx_status {app_id=%#x, frame_id=%#x, status=%d (%s)" % (self.app_id, self.frame_id, self.status, status_decode)
         else:
             return basic + " unknown packet type}>"
