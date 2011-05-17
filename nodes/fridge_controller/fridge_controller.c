@@ -7,12 +7,24 @@
 #include <avr/power.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+
 #include "lib_mrf24j.h"
 
 #define TICKS_PER_500MS 15625
 
-#define SPI_CONFIG  (DDRA = (1<<DO) | (1<<DI) | (1<<USCK))
+// USCK and DO pins are output
+#define SPI_CONFIG  (DDRA |= (1<<PINA5) | (1<<PINA4))
 
+#define RELAY_ENABLE (DDRA |= (1<<PINA2))
+#define RELAY_STATE (PORTA & (1<<PINA2))
+#define RELAY_OFF (PORTA &= ~(1<<PINA2))
+#define RELAY_ON  (PORTA |= (1<<PINA2))
+
+#define MRF_DDR (DDRB)
+#define MRF_PORT (PORTB)
+#define MRF_PIN_RESET   (PINB1)
+#define MRF_PIN_CS      (PINB0)
+#define MRF_PIN_INT     (PINB2)
 
 void init_adc(void) {
     ADMUX = 0;  // vcc aref, adc0.
@@ -44,26 +56,15 @@ void SPI_MasterInit(void) {
 }
 
 void init(void) {
-//    MRF_CONFIG;
-//    SPI_CONFIG;
-    //SPI_MasterInit();
+    MRF_DDR = (1<<MRF_PIN_RESET) | (1<<MRF_PIN_CS);
+    SPI_CONFIG;
 
-    // interrupt pin from mrf
+    // interrupt pin from mrf, low level triggered
     //EIMSK |= (1<<INT0);
-    DDRB = (1<<PINB2);
+    GIMSK |= (1<<INT0);
+    RELAY_ENABLE;
     init_adc();
     init_slow_timer();
-
-}
-
-void spi_tx(uint8_t cData) {
-    /* Start transmission */
-    USIDR = cData;
-    USISR = (1<<USIOIF);
-    /* Wait for transmission complete */
-    while (!(USISR & (1 << USIOIF)))
-        // while not done, keep hitting the clock toggle bit?
-        USICR = (1<<USITC);
 }
 
 volatile uint16_t slowticker;
@@ -71,26 +72,51 @@ volatile uint16_t slowticker;
 ISR(TIM1_COMPA_vect) {
     slowticker++;
     // make sure it's working...
-    if (PORTB & (1<<PINB2)) {
-        PORTB &= ~(1<<PINB2);
-    } else {
-        PORTB |= (1<<PINB2);
+}
+
+volatile uint8_t gotrx;
+volatile uint8_t txok;
+volatile uint8_t last_interrupt;
+
+ISR(INT0_vect) {
+    // read and clear from the radio
+    last_interrupt = mrf_read_short(MRF_INTSTAT);
+    if (last_interrupt & MRF_I_RXIF) {
+        gotrx = 1;
+    }
+    if (last_interrupt & MRF_I_TXNIF) {
+        txok = 1;
     }
 }
 
 int main(void) {
     init();
 
+    mrf_reset(&MRF_PORT, MRF_PIN_RESET);
+
+    mrf_init();
+
+    mrf_pan_write(0xcafe);
+    mrf_address16_write(0x6002);
+    //mrf_write_short(MRF_RXMCR, 0x01); // promiscuous!
     sei();
+    char buf[2];
     while (1) {
 
         // Read temp/pot
         uint16_t currentValue = adc_read();
 
-        uint8_t state;
-        uint8_t done;
-        if (slowticker % 4 == 0) {
-            // Will keep getting hit repeatedly here, don't use it like this.
+        if (slowticker > 0) {
+            slowticker = 0;
+            buf[0] = currentValue >> 8;
+            buf[1] = currentValue & 0x0ff;
+            mrf_send16(0x4202, 2, buf);
+
+            if (RELAY_STATE) {
+                RELAY_OFF;
+            } else {
+                RELAY_ON;
+            }
         } 
         //_delay_ms(100);
     }
