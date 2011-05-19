@@ -31,6 +31,9 @@ typedef struct _kpacket2 {
         ksensor         ksensors[MAX_SENSORS];
 } kpacket2;
 
+#define KPP_VERSION_1 1  // xbee-api.c, reverse endian, whichever it is...
+#define KPP_VERSION_2 2  // mrf big endian? (or is that little endian?)
+
 #define VERSION_COUNT(x,y)  (((x) << 4) | ((y) & 0x0f))
 
 #define LM35_VREF256        35
@@ -44,7 +47,9 @@ typedef struct _kpacket2 {
 #define TEMP_INT_VREF256    'I'
 // 10k NTC probe, with 10k resistor divider, measured against 3.3v VCC
 #define NTC_10K_3V3         'a'
-#define SENSOR_TEST         'z'
+// flag for binary state sensors (off/on)
+#define KPS_RELAY_STATE         'b'
+#define KPS_SENSOR_TEST         'z'
 
 #endif
 	

@@ -21,6 +21,8 @@ class human_packet(object):
         self.sensors = sensors
         self.version = 1
 
+        # TODO, this only handles version 1 packets? (fine for sending out from xbees?)
+
     def wire_format(self):
         frame = struct.pack("> bb", ord('x'),
             (self.version << 4) | len(self.sensors) & 0x0f)
@@ -52,18 +54,19 @@ class wire_packet(object):
 
         version_samples = arg[1]
         version = version_samples >> 4
-        if version != 1:
+        if version == 1 or version == 2:
+            num_samples = version_samples & 0xf
+            # only real sensors reported?
+            if len(arg) != 2 + (num_samples * 5):
+                # or the packet is padded to MAX_SENSORS ?
+                if len(arg) != 2 + (4 * 5):
+                    raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
+            self.log.debug("handling packet version: %d with %d samples", version, num_samples)
+            self.sensors = []
+            for i in range (0, num_samples):
+                self.sensors.append(Sensor(binary=arg[2 + (i * 5):7 + (i * 5)], version=version))
+        else:
             raise BadPacketException("currently only know how to handle version 1 packets, not %d" % version)
-        num_samples = version_samples & 0xf
-        # only real sensors reported?
-        if len(arg) != 2 + (num_samples * 5):
-            # or the packet is padded to MAX_SENSORS ?
-            if len(arg) != 2 + (4 * 5):
-                raise BadPacketException("this is not the right length for a kpacket! %d" % len(arg))
-        self.log.debug("handling packet version: %d with %d samples", version, num_samples)
-        self.sensors = []
-        for i in range (0, num_samples):
-            self.sensors.append(Sensor(binary=arg[2 + (i * 5):7 + (i * 5)]))
 
 
 class wire_receiver(object):
@@ -116,11 +119,11 @@ class Sensor(object):
     Defines an individual sensor reading, made up of a type, and a raw value
     """
     log = logging.getLogger("Sensors")
-    def __init__(self, binary=None, type=None, raw=None, value=None):
+    def __init__(self, binary=None, type=None, raw=None, value=None, version=1):
         """If binary, then decode binary as raw sensor bytes.
         Otherwise, just make an object like we're told"""
         if binary:
-            self.__decodeBinary(binary)
+            self.__decodeBinary(binary, version)
         else:
             self.type = type
             self.rawValue = raw
@@ -129,13 +132,16 @@ class Sensor(object):
         if value is None and self.rawValue is not None:
             (self.value, self.units) = self.__decode()
 
-    def __decodeBinary(self, arg):
+    def __decodeBinary(self, arg, version):
         """Internal method for decoding raw binary data from a wire_packet"""
         if len(arg) != 5:
             raise BadPacketException("sensor readings should be 5 bytes! 5!=%d" % len(arg))
-        self.log.debug("Decoding bytes into a sensor object: *%s*", arg)
+        self.log.debug("Decoding bytes into a sensor object (ver:%d): *%s*", version, arg)
         self.type = arg[0]
-        self.rawValue = (arg[1] << 24) + (arg[2] << 16) + (arg[3] << 8) + arg[4]
+        if version == 1:
+            self.rawValue = (arg[1] << 24) + (arg[2] << 16) + (arg[3] << 8) + arg[4]
+        if version == 2:
+            self.rawValue = (arg[4] << 24) + (arg[3] << 16) + (arg[2] << 8) + arg[1]
         (self.value, self.units) = self.__decode()
 
     
@@ -189,6 +195,8 @@ class Sensor(object):
             return (self.rawValue - 273, 'degreesCelsius')
         if self.type == ord('a'):
             return (self.__convertNTC_10K_3V3(self.rawValue))
+        if self.type == ord('b'):
+            return (self.rawValue, 'boolean')
         if self.type == ord('z'):
             return (self.rawValue, 'sensor test value')
         self.log.warn("Unknown sensor type: %s", self.type)
