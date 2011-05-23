@@ -13,19 +13,24 @@ $(function () {
             0x4203 : "teensyhumi",
             0x4201 : "tinytemp",
             0xbabe : "dummy producer",
-            0x0001 : "receiver station"
+            0x0001 : "receiver station",
+            0x6002 : "fridge controller"
         },
         sensors : {
             35 : "lm35 (&deg;C)",
             36 : "tmp36 (&deg;C)",
+            37 : "tmp36b (&deg;C)",
             73 : "internalTemp (raw)",
+            98 : "motor state",
             102 : "humidity (pF)",
             105 : "internalTemp (raw)"
         },
         yaxis : {
             35 : 1,
             36 : 1,
+            37 : 1,
             73 : 1,
+            98 : 2,
             102 : 2,
             105 : 1
         }
