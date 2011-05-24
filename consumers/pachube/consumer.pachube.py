@@ -27,6 +27,9 @@ config = {
     0x0001 : {
         "feedId" : 6447
         },
+    0x6002 : {
+        "feedId" : 25684
+    },
     'apikey' : "cmG5jxylcl9geEUPe1psgko-aGs8bEXhLpOaHNmeXEE"
 }
 
