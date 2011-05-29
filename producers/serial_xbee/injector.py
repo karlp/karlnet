@@ -6,9 +6,12 @@
 __author__="karlp"
 
 config = { 'serialPort' : "/dev/ftdi0" }
-import sys, os, time
+import sys
+import os
+import time
 import serial
 import optparse
+import struct
 
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 
@@ -47,11 +50,13 @@ def runMainLoop():
         fakeReadings.append(kpacket.Sensor(type=0xaa, raw=0x12345678))
         data = kpacket.human_packet(node=0x6209, sensors=fakeReadings)
         #data = "cafebabe"
+        #data = struct.pack("> 5s", "abcde")
         if options.manual:
             log.debug("Press enter to send the packet")
             sys.stdin.readline()
             log.info("injecting a fake packet into the ether...%s", data)
             wiredata = xbtx.tx16(destination=0x6001, data=data.wire_format())
+            #wiredata = xbtx.tx16(destination=0x6001, data=data)
             port.write(wiredata)
         else:
             log.info("injecting a fake packet into the ether...%s", data)
