@@ -10,8 +10,6 @@
       <itemPath>../../common/uart.c</itemPath>
     </logicalFolder>
     <df name="teensy_mrf24j" root=".">
-      <df name=".dep">
-      </df>
       <in>mrf24j.c</in>
     </df>
     <logicalFolder name="ExternalFiles"
@@ -39,6 +37,11 @@
           <buildCommand>$(MAKE) -f Makefile</buildCommand>
           <cleanCommand>$(MAKE) -f Makefile clean</cleanCommand>
           <executablePath></executablePath>
+          <cTool>
+            <preprocessorList>
+              <Elem>__AVR_ATmega32U4__</Elem>
+            </preprocessorList>
+          </cTool>
         </makeTool>
       </makefileType>
       <folder path="common">
