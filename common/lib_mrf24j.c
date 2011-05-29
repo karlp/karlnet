@@ -1,5 +1,6 @@
 // Karl Palsson, 2011
-// BSD/MIT license where possible or not otherwise specified
+// false.ekta.is
+// BSD/MIT license
 
 #include "lib_mrf24j.h"
 #include <avr/io.h>
@@ -11,6 +12,15 @@
  */
 static volatile uint8_t *mrf_cs_port;
 static uint8_t mrf_cs_pin;
+
+// aMaxPHYPacketSize = 127, from the 802.15.4-2006 standard.
+static uint8_t mrf_rx_buf[127];
+
+volatile uint8_t flag_got_rx;
+volatile uint8_t flag_got_tx;
+
+static mrf_rx_info_t mrf_rx_info;
+static mrf_tx_info_t mrf_tx_info;
 
 static inline void mrf_select(void) {
     *mrf_cs_port &= ~(_BV(mrf_cs_pin));
@@ -200,5 +210,55 @@ void mrf_init(volatile uint8_t *port, uint8_t pin) {
     mrf_write_short(MRF_RFCTL, 0x04); //  – Reset RF state machine.
     mrf_write_short(MRF_RFCTL, 0x00); // part 2
     _delay_us(500); // delay at least 192usec
+}
+
+/**
+ * Call this from within an interrupt handler connected to the MRFs output
+ * interrupt pin.  It handles reading in any data from the module, and letting it
+ * continue working.
+ * Only the most recent data is ever kept.
+ */
+void mrf_interrupt_handler(void) {
+    uint8_t last_interrupt = mrf_read_short(MRF_INTSTAT);
+    if (last_interrupt & MRF_I_RXIF) {
+        flag_got_rx++;
+        // read out the packet data...
+        mrf_write_short(MRF_BBREG1, 0x04);  // RXDECINV - disable receiver
+        uint8_t frame_length = mrf_read_long(0x300);  // read start of rxfifo for
+        int rb_ptr = 0;
+        for (int i = 1; i <= frame_length; i++) {
+            mrf_rx_buf[rb_ptr++] = mrf_read_long(0x300 + i);
+        }
+        mrf_rx_info.frame_length = frame_length;
+        mrf_rx_info.lqi = mrf_read_long(0x300 + frame_length + 1);
+        mrf_rx_info.rssi = mrf_read_long(0x300 + frame_length + 2);
+
+        mrf_write_short(MRF_BBREG1, 0x00);  // RXDECINV - enable receiver
+    }
+    if (last_interrupt & MRF_I_TXNIF) {
+        flag_got_tx++;
+        uint8_t tmp = mrf_read_short(MRF_TXSTAT);
+        // 1 means it failed, we want 1 to mean it worked.
+        mrf_tx_info.tx_ok = !(tmp & ~(1 << TXNSTAT));
+        mrf_tx_info.retries = tmp >> 6;
+        mrf_tx_info.channel_busy = (tmp & (1 << CCAFAIL));
+    }
+}
+
+
+/**
+ * Call this function periodically, it will invoke your nominated handlers
+ */
+void mrf_check_flags(void (*rx_handler) (mrf_rx_info_t *rxinfo, uint8_t *rxbuffer),
+                     void (*tx_handler) (mrf_tx_info_t *txinfo)){
+    // TODO - we could check whether the flags are > 1 here, indicating data was lost?
+    if (flag_got_rx) {
+        flag_got_rx = 0;
+        rx_handler(&mrf_rx_info, mrf_rx_buf);
+    }
+    if (flag_got_tx) {
+        flag_got_tx = 0;
+        tx_handler(&mrf_tx_info);
+    }
 }
 

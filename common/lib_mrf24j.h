@@ -1,6 +1,6 @@
 /* 
  * File:   lib_mrf24j.h
- * Author: karl
+ * Author: Karl Palsson, false.ekta.is
  *
  * BSD/MIT licensed
  *
@@ -150,6 +150,22 @@ extern "C" {
 
 #include <stdint.h>
 
+
+typedef struct _mrf_rx_info {
+    uint8_t frame_length;
+    uint8_t lqi;
+    uint8_t rssi;
+} mrf_rx_info_t;
+
+/**
+ * Based on the TXSTAT register, but "better"
+ */
+typedef struct _mrf_tx_info {
+    uint8_t tx_ok:1;
+    uint8_t retries:2;
+    uint8_t channel_busy:1;
+} mrf_tx_info_t;
+
 void mrf_reset(volatile uint8_t *port, uint8_t reset_pin);
 void mrf_init(volatile uint8_t *port, uint8_t cs_pin);
 
@@ -171,6 +187,11 @@ void mrf_set_interrupts(void);
 void mrf_set_channel(void);
 
 void mrf_send16(uint16_t dest16, uint8_t len, char * data);
+
+void mrf_interrupt_handler(void);
+
+void mrf_check_flags(void (*rx_handler) (mrf_rx_info_t *rxinfo, uint8_t *rxbuffer),
+                     void (*tx_handler) (mrf_tx_info_t *txinfo));
 
 
 #ifdef	__cplusplus

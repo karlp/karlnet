@@ -1,9 +1,7 @@
 // Karl Palsson, 2011
 // 
 #include <stdio.h>
-#include <stdlib.h>
 #include <avr/io.h> 
-#include <avr/pgmspace.h>
 #include <avr/power.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -11,13 +9,6 @@
 #include "usb_debug_only.h"
 #include "print.h"
 #include "lib_mrf24j.h"
-
-
-// from teensy code samples...
-// NOTE! If you're using the frequency counter for the humidity sensor, you CANNOT use the onboard LED!
-#define LED_ON          (PORTD |= (1<<6))
-#define LED_OFF         (PORTD &= ~(1<<6))
-#define LED_CONFIG      (DDRD |= (1<<6))
 
 #define MRF_DDR DDRB
 #define MRF_PORT PORTB
@@ -47,7 +38,6 @@ void init(void) {
     clock_prescale_set(clock_div_2); // we run at 3.3v
     usb_init();
     MRF_CONFIG;
-    LED_CONFIG;
     SPI_MasterInit();
 
     // interrupt pin from mrf
@@ -61,99 +51,38 @@ void init(void) {
 }
 
 
-volatile uint8_t gotrx;
-volatile uint8_t txok;
-volatile uint8_t last_interrupt;
-
-typedef struct _mrf_rx_info {
-    uint8_t frame_length;
-    uint8_t lqi;
-    uint8_t rssi;
-} mrf_rx_info_t;
-
-/**
- * Based on the TXSTAT register, but "better"
- */
-typedef struct _mrf_tx_info {
-    uint8_t tx_ok:1;
-    uint8_t retries:2;
-    uint8_t channel_busy:1;
-} mrf_tx_info_t;
-
-mrf_rx_info_t mrf_rx_info;
-mrf_tx_info_t mrf_tx_info;
-uint8_t mrf_rx_buf[127];
-
 ISR(INT0_vect) {
-    // read and clear from the radio
-    last_interrupt = mrf_read_short(MRF_INTSTAT);
-    if (last_interrupt & MRF_I_RXIF) {
-        gotrx = 1;
-        // read out the packet data...
-        mrf_write_short(MRF_BBREG1, 0x04);  // RXDECINV - disable receiver
-        uint8_t frame_length = mrf_read_long(0x300);  // read start of rxfifo for
-        int rb_ptr = 0;
-        for (int i = 1; i <= frame_length; i++) {
-            mrf_rx_buf[rb_ptr++] = mrf_read_long(0x300 + i);
-        }
-        mrf_rx_info.frame_length = frame_length;
-        mrf_rx_info.lqi = mrf_read_long(0x300 + frame_length + 1);
-        mrf_rx_info.rssi = mrf_read_long(0x300 + frame_length + 2);
-
-        mrf_write_short(MRF_BBREG1, 0x00);  // RXDECINV - enable receiver
-    }
-    if (last_interrupt & MRF_I_TXNIF) {
-        txok = 1;
-        uint8_t tmp = mrf_read_short(MRF_TXSTAT);
-        // 1 means it failed, we want 1 to mean it worked.
-        mrf_tx_info.tx_ok = !(tmp & ~(1 << TXNSTAT));
-        mrf_tx_info.retries = tmp >> 6;
-        mrf_tx_info.channel_busy = (tmp & (1 << CCAFAIL));
-    }
+    mrf_interrupt_handler();
 }
 
-void handle_rx() {
+void handle_rx(mrf_rx_info_t *rxinfo, uint8_t *rx_buffer) {
     print("Received a packet!\n\r");
 
-    phex(mrf_rx_info.frame_length);
+    phex(rxinfo->frame_length);
     print("\r\nPacket data:\r\n");
-    for (int i = 0; i <= mrf_rx_info.frame_length; i++) {
-        phex(mrf_rx_buf[i]);
+    for (int i = 0; i <= rxinfo->frame_length; i++) {
+        phex(rx_buffer[i]);
     }
     print("\r\nLQI/RSSI=");
-    phex(mrf_rx_info.lqi);
-    phex(mrf_rx_info.rssi);
+    phex(rxinfo->lqi);
+    phex(rxinfo->rssi);
 }
 
-void handle_tx() {
+void handle_tx(mrf_tx_info_t *txinfo) {
     print("tx went ok:");
-    if (mrf_tx_info.tx_ok) {
+    if (txinfo->tx_ok) {
         print("...And we got an ACK");
     } else {
         print("retried ");
-        phex(mrf_tx_info.retries);
+        phex(txinfo->retries);
     }
     print("\r\n");
-}
-
-// Call this often...
-// This will be a library function, that takes function pointers as parameters....
-void mrf_check_flags() {
-    if (gotrx) {
-        gotrx = 0;
-        handle_rx();
-    }
-    if (txok) {
-        txok = 0;
-        handle_tx();
-    }
 }
 
 int main(void) {
     init();
 
     print("woke up...woo\n");
-    uint8_t tmp;
     mrf_reset(&MRF_PORT, MRF_PIN_RESET);
     mrf_init(&MRF_PORT, MRF_PIN_CS);
 
@@ -164,7 +93,7 @@ int main(void) {
     uint32_t roughness = 0;
     while (1) {
         roughness++;
-        mrf_check_flags();
+        mrf_check_flags(&handle_rx, &handle_tx);
         // about a second or so...
         if (roughness > 0x00050000) {
             print ("txxxing...\r\n");
