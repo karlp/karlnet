@@ -286,7 +286,9 @@ void mrf_check_flags(void (*rx_handler) (mrf_rx_info_t *rxinfo, uint8_t *rxbuffe
     }
     if (flag_got_tx) {
         flag_got_tx = 0;
-        tx_handler(&mrf_tx_info);
+        if (tx_handler) {
+            tx_handler(&mrf_tx_info);
+        }
     }
 }
 
