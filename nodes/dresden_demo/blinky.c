@@ -1,25 +1,51 @@
 // Karl Palsson, 2011
-// 
-#include <avr/io.h> 
+//
+#include <stdio.h>
+#include <avr/io.h>
+#include <avr/pgmspace.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
+#include "uart.h"
 
-void init() {
-    DDRF = (1<<PINF2);
-    DDRE = (1<<PINE3);
-    DDRD = (1<<PIND6);
+#define BAUD 9600
+
+static FILE mystdout = {0};
+static FILE mystdout1 = {0};
+
+static int _uart_putc(char c, FILE* stream) {
+    if (c == '\n') {
+        _uart_putc('\r', NULL);
+    }
+    uart_putc(c);
+    return 0;
+}
+static int _uart1_putc(char c, FILE* stream) {
+    if (c == '\n') {
+        _uart1_putc('\r', NULL);
+    }
+    uart1_putc(c);
+    return 0;
 }
 
+static void init(void) {
+    uart_init(UART_BAUD_SELECT(BAUD, F_CPU));
+    uart1_init(UART_BAUD_SELECT(BAUD, F_CPU));
+    fdev_setup_stream(&mystdout, _uart_putc, NULL, _FDEV_SETUP_WRITE);
+    fdev_setup_stream(&mystdout1, _uart1_putc, NULL, _FDEV_SETUP_WRITE);
+    stdout = &mystdout;
+    DDRD |= _BV(PIND6);
+}
 
 int main(void) {
     init();
+    sei();
+    uint32_t i = 0;
     while (1) {
-        PORTF |= (1<<PINF2);
-        PORTE |= (1<<PINE3);
-        PORTD |= (1<<PIND6);
+        PORTD |= (1 << PIND6);
         _delay_ms(500);
-        PORTF &= ~(1<<PINF2);
-        PORTE &= ~(1<<PINE3);
-        PORTD &= ~(1<<PIND6);
+        printf_P(PSTR("hello karl, this is uart0, loop %d\n"), i++);
+        fprintf_P(&mystdout1, PSTR("this is uart1, loop %d\n"), i);
+        PORTD &= ~(1 << PIND6);
         _delay_ms(250);
     }
 }

@@ -47,8 +47,8 @@ TARGET = blinky
 KARLNET_COMMON = ../../common
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC =	$(TARGET).c #\
-	$(KARLNET_COMMON)/lib_mrf24j.c
+SRC =	$(TARGET).c \
+	$(KARLNET_COMMON)/uart.c
 
 # MCU name, you MUST set this to match the board you are using
 # type "make clean" after changing this, so all files will be rebuilt
@@ -66,8 +66,8 @@ MCU = atmega128rfa1
 #   so your program will run at the correct speed.  You should also set this
 #   variable to same clock speed.  The _delay_ms() macro uses this, and many
 #   examples use this variable to calculate timings.  Do not add a "UL" here.
-F_CPU = 1000000
-#F_CPU = 8000000
+#F_CPU = 1000000
+F_CPU = 8000000
 
 
 # Output format. (can be srec, ihex, binary)
@@ -111,7 +111,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = $(KARLNET_COMMON) $(PJRC_LIBS)
+EXTRAINCDIRS = $(KARLNET_COMMON)
 
 
 # Compiler flag to set the C Standard level.

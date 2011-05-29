@@ -174,7 +174,7 @@ Date        Description
  #define UART1_CONTROL  UCSR1B
  #define UART1_DATA     UDR1
  #define UART1_UDRIE    UDRIE1
-#elif defined(__AVR_ATmega64__) || defined(__AVR_ATmega128__) 
+#elif defined(__AVR_ATmega64__) || defined(__AVR_ATmega128__) || defined (__AVR_ATmega128RFA1__)
  /* ATmega with two USART */
  #define ATMEGA_USART0
  #define ATMEGA_USART1
