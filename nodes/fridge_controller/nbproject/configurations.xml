@@ -21,8 +21,6 @@
       <in>xbee-api.h</in>
     </df>
     <df name="fridge_controller" root=".">
-      <df name=".dep">
-      </df>
       <in>fridge_controller.c</in>
     </df>
     <logicalFolder name="ExternalFiles"

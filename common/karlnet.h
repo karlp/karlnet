@@ -49,7 +49,18 @@ typedef struct _kpacket2 {
 #define NTC_10K_3V3         'a'
 // flag for binary state sensors (off/on)
 #define KPS_RELAY_STATE         'b'
+#define KPS_COMMAND         'c'
+#define KPS_COMMAND_ARG     'd'
 #define KPS_SENSOR_TEST         'z'
+
+// All possible commands
+#define KPS_COMMAND_REPORTING_INTERVAL  1
+#define KPS_COMMAND_THRESHOLD_TEMP      2
+#define KPS_COMMAND_MIN_ON_TIME         3
+#define KPS_COMMAND_MIN_OFF_TIME        4
+#define KPS_COMMAND_SET_COLLECTOR       5
+
+
 
 #endif
 	

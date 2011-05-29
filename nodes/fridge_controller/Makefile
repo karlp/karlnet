@@ -48,7 +48,8 @@ KARLNET_COMMON = ../../common
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC =	$(TARGET).c \
-	$(KARLNET_COMMON)/lib_mrf24j.c
+	$(KARLNET_COMMON)/lib_mrf24j.c \
+#	$(KARLNET_COMMON)/pjrc/usb_debug_only.c
 
 # MCU name, you MUST set this to match the board you are using
 # type "make clean" after changing this, so all files will be rebuilt
