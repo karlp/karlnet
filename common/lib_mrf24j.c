@@ -225,7 +225,13 @@ void mrf_init(volatile uint8_t *port, uint8_t pin) {
  * Call this from within an interrupt handler connected to the MRFs output
  * interrupt pin.  It handles reading in any data from the module, and letting it
  * continue working.
- * Only the most recent data is ever kept.
+ * I haven't been able to reliably leave interrupts on, and throw away new packets
+ * until the old one was read out by client software.  Until I can work that out,
+ * I highly recommend disabling interrupts from module in your handle_rx callback.
+ * Otherwise, you run the risk of having a new packet trample all over the current packet.
+ * (TODO: why is this so hard to get right?!)
+ *
+ * Note, this is really only a problem in promiscuous mode...
  */
 void mrf_interrupt_handler(void) {
     uint8_t last_interrupt = mrf_read_short(MRF_INTSTAT);
@@ -234,11 +240,24 @@ void mrf_interrupt_handler(void) {
         // read out the packet data...
         mrf_write_short(MRF_BBREG1, 0x04);  // RXDECINV - disable receiver
         uint8_t frame_length = mrf_read_long(0x300);  // read start of rxfifo for
-        int rb_ptr = 0;
-        for (int i = 1; i <= frame_length; i++) {
-            mrf_rx_buf[rb_ptr++] = mrf_read_long(0x300 + i);
+
+        uint16_t frame_control = mrf_read_long(0x301);
+        frame_control |= mrf_read_long(0x302) << 8;
+        mrf_rx_info.frame_type = frame_control & 0x07;
+        mrf_rx_info.pan_compression = (frame_control >> 6) & 0x1;
+        mrf_rx_info.ack_bit = (frame_control >> 5) & 0x1;
+        mrf_rx_info.dest_addr_mode = (frame_control >> 10) & 0x3;
+        mrf_rx_info.frame_version = (frame_control >> 12) & 0x3;
+        mrf_rx_info.src_addr_mode = (frame_control >> 14) & 0x3;
+        mrf_rx_info.sequence_number = mrf_read_long(0x303);
+
+        // only three bytes have been removed, frame control and sequence id
+        // the data starts at 4 though, because byte 0 was the mrf length
+        // also hide the FCS bytes, even though we've copied them into the rx buffer
+        for (int i = 0; i <= frame_length - 4; i++) {
+            mrf_rx_buf[i] = mrf_read_long(0x304 + i);
         }
-        mrf_rx_info.frame_length = frame_length;
+        mrf_rx_info.frame_length = frame_length - 3 - 2;
         mrf_rx_info.lqi = mrf_read_long(0x300 + frame_length + 1);
         mrf_rx_info.rssi = mrf_read_long(0x300 + frame_length + 2);
 
@@ -261,8 +280,8 @@ void mrf_interrupt_handler(void) {
 void mrf_check_flags(void (*rx_handler) (mrf_rx_info_t *rxinfo, uint8_t *rxbuffer),
                      void (*tx_handler) (mrf_tx_info_t *txinfo)){
     // TODO - we could check whether the flags are > 1 here, indicating data was lost?
-    if (flag_got_rx) {
-        flag_got_rx = 0;
+    if (flag_got_rx > 0) {
+        flag_got_rx--;
         rx_handler(&mrf_rx_info, mrf_rx_buf);
     }
     if (flag_got_tx) {

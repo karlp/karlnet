@@ -146,13 +146,34 @@ extern "C" {
 #define MRF_I_RXIF  0b00001000
 #define MRF_I_TXNIF 0b00000001
 
+// These are defines based on the 802.15.4 standard, hence the MAC prefix,
+// rather than MRF_
+#define MAC_FRAME_TYPE_BEACON 0
+#define MAC_FRAME_TYPE_DATA 1
+#define MAC_FRAME_TYPE_ACK 2
+#define MAC_FRAME_TYPE_MACCMD 3
 
+#define MAC_ADDRESS_MODE_NONE 0
+#define MAC_ADDRESS_MODE_RESERVED 1
+#define MAC_ADDRESS_MODE_16 2
+#define MAC_ADDRESS_MODE_64 3
+
+#define MAC_FRAME_VERSION_2003 0
+#define MAC_FRAME_VERSION_2006 1
 
 #include <stdint.h>
 
 
 typedef struct _mrf_rx_info {
     uint8_t frame_length;
+    uint8_t frame_type:3;
+    uint8_t security_enabled:1;
+    uint8_t ack_bit:1;
+    uint8_t pan_compression:1;
+    uint8_t frame_version:2;
+    uint8_t dest_addr_mode:2;
+    uint8_t src_addr_mode:2;
+    uint8_t sequence_number;
     uint8_t lqi;
     uint8_t rssi;
 } mrf_rx_info_t;
