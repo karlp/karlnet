@@ -50,11 +50,7 @@ PJRC_LIBS = ../../common/pjrc
 # List C source files here. (C dependencies are automatically generated.)
 SRC =	$(TARGET).c \
 	$(KARLNET_COMMON)/lib_mrf24j.c \
-	$(PJRC_LIBS)/usb_debug_only.c \
-	$(PJRC_LIBS)/print.c \
-	$(KARLNET_COMMON)/uart.c 
-#        $(KARLNET_COMMON)/xbee-api.c \
-        $(KARLNET_COMMON)/FreqCounter.c
+	$(PJRC_LIBS)/usb_debug_only.c
 
 # MCU name, you MUST set this to match the board you are using
 # type "make clean" after changing this, so all files will be rebuilt
@@ -218,8 +214,8 @@ PRINTF_LIB_MIN = -Wl,-u,vfprintf -lprintf_min
 PRINTF_LIB_FLOAT = -Wl,-u,vfprintf -lprintf_flt
 
 # If this is left blank, then it will use the Standard printf version.
-PRINTF_LIB = 
-#PRINTF_LIB = $(PRINTF_LIB_MIN)
+#PRINTF_LIB =
+PRINTF_LIB = $(PRINTF_LIB_MIN)
 #PRINTF_LIB = $(PRINTF_LIB_FLOAT)
 
 
@@ -230,7 +226,7 @@ SCANF_LIB_MIN = -Wl,-u,vfscanf -lscanf_min
 SCANF_LIB_FLOAT = -Wl,-u,vfscanf -lscanf_flt
 
 # If this is left blank, then it will use the Standard scanf version.
-SCANF_LIB = 
+SCANF_LIB =
 #SCANF_LIB = $(SCANF_LIB_MIN)
 #SCANF_LIB = $(SCANF_LIB_FLOAT)
 
