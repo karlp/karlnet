@@ -82,8 +82,7 @@ int main(void) {
     print("woke up...woo\n");
     uint8_t tmp;
     mrf_reset(&MRF_PORT, MRF_PIN_RESET);
-
-    mrf_init();
+    mrf_init(&MRF_PORT, MRF_PIN_CS);
 
     mrf_pan_write(0xcafe);
     mrf_address16_write(0x6001);

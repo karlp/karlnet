@@ -7,6 +7,20 @@
 
 
 /**
+ * these will be setup at init time...
+ */
+static volatile uint8_t *mrf_cs_port;
+static uint8_t mrf_cs_pin;
+
+static inline void mrf_select(void) {
+    *mrf_cs_port &= ~(_BV(mrf_cs_pin));
+}
+
+static inline void mrf_deselect(void) {
+    *mrf_cs_port |= (_BV(mrf_cs_pin));
+}
+
+/**
  * use with mrf_reset(&PORTB, PINB5);
  */
 void mrf_reset(volatile uint8_t *port, uint8_t pin) {
@@ -51,42 +65,42 @@ uint8_t spi_tx(uint8_t cData) {
 
 
 uint8_t mrf_read_short(uint8_t address) {
-    MRF_SELECT;
+    mrf_select();
     // 0 top for short addressing, 0 bottom for read
     spi_tx(address<<1 & 0b01111110);
     uint8_t res = spi_tx(0x0);
-    MRF_DESELECT;
+    mrf_deselect();
     return res;
 }
 
 uint8_t mrf_read_long(uint16_t address) {
-    MRF_SELECT;
+    mrf_select();
     uint8_t ahigh = address >> 3;
     uint8_t alow = address << 5;
     spi_tx(0x80 | ahigh);  // high bit for long
     spi_tx(alow);
     uint8_t res = spi_tx(0);
-    MRF_DESELECT;
+    mrf_deselect();
     return res;
 }
 
 
 void mrf_write_short(uint8_t address, uint8_t data) {
-    MRF_SELECT;
+    mrf_select();
     // 0 for top address, 1 bottom for write
     spi_tx((address<<1 & 0b01111110) | 0x01);
     spi_tx(data);
-    MRF_DESELECT;
+    mrf_deselect();
 }
 
 void mrf_write_long(uint16_t address, uint8_t data) {
-    MRF_SELECT;
+    mrf_select();
     uint8_t ahigh = address >> 3;
     uint8_t alow = address << 5;
     spi_tx(0x80 | ahigh);  // high bit for long
     spi_tx(alow | 0x10);  // last bit for write
     spi_tx(data);
-    MRF_DESELECT;
+    mrf_deselect();
 }
 
 uint16_t mrf_pan_read(void) {
@@ -154,7 +168,9 @@ void mrf_set_channel(void) {
     mrf_write_long(MRF_RFCON0, 0x13);
 }
 
-void mrf_init(void) {
+void mrf_init(volatile uint8_t *port, uint8_t pin) {
+    mrf_cs_port = port;
+    mrf_cs_pin = pin;
 /*
  // Seems a bit ridiculous when I use reset pin anyway
     mrf_write_short(MRF_SOFTRST, 0x7); // from manual

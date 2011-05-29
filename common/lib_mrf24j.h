@@ -2,6 +2,8 @@
  * File:   lib_mrf24j.h
  * Author: karl
  *
+ * BSD/MIT licensed
+ *
  * Created on February 20, 2011, 4:02 PM
  */
 
@@ -11,20 +13,6 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
-
-    // PUBLIC CONFIG
-    // TODO: make these externable somehow, probably via inlining externed functions?
-    
-//#define BOARD_FRIDGE
-#define BOARD_TEENSY_DEMO
-#if defined (BOARD_FRIDGE)
-#define MRF_PORT (PORTB)
-#define MRF_PIN_CS      (PINB0)
-#elif defined (BOARD_TEENSY_DEMO)
-#define MRF_PORT  (PORTB)
-#define MRF_PIN_CS (PINB0)
-#endif
-
 
 #define MRF_RXMCR 0x00
 #define MRF_PANIDL 0x01
@@ -162,8 +150,8 @@ extern "C" {
 
 #include <stdint.h>
 
-void mrf_reset(volatile uint8_t *port, uint8_t pin);
-void mrf_init(void);
+void mrf_reset(volatile uint8_t *port, uint8_t reset_pin);
+void mrf_init(volatile uint8_t *port, uint8_t cs_pin);
 
 uint8_t mrf_read_short(uint8_t address);
 uint8_t mrf_read_long(uint16_t address);
@@ -183,22 +171,6 @@ void mrf_set_interrupts(void);
 void mrf_set_channel(void);
 
 void mrf_send16(uint16_t dest16, uint8_t len, char * data);
-
-
-
-#if defined (MRF_SELECT) && defined (MRF_DESELECT)
-//wee :)
-#else
-#if defined (MRF_PORT) && defined (MRF_PIN_CS)
-#define MRF_SELECT MRF_PORT &= ~(1<<MRF_PIN_CS)
-#define MRF_DESELECT MRF_PORT |= (1<<MRF_PIN_CS)
-#else
-#error "MRF_SELECT/DESELECT must be defined for chipselect, or MRF_PORT and MRF_PIN_CS"
-#endif
-#endif
-
-
-
 
 
 #ifdef	__cplusplus
