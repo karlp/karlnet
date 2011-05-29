@@ -1,1 +1,2 @@
-prototype demo exploration with pjrc teensy and microchip mrf24j40 802.15.4 module
+This project demonstrates how to use Microchip's mrf24j40ma 802.15.4 module using my lib_mrf24j code.
+The demo is based on PJRC's teensy 2.0 board.
