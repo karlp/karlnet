@@ -2,12 +2,12 @@
 // 
 #include <stdio.h>
 #include <avr/io.h> 
+#include <avr/pgmspace.h>
 #include <avr/power.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 // usb hid...
 #include "usb_debug_only.h"
-#include "print.h"
 #include "lib_mrf24j.h"
 
 #define MRF_DDR DDRB
@@ -22,6 +22,8 @@
 #define SPI_MOSI        PINB2
 #define SPI_SCLK        PINB1
 
+static FILE mystdout = {0};
+
 
 void SPI_MasterInit(void) {
     // outputs, also for the /SS pin, to stop it from flicking to slave
@@ -34,8 +36,14 @@ void SPI_MasterInit(void) {
     // up to 10Mhz, but let's not push it.... (yet)
 }
 
+static int uart_putchar(char c, FILE* stream) {
+    return usb_debug_putchar(c);
+}
+
 void init(void) {
     clock_prescale_set(clock_div_2); // we run at 3.3v
+    fdev_setup_stream(&mystdout, uart_putchar, NULL, _FDEV_SETUP_WRITE);
+    stdout = &mystdout;
     usb_init();
     MRF_CONFIG;
     SPI_MasterInit();
@@ -56,33 +64,26 @@ ISR(INT0_vect) {
 }
 
 void handle_rx(mrf_rx_info_t *rxinfo, uint8_t *rx_buffer) {
-    print("Received a packet!\n\r");
-
-    phex(rxinfo->frame_length);
-    print("\r\nPacket data:\r\n");
+    printf_P(PSTR("Received a packet: %d bytes long\n"), rxinfo->frame_length);
+    printf_P(PSTR("Packet data:\n"));
     for (int i = 0; i <= rxinfo->frame_length; i++) {
-        phex(rx_buffer[i]);
+        printf("%x", rx_buffer[i]);
     }
-    print("\r\nLQI/RSSI=");
-    phex(rxinfo->lqi);
-    phex(rxinfo->rssi);
+    printf_P(PSTR("\nLQI/RSSI=%d/%d\n"), rxinfo->lqi, rxinfo->rssi);
 }
 
 void handle_tx(mrf_tx_info_t *txinfo) {
-    print("tx went ok:");
     if (txinfo->tx_ok) {
-        print("...And we got an ACK");
+        printf_P(PSTR("TX went ok, got ack\n"));
     } else {
-        print("retried ");
-        phex(txinfo->retries);
+        printf_P(PSTR("TX failed after %d retries\n"), txinfo->retries);
     }
-    print("\r\n");
 }
 
 int main(void) {
     init();
 
-    print("woke up...woo\n");
+    printf_P(PSTR("woke up...woo\n"));
     mrf_reset(&MRF_PORT, MRF_PIN_RESET);
     mrf_init(&MRF_PORT, MRF_PIN_CS);
 
@@ -96,7 +97,7 @@ int main(void) {
         mrf_check_flags(&handle_rx, &handle_tx);
         // about a second or so...
         if (roughness > 0x00050000) {
-            print ("txxxing...\r\n");
+            printf_P(PSTR("txxxing...\n"));
             mrf_send16(0x4202, 4, "abcd");
             roughness = 0;
         }
