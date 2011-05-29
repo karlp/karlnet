@@ -65,14 +65,87 @@ volatile uint8_t gotrx;
 volatile uint8_t txok;
 volatile uint8_t last_interrupt;
 
+typedef struct _mrf_rx_info {
+    uint8_t frame_length;
+    uint8_t lqi;
+    uint8_t rssi;
+} mrf_rx_info_t;
+
+/**
+ * Based on the TXSTAT register, but "better"
+ */
+typedef struct _mrf_tx_info {
+    uint8_t tx_ok:1;
+    uint8_t retries:2;
+    uint8_t channel_busy:1;
+} mrf_tx_info_t;
+
+mrf_rx_info_t mrf_rx_info;
+mrf_tx_info_t mrf_tx_info;
+uint8_t mrf_rx_buf[127];
+
 ISR(INT0_vect) {
     // read and clear from the radio
     last_interrupt = mrf_read_short(MRF_INTSTAT);
     if (last_interrupt & MRF_I_RXIF) {
         gotrx = 1;
+        // read out the packet data...
+        mrf_write_short(MRF_BBREG1, 0x04);  // RXDECINV - disable receiver
+        uint8_t frame_length = mrf_read_long(0x300);  // read start of rxfifo for
+        int rb_ptr = 0;
+        for (int i = 1; i <= frame_length; i++) {
+            mrf_rx_buf[rb_ptr++] = mrf_read_long(0x300 + i);
+        }
+        mrf_rx_info.frame_length = frame_length;
+        mrf_rx_info.lqi = mrf_read_long(0x300 + frame_length + 1);
+        mrf_rx_info.rssi = mrf_read_long(0x300 + frame_length + 2);
+
+        mrf_write_short(MRF_BBREG1, 0x00);  // RXDECINV - enable receiver
     }
     if (last_interrupt & MRF_I_TXNIF) {
         txok = 1;
+        uint8_t tmp = mrf_read_short(MRF_TXSTAT);
+        // 1 means it failed, we want 1 to mean it worked.
+        mrf_tx_info.tx_ok = !(tmp & ~(1 << TXNSTAT));
+        mrf_tx_info.retries = tmp >> 6;
+        mrf_tx_info.channel_busy = (tmp & (1 << CCAFAIL));
+    }
+}
+
+void handle_rx() {
+    print("Received a packet!\n\r");
+
+    phex(mrf_rx_info.frame_length);
+    print("\r\nPacket data:\r\n");
+    for (int i = 0; i <= mrf_rx_info.frame_length; i++) {
+        phex(mrf_rx_buf[i]);
+    }
+    print("\r\nLQI/RSSI=");
+    phex(mrf_rx_info.lqi);
+    phex(mrf_rx_info.rssi);
+}
+
+void handle_tx() {
+    print("tx went ok:");
+    if (mrf_tx_info.tx_ok) {
+        print("...And we got an ACK");
+    } else {
+        print("retried ");
+        phex(mrf_tx_info.retries);
+    }
+    print("\r\n");
+}
+
+// Call this often...
+// This will be a library function, that takes function pointers as parameters....
+void mrf_check_flags() {
+    if (gotrx) {
+        gotrx = 0;
+        handle_rx();
+    }
+    if (txok) {
+        txok = 0;
+        handle_tx();
     }
 }
 
@@ -88,45 +161,15 @@ int main(void) {
     mrf_address16_write(0x6001);
     //mrf_write_short(MRF_RXMCR, 0x01); // promiscuous!
     sei();
+    uint32_t roughness = 0;
     while (1) {
-        print ("txxxing...\r\n");
-        mrf_send16(0x4202, 4, "abcd");
-        _delay_ms(500);
-        if (txok) {
-            txok = 0;
-            print("tx went ok:");
-            tmp = mrf_read_short(MRF_TXSTAT);
-            phex(tmp);
-            if (!(tmp & ~(1<<TXNSTAT))) {  // 1 = failed
-                print("...And we got an ACK");
-            } else {
-                print("retried ");
-                phex(tmp >> 6);
-            }
-            print ("\r\n");
-        }
-        if (gotrx) {
-            gotrx = 0;
-            cli();
-            print("Received a packet!\n\r");
-            mrf_write_short(MRF_BBREG1, 0x04);  // RXDECINV - disable receiver
-
-            uint8_t frame_length = mrf_read_long(0x300);  // read start of rxfifo for
-            phex(frame_length);
-            print("\r\nPacket data:\r\n");
-            for (int i = 1; i <= frame_length; i++) {
-                tmp = mrf_read_long(0x300 + i);
-                phex(tmp);
-            }
-            print("\r\nLQI/RSSI=");
-            uint8_t lqi = mrf_read_long(0x300 + frame_length + 1);
-            uint8_t rssi = mrf_read_long(0x300 + frame_length + 2);
-            phex(lqi);
-            phex(rssi);
-
-            mrf_write_short(MRF_BBREG1, 0x00);  // RXDECINV - enable receiver
-            sei();
-
+        roughness++;
+        mrf_check_flags();
+        // about a second or so...
+        if (roughness > 0x00050000) {
+            print ("txxxing...\r\n");
+            mrf_send16(0x4202, 4, "abcd");
+            roughness = 0;
         }
     }
 }
