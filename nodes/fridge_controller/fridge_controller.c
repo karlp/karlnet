@@ -34,15 +34,17 @@ typedef struct _config {
     uint16_t interval_report;
     uint16_t rf_panid;
     uint16_t rf_ourid;
+    uint16_t rf_collector;
 } configt;
 
 configt config_eeprom EEMEM = {
-    .threshold_value = 300,
-    .min_off_time = 8,
-    .min_on_time = 8,
-    .interval_report = 1,
+    .threshold_value = 3,
+    .min_off_time = 150,  // about 5 minutes
+    .min_on_time = 150,  // about 5 minutes
+    .interval_report = 5,
     .rf_panid = 0xcafe,
-    .rf_ourid = 0x6002
+    .rf_ourid = 0x6002,
+    .rf_collector = 0x0001  // teensy receiver station
 };
 
 uint32_t flags;
@@ -76,8 +78,13 @@ uint16_t adc_read(void)
     return (ADCH << 8) | lsb;          // read the MSB and return 10 bit result
 }
 
-
-void SPI_MasterInit(void) {
+float convert_raw(uint16_t raw) {
+    //int32_t milliVolts = ((uint32_t) raw) / 1024 * 1100;
+    int32_t milliVolts = ((uint32_t) raw) * 1100;
+    milliVolts /= 1024;
+    float lessOffset = (float)(milliVolts - 750) / 10.0;
+    float tempC = 25 + lessOffset;
+    return tempC;
 }
 
 void init(configt *config) {
@@ -184,29 +191,36 @@ int main(void) {
     sei();
     while (1) {
 
-        // Read temp/pot
-        uint16_t currentValue = adc_read();
+        // Read temp
+        uint32_t currentValue = adc_read();
+        currentValue += adc_read();
+        currentValue += adc_read();
+        currentValue += adc_read();
+        currentValue /= 4;
+        float temp = convert_raw(currentValue);
 
         // TODO - insert code here to listen to the mrf and update our config!!
+/*
         if (gotrx) {
             handle_network_traffic(&config);
         }
+*/
 
         if (tick_reporting >= config.interval_report) {
             tick_reporting = 0;
             ksensor s1 = {TMP36_VREF11, currentValue};
             ksensor s2 = {KPS_RELAY_STATE, get_relay_state()};
-            ksensor s3 = {KPS_SENSOR_TEST, flags};
+            ksensor s3 = {KPS_SENSOR_TEST, temp * 100};
             packet.ksensors[0] = s1;
             packet.ksensors[1] = s2;
             packet.ksensors[2] = s3;
-            mrf_send16(0x4202, sizeof(kpacket2), &packet);
+            mrf_send16(config.rf_collector, sizeof(kpacket2), &packet);
         }
 
         // now, check the threshold.  If we're above (too hot),
         // we can turn the motor on, but only if it's off, and only if
         // it's been longer than min_off_time since it was last on...
-        if (currentValue > config.threshold_value) {
+        if (temp > config.threshold_value) {
             if (!get_relay_state()) {
                 if (tick_motor >= config.min_off_time) {
                     RELAY_ON;
@@ -219,7 +233,7 @@ int main(void) {
         // likewise, if we're too cold, (anywhere below)
         // we want to turn the motor off, but only if it's on already, and
         // only if it's been on longer than min_on_time
-        if (currentValue <= config.threshold_value) {
+        if (temp <= config.threshold_value) {
             if (get_relay_state()) {
                 if (tick_motor >= config.min_on_time) {
                     RELAY_OFF;
