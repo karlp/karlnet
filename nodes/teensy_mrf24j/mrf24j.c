@@ -19,21 +19,22 @@
 #define LED_OFF         (PORTD &= ~(1<<6))
 #define LED_CONFIG      (DDRD |= (1<<6))
 
-#define MRF_DDR DDRD
-#define MRF_PIN_RESET PIND1
-#define MRF_PIN_CS PIND2
-#define MRF_CONFIG  (MRF_DDR = (1<<MRF_PIN_RESET) | (1<<MRF_PIN_CS))
+#define MRF_DDR DDRB
+#define MRF_PORT PORTB
+#define MRF_PIN_RESET PINB4
+#define MRF_PIN_CS PINB0  // This is also /SS
+#define MRF_CONFIG  (MRF_DDR |= (1<<MRF_PIN_RESET) | (1<<MRF_PIN_CS))
 
 
-#define DDR_SPI     DDRB
-#define MISO        PINB3
-#define MOSI        PINB2
-#define SCLK        PINB1
-
-#define SPI_CONFIG  (DDR_SPI = (1<<MOSI) | (1<<SCLK) | (1<<PINB0))
+#define SPI_DDR     DDRB
+#define SPI_MISO        PINB3
+#define SPI_MOSI        PINB2
+#define SPI_SCLK        PINB1
 
 
 void SPI_MasterInit(void) {
+    // outputs, also for the /SS pin, to stop it from flicking to slave
+    SPI_DDR |= _BV(SPI_MOSI) | _BV(SPI_SCLK) | _BV(MRF_PIN_CS);
     /* Enable SPI, Master, set clock rate fck/4 */
     SPCR = (1 << SPE) | (1 << MSTR);
     // So, that's either 4Mhz, or 2Mhz, depending on whether Fosc is
@@ -46,7 +47,6 @@ void init(void) {
     clock_prescale_set(clock_div_2); // we run at 3.3v
     usb_init();
     MRF_CONFIG;
-    SPI_CONFIG;
     LED_CONFIG;
     SPI_MasterInit();
 
@@ -81,7 +81,7 @@ int main(void) {
 
     print("woke up...woo\n");
     uint8_t tmp;
-    mrf_reset(DDRD, MRF_PIN_RESET);
+    mrf_reset(&MRF_PORT, MRF_PIN_RESET);
 
     mrf_init();
 

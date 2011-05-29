@@ -15,14 +15,14 @@ extern "C" {
     // PUBLIC CONFIG
     // TODO: make these externable somehow, probably via inlining externed functions?
     
-#define BOARD_FRIDGE
-//#define BOARD_TEENSY_DEMO
+//#define BOARD_FRIDGE
+#define BOARD_TEENSY_DEMO
 #if defined (BOARD_FRIDGE)
 #define MRF_PORT (PORTB)
 #define MRF_PIN_CS      (PINB0)
 #elif defined (BOARD_TEENSY_DEMO)
-#define MRF_PORT  (PORTD)
-#define MRF_PIN_CS (PIND2)
+#define MRF_PORT  (PORTB)
+#define MRF_PIN_CS (PINB0)
 #endif
 
 

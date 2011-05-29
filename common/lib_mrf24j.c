@@ -33,8 +33,7 @@ uint8_t spi_tx(uint8_t cData) {
     /* Start transmission */
     SPDR = cData;
     /* Wait for transmission complete */
-    while (!(SPSR & (1 << SPIF)))
-        ;
+    loop_until_bit_is_set(SPSR, SPIF);
     return SPDR;
 #elif defined (USIDR)
     // AVR platforms with USI interfaces, capable of SPI
