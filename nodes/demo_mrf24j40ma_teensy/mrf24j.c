@@ -1,5 +1,6 @@
 // Karl Palsson, 2011
-// 
+// false.ekta.is
+// BSD/MIT Licensed.
 #include <stdio.h>
 #include <avr/io.h> 
 #include <avr/pgmspace.h>
