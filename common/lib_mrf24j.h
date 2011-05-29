@@ -178,6 +178,8 @@ void mrf_write_long(uint16_t address, uint8_t data);
 uint16_t mrf_pan_read(void);
 void mrf_pan_write(uint16_t panid);
 
+void mrf_promiscuous(uint8_t enabled);
+
 void mrf_address16_write(uint16_t address16);
 uint16_t mrf_address16_read(void);
 

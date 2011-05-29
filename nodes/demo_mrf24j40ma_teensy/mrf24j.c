@@ -90,7 +90,7 @@ int main(void) {
 
     mrf_pan_write(0xcafe);
     mrf_address16_write(0x6001);
-    //mrf_write_short(MRF_RXMCR, 0x01); // promiscuous!
+    //mrf_promiscuous(1);
     sei();
     uint32_t roughness = 0;
     while (1) {

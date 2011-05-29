@@ -133,6 +133,15 @@ uint16_t mrf_address16_read(void) {
     return a16h << 8 | mrf_read_short(MRF_SADRL);
 }
 
+void mrf_promiscuous(uint8_t enabled) {
+    // TODO - a tad ugly, this should really do a read modify write
+    if (enabled) {
+        mrf_write_short(MRF_RXMCR, 0x01);
+    } else {
+        mrf_write_short(MRF_RXMCR, 0x00);
+    }
+}
+
 /**
  * Simple send 16, with acks, not much of anything.. assumes src16 and local pan only.
  * @param data
