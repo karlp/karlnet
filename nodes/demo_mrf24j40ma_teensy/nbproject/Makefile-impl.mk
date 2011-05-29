@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=teensy_mrf24j
+PROJECTNAME=demo_mrf24j40ma_teensy
 
 # Active Configuration
 DEFAULTCONF=Default

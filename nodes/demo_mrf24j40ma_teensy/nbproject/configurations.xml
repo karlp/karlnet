@@ -10,6 +10,8 @@
       <itemPath>../../common/uart.c</itemPath>
     </logicalFolder>
     <df name="teensy_mrf24j" root=".">
+      <df name=".dep">
+      </df>
       <in>mrf24j.c</in>
     </df>
     <logicalFolder name="ExternalFiles"

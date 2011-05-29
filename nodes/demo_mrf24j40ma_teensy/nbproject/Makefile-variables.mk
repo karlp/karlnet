@@ -12,5 +12,5 @@ CND_ARTIFACT_DIR_Default=
 CND_ARTIFACT_NAME_Default=
 CND_ARTIFACT_PATH_Default=
 CND_PACKAGE_DIR_Default=dist/Default/AVR-GNU-Linux-x86/package
-CND_PACKAGE_NAME_Default=teensymrf24j.tar
-CND_PACKAGE_PATH_Default=dist/Default/AVR-GNU-Linux-x86/package/teensymrf24j.tar
+CND_PACKAGE_NAME_Default=demomrf24j40mateensy.tar
+CND_PACKAGE_PATH_Default=dist/Default/AVR-GNU-Linux-x86/package/demomrf24j40mateensy.tar
