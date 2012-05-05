@@ -3,7 +3,7 @@
 # Listen to a serial port connected to a xbee/karlnet, and post all the data to stomp
 
 
-config = {'serialPort': "/dev/ttyACM0"}
+config = {'serialPort': "/dev/ftdi0"}
 import sys
 import time
 
@@ -34,7 +34,7 @@ if options.testmode:
     logging.basicConfig(level=logging.DEBUG,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 else:
-    stomp = Client(host='egri')
+    stomp = Client(host='localhost')
     logging.basicConfig(level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
         filename="/var/log/karlnet_serial.log")
