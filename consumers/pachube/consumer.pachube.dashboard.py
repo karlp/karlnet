@@ -20,7 +20,7 @@ import jsonpickle
 import httplib
 
 import pygame
-from stompy.simple import Client
+import mosquitto
 
 configFile = ConfigParser.ConfigParser()
 configFile.read(['config.default.ini', 'config.ini'])
@@ -33,7 +33,8 @@ config = {
     'dashboardFeed' : int(configFile.get('pachube', 'dashboardFeed'),0)
 }
 
-unblob = {}
+class Container():
+    unblob = {}
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s",
@@ -41,9 +42,10 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(nam
 )
 log = logging.getLogger("main")
 
-stomp = Client(host='egri')
 pygame.init()
 sound = pygame.mixer.Sound("phone_2.wav")
+
+qq = Container()
 
 def fetch_pachube(feedId):
     conn = httplib.HTTPConnection('www.pachube.com')
@@ -60,33 +62,15 @@ def get_knob(blob, tag):
         if node['tags'][0] == tag:
             return node['values'][0]['value']
     
-
-
-def runMain():
-    clientid = "karlnet_pachube@%s/%d" % (socket.gethostname(), os.getpid())
-    stomp.connect(clientid=clientid)
-    stomp.subscribe("/topic/karlnet.>")
-
-    last = 0
-    threshold = None
-    
-    playing = False
-    while True:
-        if (time.time() - last > 60):
-            log.info("Fetching current dashboard values from pachube, incase they've changed")
-            unblob = fetch_pachube(feedId=config['dashboardFeed'])
-            last = time.time()
-
-        message = stomp.get()
-        kp = jsonpickle.decode(message.body)
+def handle_mq_packet(obj, msg):
+        kp = jsonpickle.decode(msg.payload)
         if (kp['node'] == config['node']):
             realTemp = kp['sensors'][config['probe']]['value']
             log.info("Current temp on probe is %d", realTemp)
         else:
-            continue
+            return
 
-
-        threshold = get_knob(unblob, "set temp mash")
+        threshold = get_knob(obj.unblob, "set temp mash")
         if threshold is not None:
             setTemp = int(threshold)
             cooling = setTemp < 50
@@ -95,17 +79,17 @@ def runMain():
         # Assume cooling if the setTemp is under 50, assume heating if the set temp is over 50....
         if (cooling and realTemp < setTemp) or (heating and realTemp > setTemp):
             log.warn("ok, it's ready!")
-            alarm = get_knob(unblob, "mash temp alarm active")
+            alarm = get_knob(obj.unblob, "mash temp alarm active")
             log.debug("alarm = %s", alarm)
-            if int(alarm) > 0 and not playing :
+            if int(alarm) > 0 and not obj.playing :
                 log.info("Music is on!!!!!")
                 sound.play(loops=-1)
-                playing = True
-            elif int(alarm) == 0 and playing:
+                obj.playing = True
+            elif int(alarm) == 0 and obj.playing:
                 log.info("alarm off, and we're already playing")
                 sound.stop()
-                playing = False
-            elif playing:
+                obj.playing = False
+            elif obj.playing:
                 log.debug("No need to do anything, alarm is on, and we're already playing")
 
         else:
@@ -114,19 +98,37 @@ def runMain():
             else:
                 log.info("Turning music off.... we're above the threshold")
             sound.stop()
-            playing = False
+            obj.playing = False
+
+def runMain(blob):
+    clientid = "karlnet_pachube@%s/%d" % (socket.gethostname(), os.getpid())
+    mqttc = mosquitto.Mosquitto(clientid, obj=blob)
+    mqttc.connect("localhost")
+    mqttc.subscribe("karlnet/readings/#")
+    mqttc.on_message = handle_mq_packet
+
+    last = 0
+    threshold = None
+    
+    blob.playing = False
+    while True:
+        if (time.time() - last > 60):
+            log.info("Fetching current dashboard values from pachube, incase they've changed")
+            blob.unblob = fetch_pachube(feedId=config['dashboardFeed'])
+            last = time.time()
+
+        mqttc.loop()
+
 
 if __name__ == "__main__":
     try:
-        runMain()
+        runMain(qq)
     except KeyboardInterrupt:
         print "got a keyboard interrupt"
         log.info("QUIT - quitting due to keyboard interrupt")
-        stomp.disconnect()
         raise SystemExit
     except:
         log.exception("Something really bad!")
-        stomp.disconnect()
         raise
     finally:
         pygame.mixer.stop()
