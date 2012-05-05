@@ -18,6 +18,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print "got a keyboard interrupt"
         log.info("QUIT - quitting due to keyboard interrupt")
-        l.stomp.disconnect()
+        l.mqttc.disconnect()
         raise SystemExit
 

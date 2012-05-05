@@ -6,7 +6,7 @@
 import sys, os, socket, string
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 import sqlite3
-from stompy.simple import Client
+import mosquitto
 import jsonpickle
 import kpacket
 import logging
@@ -21,14 +21,14 @@ logging.getLogger("alexandria").addHandler(h)
 
 # Some shared config
 config = {
-    'library_file': '/home/karl/src/karlnet-git/consumers/alexandria/library.alexandria.sqlite3',
+    'library_file': '/home/karlp/src/karlnet-git/consumers/alexandria/library.alexandria.sqlite3',
     'create_sql' : """
         create table karlnet_sensor (sampleTime integer, node integer, sensorType integer, channel integer, sensorRaw
 real, sensorValue real)""",
     'create_index' : """
         create index idx_karlnet_sensor_sampleTime on karlnet_sensor(sampleTime);
         """,
-    'stomp_host' : 'egri'
+    'mq_host' : 'egri'
 }
 
 class Researcher:
@@ -121,35 +121,39 @@ If the database file is not found, or does not contain the appropriate tables an
                 self.log.debug("karlnet_sensor table didn't exist, creating it!")
                 self.cur.execute(config['create_sql'])
                 self.cur.execute(config['create_index'])
-        self.log.debug("library is valid, connecting to stomp")
+        self.log.debug("library is valid, connecting to mq")
 
         if host is None:
-            host = config['stomp_host']
-        self.stomp = Client(host=host)
-        self.log.info("Valid library and stomp is up, starting to write books!")
-
-    def save_books(self):
-        """
-Loop forever, saving readings into the database.  TODO: topic could be a config option?
-        """
+            host = config['mq_host']
+        # FIXME - get clientid here...
         clientid = "karlnet_alexandria@%s/%d" % (socket.gethostname(), os.getpid())
-        self.stomp.connect(clientid=clientid)
-        self.stomp.subscribe("/topic/karlnet.>")
-    
-        while True:
-            message = self.stomp.get()
-            kp = jsonpickle.decode(message.body)
+        self.mqttc = mosquitto.Mosquitto(clientid, obj=self)
+        self.log.info("Valid library and messaging is up, starting to write books!")
+
+    def on_message(self, obj, msg):
+            kp = jsonpickle.decode(msg.payload)
             self.log.info("saving into the library for: %s", kp)
 
             for i in range(len(kp.sensors)):
                 sensor = kp.sensors[i]
                 if sensor.type == ord('z'):
                     self.log.debug("Skipping archiving of sensor test value: %s", sensor)
-                    continue
+                    return
                 self.log.debug("saving to db for sensor %d: %s", i, sensor)
                 self.cur.execute('insert into karlnet_sensor (sampleTime, node, sensorType, channel, sensorRaw, sensorValue) values (?,?,?,?,?,?)', 
                     (kp.time_received, kp.node, sensor.type, i, sensor.rawValue, sensor.value))
                 self.conn.commit()
+
+    def save_books(self):
+        """
+Loop forever, saving readings into the database.  TODO: topic could be a config option?
+        """
+        self.mqttc.connect()
+        self.mqttc.subscribe("karlnet/readings/#")
+        self.mqttc.on_message = self.on_message
+
+        while True:
+            self.mqttc.loop()
 
 # Keeping this as it shows me how to do it, without looking it up again
 class TestResearcher(unittest.TestCase):
