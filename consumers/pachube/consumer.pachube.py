@@ -9,7 +9,7 @@ import sys, os, socket
 sys.path.append(os.path.join(sys.path[0], "../../common"))
 import kpacket
 from optparse import OptionParser
-from stompy.simple import Client
+import mosquitto
 import jsonpickle
 import httplib
 import time
@@ -50,7 +50,6 @@ else:
 
 log = logging.getLogger("main")
 
-stomp = Client(host='egri')
 
 def upload(node, running):
     """Average a set of data and upload to pachube. Assumes that a config exists for the node id."""
@@ -73,21 +72,15 @@ def upload(node, running):
         log.info("uploaded node:%#x: csv:: %s with response: %d - %s",
             node, csv, response.status, response.reason)
 
-
-def runMain():
-    clientid = "karlnet_pachube@%s/%d" % (socket.gethostname(), os.getpid())
-    stomp.connect(clientid=clientid)
-    stomp.subscribe("/topic/karlnet.>")
-
-    last = time.time()
+class Application:
     running = {}
-    
-    while True:
-        message = stomp.get()
-        kp = jsonpickle.decode(message.body)
+    last = time.time() 
+
+    def on_message(self, obj, msg):
+        kp = jsonpickle.decode(msg.payload)
 
         # first, average them up for a little while, so we don't massively over hit the api
-        nd = running.setdefault(kp.node, {})
+        nd = self.running.setdefault(kp.node, {})
         nd.setdefault('sensors', {})
         for i in range(len(kp.sensors)):
             nd['sensors'][i] = nd['sensors'].setdefault(i, 0) + kp.sensors[i].value
@@ -96,30 +89,41 @@ def runMain():
         nd['count'] = nd.setdefault('count', 0) + 1
         log.info("just finished averaging for: %s", kp)
 
-        if (time.time() - last > 60):
+        if (time.time() - self.last > 60):
             log.info("Sending the last minutes averages...")
 
-            for key in running:
+            for key in self.running:
                 if config.get(key) :
                     log.info("Averaging stats for node: %#x for upload to pachube", key)
-                    upload(key, running[key])
+                    upload(key, self.running[key])
                 else:
                     log.warn("No pachube config for node: %#x, perhaps you should make some?", key)
             
-            last = time.time()
-            running = {}
+            self.last = time.time()
+            self.running = {}
+
+
+
+    def runMain(self):
+        clientid = "karlnet_pachube@%s/%d" % (socket.gethostname(), os.getpid())
+        mqttc = mosquitto.Mosquitto(clientid, obj=self)
+        mqttc.connect("localhost")
+        mqttc.subscribe("karlnet/readings/#")
+        mqttc.on_message = self.on_message
+
+        while True:
+            mqttc.loop()
 
 
 if __name__ == "__main__":
     try:
-        runMain()
+        a = Application()
+        a.runMain()
     except KeyboardInterrupt:
         print "got a keyboard interrupt"
         log.info("QUIT - quitting due to keyboard interrupt")
-        stomp.disconnect()
         raise SystemExit
     except:
         log.exception("Something really bad!")
-        stomp.disconnect()
         raise
 
