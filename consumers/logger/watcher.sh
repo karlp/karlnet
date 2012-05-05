@@ -1,0 +1,3 @@
+#!/bin/sh
+# Using mqtt means nicer tools...
+mosquitto_sub -t "karlnet/readings/#" -d
