@@ -14,7 +14,7 @@ sys.path.append(os.path.join(sys.path[0], "../../common"))
 
 from xbee import xbee, xbee_receiver
 import kpacket
-from stompy.simple import Client
+import mosquitto
 import jsonpickle
 import logging
 import logging.config
@@ -22,7 +22,7 @@ import logging.handlers
 
 parser = OptionParser()
 parser.add_option("-t", "--test", dest="testmode", action="store_true",
-    help="Run in test mode (don't post any reports to stomp, log to console)",
+    help="Run in test mode (don't post any reports to message broker, log to console)",
     default=False)
 parser.add_option("-p", "--port", dest="port",
     help="Serial port to use [default: %default]", default=config['serialPort'])
@@ -30,11 +30,11 @@ parser.add_option("-p", "--port", dest="port",
 (options, args) = parser.parse_args()
 
 if options.testmode:
-    stomp = None
+    mqttc = None
     logging.basicConfig(level=logging.DEBUG,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 else:
-    stomp = Client(host='localhost')
+    mqttc = mosquitto.Mosquitto("serial port listener")
     logging.basicConfig(level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
         filename="/var/log/karlnet_serial.log")
@@ -46,8 +46,8 @@ def runMainLoop():
     port = None
     manualTimeout = 40
 
-    if stomp:
-        stomp.connect(clientid="serial port listener", username="karlnet", password="password")
+    if mqttc:
+        mqttc.connect("localhost")
 
     while(1):
         if time.time() - lastgoodtime > manualTimeout:
@@ -79,8 +79,9 @@ def runMainLoop():
         lastgoodtime = time.time()
         hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
         hp.time_received = time.time()
-        if stomp:
-            stomp.put(jsonpickle.encode(hp), destination="/topic/karlnet.%d" % hp.node)
+        if mqttc:
+            mqttc.publish("karlnet/readings/%d" % hp.node, jsonpickle.encode(hp))
+            #stomp.put(jsonpickle.encode(hp), destination="/topic/karlnet.%d" % hp.node)
         log.info(hp)
 
 
