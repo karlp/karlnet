@@ -48,9 +48,9 @@ sound = pygame.mixer.Sound("phone_2.wav")
 qq = Container()
 
 def fetch_pachube(feedId):
-    conn = httplib.HTTPConnection('www.pachube.com')
-    headers = {"X-PachubeApiKey" : config["apikey"]}
-    conn.request("GET", "/api/%d.json" % feedId, headers=headers)
+    conn = httplib.HTTPConnection('api.cosm.com')
+    headers = {"X-APIKey" : config["apikey"]}
+    conn.request("GET", "/v1/feeds/%d.json" % feedId, headers=headers)
     blob = conn.getresponse()
     if blob.status != httplib.OK:
         raise httplib.HTTPException("Couldn't read from pachube dashboard, did you set the API key?: %d %s" % (blob.status, blob.reason))
