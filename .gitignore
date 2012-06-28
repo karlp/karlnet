@@ -1,9 +1,13 @@
 *.o
 # avr compiled cruft
 *.ls[st]
+*.list
+*.d
 *.sym
+*.srec
 *.hex
 *.elf
+*.bin
 *.eep
 *.map
 .dep/
