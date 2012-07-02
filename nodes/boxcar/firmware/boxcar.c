@@ -16,6 +16,7 @@
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/systick.h>
+#include <libopencm3/stm32/timer.h>
 
 #include "syscfg.h"
 #include "nastylog.h"
@@ -102,6 +103,9 @@ void clock_setup(void) {
     // oh, and dma!
     rcc_peripheral_enable_clock(&RCC_AHBENR, RCC_AHBENR_DMA1EN);
     rcc_peripheral_enable_clock(&RCC_AHBENR, RCC_AHBENR_CRCEN);
+    
+    // and timers...
+    rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_TIM6EN);
 }
 
 /**
@@ -176,6 +180,77 @@ int _write(int file, char *ptr, int len) {
     return -1;
 }
 
+/**
+ * Ugly hack, just drag some pins up and down and try and record timings...
+ * @return 
+ */
+int read_dht(void) {
+    // drag the pins up and down, 
+    // then turn on EXTI, and have it just print out that it detected transitions.
+    // Then, we can turn on a timer to have the interrupt grab the times instead.
+    
+    gpio_set_mode(PORT_DHT, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT);
+    gpio_set(PORT_DHT, PIN_DHT);
+    delay_ms(250);
+    gpio_clear(PORT_DHT, PIN_DHT);
+    delay_ms(20);
+
+    gpio_set_mode(PORT_DHT, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, PIN_DHT);
+#if USE_INTERRUPTS
+     //Enable EXTI0 interrupt. 
+    nvic_enable_irq(NVIC_EXTI0_IRQ);
+    
+    exti_select_source(EXTI_DHT, PORT_DHT);
+    exti_set_trigger(EXTI_DHT, EXTI_TRIGGER_BOTH);
+    exti_enable_request(EXTI_DHT);
+#else
+    timer_reset(TIM6);
+    timer_set_prescaler(TIM6, 23);  // 24Mhz, freq is x + 1, so 1uS ticks...
+    timer_set_period(TIM6, 0xffff);  // max, we should use the overflow here to "timeout"
+    timer_enable_counter(TIM6);
+    
+    int state = 0;
+    int bitcount = 0;
+    int timings[40];
+    while (bitcount < 40) {
+        if (timer_get_counter(TIM6) > 0xbfff) {
+            DLOG("timeout...\n");
+            break;
+        }
+        int nowstate = gpio_get(PORT_DHT, PIN_DHT);
+        if (nowstate != state) {
+            timings[bitcount++] = timer_get_counter(TIM6);
+            //DLOG("pin changed at %d: s!=ns %x != %x\n", timer_get_counter(TIM6), state, nowstate);
+            //bitcount++;
+            state = nowstate;
+        }
+    }
+    int i = 0;
+    for (i =  0; i < bitcount; i++) {
+        DLOG("tim[%d] = %d\n", i, timings[i]);
+    }
+    
+#endif
+    
+    return 0;
+    
+}
+
+#if 0
+void exti0_isr(void) {
+    exti_reset_request(EXTI_DHT);
+    state.bitcount++;
+    if (gpio_get(PORT_DHT, PIN_DHT)) {
+        putchar('I');
+    } else {
+        putchar('i');
+    }
+    if (state.bitcount > 40) {
+        exti_disable_request(EXTI_DHT);
+        nvic_disable_irq(NVIC_EXTI0_IRQ);
+    }
+}
+#endif
 
 int main(void) {
     int c = 0;
@@ -194,6 +269,10 @@ int main(void) {
             DLOG("still alive: %c\n", c + '0');
             c = (c == 9) ? 0 : c + 1; /* Increment c. */
             state.last_blink_time = millis();
+        }
+        if (millis() - state.last_dht_time > 2500) {
+            state.last_dht_time = millis();
+            read_dht();
         }
     }
 

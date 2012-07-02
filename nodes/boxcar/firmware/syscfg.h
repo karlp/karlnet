@@ -22,10 +22,16 @@ extern "C" {
     // Discovery board LED is PC8 (blue led)
 #define PIN_STATUS_LED GPIO8
 #define PORT_STATUS_LED GPIOC
+#define PORT_DHT GPIOC
+#define PIN_DHT GPIO0
+#define EXTI_DHT EXTI0
+    
 
 
     struct state_t {
         unsigned long last_blink_time;
+        unsigned long last_dht_time;
+        int bitcount;
     };
 
 
