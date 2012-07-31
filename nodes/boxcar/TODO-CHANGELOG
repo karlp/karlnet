@@ -1,0 +1,19 @@
+TODO:
+* add silk/copper to mark pin 1 on SWD header
+* ? Bigger keepout for battery case drill holes
+* ? Different headphone jack parts, either SMD, or footprints that 
+  don't need tinned slots.
+* Drills for all 0.1" headers (mrf pins, swd and rht03) get drilled at 0.8mm
+  unplated.  This is too tight for regular headers.  Should be 1.0mm, to allow
+  for plating on real pcbs.
+* annular rings around vias and drills hits are a little tight, isolation a
+  little too much
+
+v3e:
+* Changed all through hole to SMT to make it easier to assemble when milled
+* Use vias rather than through hole.
+* smaller resistors for 3v3 feedback divider, should hopefully prevent
+  parasitics from fucking with the regulator
+* use SPI1 instead of SPI2, so this will also work on C4/C6 (Low Density) devices
+* Put the right decoupling caps in the right places (mostly)
+
