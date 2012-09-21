@@ -29,6 +29,7 @@ configFile.read(['config.default.ini', 'config.ini'])
 config = {
     'node' : int(configFile.get('karlnet', 'node'), 0),
     'probe' : int(configFile.get('karlnet', 'probe'), 0),
+    'mqtthost' : configFile.get('karlnet', 'mqtthost'),
     'apikey' : configFile.get('pachube', 'apikey'),
     'dashboardFeed' : int(configFile.get('pachube', 'dashboardFeed'),0)
 }
@@ -103,7 +104,7 @@ def handle_mq_packet(obj, msg):
 def runMain(blob):
     clientid = "karlnet_pachube@%s/%d" % (socket.gethostname(), os.getpid())
     mqttc = mosquitto.Mosquitto(clientid, obj=blob)
-    mqttc.connect("localhost")
+    mqttc.connect(config["mqtthost"])
     mqttc.subscribe("karlnet/readings/#")
     mqttc.on_message = handle_mq_packet
 
