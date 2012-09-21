@@ -1,0 +1,6 @@
+Still needing work:
+* actual code for testing whether probes are connected, and reading them
+* bringing in simrf code.
+* getting the RHT03/DHT11/DHT22 code working somewhere. (Needs a board with
+  actualllllly 3v3, unlike discovery boards)
+
