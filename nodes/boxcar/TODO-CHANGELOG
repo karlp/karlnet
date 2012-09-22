@@ -1,13 +1,17 @@
 TODO:
 * add silk/copper to mark pin 1 on SWD header
-* ? Bigger keepout for battery case drill holes
 * ? Different headphone jack parts, either SMD, or footprints that 
   don't need tinned slots.
-* Drills for all 0.1" headers (mrf pins, swd and rht03) get drilled at 0.8mm
+* Add header for a console uart...?
+* Drills for all 0.1" headers (mrf pins, swd) get drilled at 0.8mm
   unplated.  This is too tight for regular headers.  Should be 1.0mm, to allow
-  for plating on real pcbs.
+  for plating on real pcbs. (RHT03 is fine, it has super thin legs...
 * annular rings around vias and drills hits are a little tight, isolation a
   little too much
+* maybe reverse rht so it can lay down between plug jacks?
+
+v3f:
+* Bigger keepout for battery case drill holes
 
 v3e:
 * Changed all through hole to SMT to make it easier to assemble when milled
