@@ -10,8 +10,6 @@
 #include <libopencm3/stm32/f1/flash.h>
 #include <libopencm3/stm32/f1/gpio.h>
 #include <libopencm3/stm32/f1/dma.h>
-#include <libopencm3/stm32/f1/desig.h>
-#include <libopencm3/stm32/crc.h>
 #include <libopencm3/stm32/nvic.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/usart.h>
@@ -29,103 +27,24 @@
 
 static struct state_t state;
 
-/**
- * To go back to libopencm3 for later...
- * This makes it "like" the 32vl discovery board, but without HSE fitted
- */
-#if libopencm3_does_not_have_karls_patches_yet
-void rcc_clock_setup_in_hsi_out_24mhz(void) {
-    /* Enable internal high-speed oscillator. */
-    rcc_osc_on(HSI);
-    rcc_wait_for_osc_ready(HSI);
-
-    /* Select HSI as SYSCLK source. */
-    rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_HSICLK);
-
-    /*
-     * Set prescalers for AHB, ADC, ABP1, ABP2.
-     * Do this before touching the PLL (TODO: why?).
-     */
-    rcc_set_hpre(RCC_CFGR_HPRE_SYSCLK_NODIV); /* Set. 24MHz Max. 24MHz */
-    rcc_set_adcpre(RCC_CFGR_ADCPRE_PCLK2_DIV2); /* Set.  12MHz Max. 12MHz */
-    rcc_set_ppre1(RCC_CFGR_PPRE1_HCLK_NODIV); /* Set. 24MHz Max. 24MHz */
-    rcc_set_ppre2(RCC_CFGR_PPRE2_HCLK_NODIV); /* Set. 24MHz Max. 24MHz */
-
-    /*
-     * Sysclk is (will be) running with 24MHz -> 2 waitstates.
-     * 0WS from 0-24MHz
-     * 1WS from 24-48MHz
-     * 2WS from 48-72MHz
-     */
-    flash_set_ws(FLASH_LATENCY_0WS);
-
-    /*
-     * Set the PLL multiplication factor to 6.
-     * 8MHz (internal) * 6 (multiplier) / 2 (PLLSRC_HSI_CLK_DIV2) = 24MHz
-     */
-    rcc_set_pll_multiplication_factor(RCC_CFGR_PLLMUL_PLL_CLK_MUL6);
-
-    /* Select HSI/2 as PLL source. */
-    rcc_set_pll_source(RCC_CFGR_PLLSRC_HSI_CLK_DIV2);
-
-    /* Enable PLL oscillator and wait for it to stabilize. */
-    rcc_osc_on(PLL);
-    rcc_wait_for_osc_ready(PLL);
-
-    /* Select PLL as SYSCLK source. */
-    rcc_set_sysclk_source(RCC_CFGR_SW_SYSCLKSEL_PLLCLK);
-
-    /* Set the peripheral clock frequencies used */
-    rcc_ppre1_frequency = 24000000;
-    rcc_ppre2_frequency = 24000000;
-}
-#endif
 
 void clock_setup(void) {
-    //rcc_clock_setup_in_hse_8mhz_out_24mhz();
     rcc_clock_setup_in_hsi_out_24mhz();
-
-    // oh, but because we want 300 baud for usart3 (kamstrup), 
-    // 24mhz on apb1 is too fast,
-    rcc_set_ppre1(RCC_CFGR_PPRE1_HCLK_DIV2);
-    rcc_ppre1_frequency = 12000000; // Used internally by libopencm3
-
-    /* uart1 and 2 pins are port A, also status LED */
+    /* Lots of things on all ports... */
     rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPAEN);
-    /* usart 3 pins are on port B*/
     rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPBEN);
-    //  Leds on port c
     rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPCEN);
-    // all uarts please :)
-    rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_USART1EN);
+
     rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_USART2EN);
-    rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_USART3EN);
     // oh, and dma!
     rcc_peripheral_enable_clock(&RCC_AHBENR, RCC_AHBENR_DMA1EN);
-    rcc_peripheral_enable_clock(&RCC_AHBENR, RCC_AHBENR_CRCEN);
-    
     // and timers...
     rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_TIM6EN);
 }
 
-/**
- * We want all usarts, so just blindly configure all the _pins_ here.
- * We can set up bauds and parity elsewhere with logical names
- */
 void usart_enable_all_pins(void) {
-    /* Setup GPIO pin GPIO_USART1_TX/GPIO9 on GPIO port A for transmit. */
-    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-            GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
-    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART1_RX);
-
-    /* Setup GPIO pin GPIO_USART_MODBUS_TX/GPIO2 on GPIO port A for transmit. */
-    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-            GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART2_TX);
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART2_TX);
     gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART2_RX);
-
-    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
-            GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART3_TX);
-    gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART3_RX);
 }
 
 void usart_console_setup(void) {
@@ -140,7 +59,8 @@ void usart_console_setup(void) {
 
 
 void gpio_setup(void) {
-    gpio_set_mode(PORT_STATUS_LED, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_STATUS_LED);
+    // FIXME - we aren't using this yet...
+    //gpio_set_mode(PORT_STATUS_LED, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_STATUS_LED);
 }
 
 
@@ -180,6 +100,16 @@ int _write(int file, char *ptr, int len) {
     return -1;
 }
 
+void dht_power(bool enable) {
+    gpio_set_mode(PORT_DHT_POWER, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT_POWER);
+    if (enable) {
+        gpio_set(PORT_DHT_POWER, PIN_DHT_POWER);
+        delay_ms(50);        
+    } else {
+        gpio_clear(PORT_DHT_POWER, PIN_DHT_POWER);
+    }
+}
+
 /**
  * Ugly hack, just drag some pins up and down and try and record timings...
  * @return 
@@ -189,6 +119,9 @@ int read_dht(void) {
     // then turn on EXTI, and have it just print out that it detected transitions.
     // Then, we can turn on a timer to have the interrupt grab the times instead.
     
+    dht_power(true);
+    
+    // This is for the IO pin...
     gpio_set_mode(PORT_DHT, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT);
     gpio_set(PORT_DHT, PIN_DHT);
     delay_ms(250);
@@ -232,6 +165,7 @@ int read_dht(void) {
     
 #endif
     
+    dht_power(false);
     return 0;
     
 }
@@ -265,7 +199,6 @@ int main(void) {
 
     while (1) {
         if (millis() - state.last_blink_time > 1000) {
-            gpio_toggle(PORT_STATUS_LED, PIN_STATUS_LED); /* LED on/off */
             DLOG("still alive: %c\n", c + '0');
             c = (c == 9) ? 0 : c + 1; /* Increment c. */
             state.last_blink_time = millis();
