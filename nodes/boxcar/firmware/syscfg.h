@@ -25,11 +25,11 @@ extern "C" {
 #define PORT_STATUS_LED GPIOC
 
 #define DHT_POWER
-#define PORT_DHT GPIOC
+#define PORT_DHT GPIOB
 #define PORT_DHT_POWER GPIOA
-#define PIN_DHT GPIO0
+#define PIN_DHT GPIO6
 #define PIN_DHT_POWER GPIO10
-#define EXTI_DHT EXTI0
+#define EXTI_DHT EXTI6
     
 
 

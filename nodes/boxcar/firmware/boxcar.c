@@ -59,6 +59,8 @@ void usart_console_setup(void) {
 
 
 void gpio_setup(void) {
+    gpio_set_mode(PORT_DHT_POWER, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT_POWER);
+
     // FIXME - we aren't using this yet...
     //gpio_set_mode(PORT_STATUS_LED, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_STATUS_LED);
 }
@@ -101,10 +103,8 @@ int _write(int file, char *ptr, int len) {
 }
 
 void dht_power(bool enable) {
-    gpio_set_mode(PORT_DHT_POWER, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT_POWER);
     if (enable) {
         gpio_set(PORT_DHT_POWER, PIN_DHT_POWER);
-        delay_ms(50);        
     } else {
         gpio_clear(PORT_DHT_POWER, PIN_DHT_POWER);
     }
