@@ -124,8 +124,12 @@ int read_dht(void) {
     gpio_set_mode(PORT_DHT, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT);
     gpio_set(PORT_DHT, PIN_DHT);
     delay_ms(250);
+
+    
     gpio_clear(PORT_DHT, PIN_DHT);
     delay_ms(20);
+    gpio_set(PORT_DHT, PIN_DHT);
+    // want to wait for 40us here, but we're ok with letting some code delay us..
 
     gpio_set_mode(PORT_DHT, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, PIN_DHT);
 #if USE_INTERRUPTS
@@ -145,15 +149,13 @@ int read_dht(void) {
     int bitcount = 0;
     int timings[40];
     while (bitcount < 40) {
-        if (timer_get_counter(TIM6) > 0xbfff) {
+        if (timer_get_counter(TIM6) > 0xdfff) {
             DLOG("timeout...\n");
             break;
         }
         int nowstate = gpio_get(PORT_DHT, PIN_DHT);
         if (nowstate != state) {
             timings[bitcount++] = timer_get_counter(TIM6);
-            //DLOG("pin changed at %d: s!=ns %x != %x\n", timer_get_counter(TIM6), state, nowstate);
-            //bitcount++;
             state = nowstate;
         }
     }
