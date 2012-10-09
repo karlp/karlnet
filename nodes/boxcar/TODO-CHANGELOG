@@ -6,6 +6,10 @@ TODO:
 * annular rings around vias and drills hits are a little tight, isolation a
   little too much
 * different inductor footprint?
+* test points for V+, (gnd is all the general plane, no need)
+* test point for rht_pwr
+* extra holes for providing power from pins, not just from soldered battery leads.
+(Look for a battery case that has pins for mounting?)
 
 v3f:
 * Bigger keepout for battery case drill holes
@@ -13,7 +17,7 @@ v3f:
 * Drills for all 0.1" headers (mrf pins, swd) get drilled at 0.8mm
   unplated.  This is too tight for regular headers.  Should be 1.0mm, to allow
   for plating on real pcbs. (RHT03 is fine, it has super thin legs...
-* maybe reverse rht so it can lay down between plug jacks?
+* reverse rht so it can lay down between plug jacks?
 
 v3e:
 * Changed all through hole to SMT to make it easier to assemble when milled
