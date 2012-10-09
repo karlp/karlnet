@@ -18,6 +18,7 @@ extern "C" {
 
 
 #define USART_CONSOLE USART2
+#define USE_NASTYLOG 1
 
     // Discovery board LED is PC8 (blue led)
 #define PIN_STATUS_LED GPIO8

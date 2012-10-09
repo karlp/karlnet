@@ -8,57 +8,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include "syscfg.h"
 #include "nastylog.h"
 
 // Using fiprintf instead of fprintf will make this somewhat smaller
 
-static int nastylog_stderr(int level, const char *tag, const char *format, va_list args) {
-    switch (level) {
-#if (NASTYLOG_LEVEL >= UDEBUG)
-    case UDEBUG:
-        fprintf(stderr, "DEBUG %s: ", tag);
-        vfprintf(stderr, format, args);
-        break;
-#endif
-#if (NASTYLOG_LEVEL >= UINFO)
-    case UINFO:
-        fprintf(stderr, "INFO %s: ", tag);
-        vfprintf(stderr, format, args);
-        break;
-#endif
-#if (NASTYLOG_LEVEL >= UWARN)
-    case UWARN:
-        fprintf(stderr, "WARN %s: ", tag);
-        vfprintf(stderr, format, args);
-        break;
-#endif
-#if (NASTYLOG_LEVEL >= UERROR)
-    case UERROR:
-        fprintf(stderr, "ERROR %s: ", tag);
-        vfprintf(stderr, format, args);
-        break;
-#endif
-#if (NASTYLOG_LEVEL >= UFATAL)
-    case UFATAL:
-        fprintf(stderr, "FATAL %s: ", tag);
-        vfprintf(stderr, format, args);
-        exit(EXIT_FAILURE);
-        // NEVER GETS HERE!!!
-        break;
-#endif
-    default:
-        break;
-    }
-    return 1;
+#if (USE_NASTYLOG == 1)
+static int nastylog_stderr(const char *tag, const char *format, va_list args) {
+    fiprintf(stderr, "%s: ", tag);
+    vfiprintf(stderr, format, args);
+    return 0;
 }
+#endif
 
 
-int nastylog(int level, const char *tag, const char *format, ...) {
-#if defined USE_NASTYLOG
+int nastylog(const char *tag, const char *format, ...) {
+#if (USE_NASTYLOG == 1)
     va_list args;
     va_start(args, format);
-    nastylog_stderr(level, tag, format, args);
+    nastylog_stderr(tag, format, args);
     va_end(args);
+#else
+    (void)tag;
+    (void)format;
 #endif
     return 0;
 }

@@ -21,9 +21,9 @@
 #include "ms_systick.h"
 
 #define LOG_TAG __FILE__
-#define DLOG(format, args...)         nastylog(UDEBUG, LOG_TAG, format, ## args)
-#define ILOG(format, args...)         nastylog(UINFO, LOG_TAG, format, ## args)
-#define WLOG(format, args...)         nastylog(UWARN, LOG_TAG, format, ## args)
+#define DLOG(format, args...)         nastylog(LOG_TAG ":DEBUG", format, ## args)
+#define ILOG(format, args...)         nastylog(LOG_TAG ":INFO", format, ## args)
+#define WLOG(format, args...)         nastylog(LOG_TAG ":WARN", format, ## args)
 
 static struct state_t state;
 
@@ -119,7 +119,6 @@ int read_dht(void) {
     // then turn on EXTI, and have it just print out that it detected transitions.
     // Then, we can turn on a timer to have the interrupt grab the times instead.
     
-    dht_power(true);
     
     // This is for the IO pin...
     gpio_set_mode(PORT_DHT, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT);
@@ -165,7 +164,6 @@ int read_dht(void) {
     
 #endif
     
-    dht_power(false);
     return 0;
     
 }
@@ -196,6 +194,7 @@ int main(void) {
     systick_setup();
     usart_enable_all_pins();
     usart_console_setup();
+    dht_power(true);
 
     while (1) {
         if (millis() - state.last_blink_time > 1000) {

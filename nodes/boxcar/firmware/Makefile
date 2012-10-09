@@ -6,11 +6,11 @@ V?=1
 # We use texane/stlink for flashing (via tcp)
 STLINK_PORT?=:4242
 BINARY=boxcar
-OBJS+=ms_systick.o nastylog.o bser.o
+OBJS+=ms_systick.o nastylog.o
 
 # When finalised, this will be the real board, not discovery
-#LDSCRIPT = stm32f100x8.ld
-LDSCRIPT = stm32f100xb.ld  # VL-Discovery
+LDSCRIPT = stm32f100x8.ld
+#LDSCRIPT = stm32f100xb.ld  # VL-Discovery
 #CFLAGS+=-I../../shared
 
 #CFLAGS+=-I../libs
