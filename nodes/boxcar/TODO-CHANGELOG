@@ -1,17 +1,21 @@
 TODO:
-* add silk/copper to mark pin 1 on SWD header
-* ? Different headphone jack parts, either SMD, or footprints that 
-  don't need tinned slots.
-* Add jumper for current measurement
+* different inductor footprint?
+  Get footprint of parts from work (was it 1206?) and use that.
+* triple check pinouts of new headphone jack sockets.
 * annular rings around vias and drills hits are a little tight, isolation a
   little too much
-* different inductor footprint?
-* test points for V+, (gnd is all the general plane, no need)
-* test point for rht_pwr
 * extra holes for providing power from pins, not just from soldered battery leads.
 (Look for a battery case that has pins for mounting?)
 
+v4a:
+* WONTFIX: Add jumper for current measurement (just use the battery connector)
+* regular headphone jacks.  No more oversized holes for slots, but way more space.
+* rereversed rht
+* test points for V+, (gnd is all the general plane, no need)
+* test point for rht_pwr
+
 v3f:
+* add silk/copper to mark pin 1 on SWD header
 * Bigger keepout for battery case drill holes
 * Add header for a console uart...?
 * Drills for all 0.1" headers (mrf pins, swd) get drilled at 0.8mm
