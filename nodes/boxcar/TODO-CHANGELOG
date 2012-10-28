@@ -1,15 +1,14 @@
 TODO:
-* different inductor footprint?
-  Get footprint of parts from work (was it 1206?) and use that.
-* triple check pinouts of new headphone jack sockets.
 * annular rings around vias and drills hits are a little tight, isolation a
   little too much
 * extra holes for providing power from pins, not just from soldered battery leads.
 (Look for a battery case that has pins for mounting?)
 
 v4a:
+* different inductor footprint? (using 0805, taiyo yuden part BRC2012T4R7MD)
 * WONTFIX: Add jumper for current measurement (just use the battery connector)
 * regular headphone jacks.  No more oversized holes for slots, but way more space.
+* triple check pinouts of new headphone jack sockets.
 * rereversed rht
 * test points for V+, (gnd is all the general plane, no need)
 * test point for rht_pwr
