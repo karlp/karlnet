@@ -8,6 +8,8 @@ TODO:
 (Look for a battery case that has pins for mounting?)
 
 v4b:
+* move debug led to a differnt port, to avoid PC13,14,15 current limitations
+  (also less crowded)
 * drillsize for STLINK is too tight for regular headers.
 * footprint for headphone jack works, but has extra holes on the plug end
   that are unneeded, and silk is wrong for outline. (so not enough space for
