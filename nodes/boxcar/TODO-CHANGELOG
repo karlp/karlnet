@@ -1,10 +1,4 @@
 TODO:
-* footprint for headphone jack works, but has extra holes on the plug end
-  that are unneeded, and silk is wrong for outline. (so not enough space for
-  humidity sensor to fit in neatly)
-* jack: No need for two different sized drills either, one drill size is fine,
-  same as "green" drills.
-* drillsize for STLINK is too tight for regular headers.
 * annular rings around vias and drills hits are a little tight, isolation a
   little too much (only matters on milled board)
 * extra holes for providing power from pins, not just from soldered battery
@@ -12,6 +6,15 @@ TODO:
   1.3mm drills? maybe 1.5me?
 
 (Look for a battery case that has pins for mounting?)
+
+v4b:
+* drillsize for STLINK is too tight for regular headers.
+* footprint for headphone jack works, but has extra holes on the plug end
+  that are unneeded, and silk is wrong for outline. (so not enough space for
+  humidity sensor to fit in neatly)
+* jack: No need for two different sized drills either, one drill size is fine,
+  same as "green" drills.
+
 
 v4a:
 * different inductor footprint? (using 0805, taiyo yuden part BRC2012T4R7MD)
