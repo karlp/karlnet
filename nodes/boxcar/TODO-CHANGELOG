@@ -16,6 +16,10 @@ v4b:
   humidity sensor to fit in neatly)
 * jack: No need for two different sized drills either, one drill size is fine,
   same as "green" drills.
+* add tip/ring/sleeve descriptions in silk
+* add Idd measurement pins
+* move the VBat (F1) trace outside the package so it can be cut for L1 usage
+  (where Vbat is Vlcd)
 
 
 v4a:
