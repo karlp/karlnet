@@ -4,6 +4,9 @@ TODO:
 * extra holes for providing power from pins, not just from soldered battery
   leads. (OR: two extra holes, also used for strain relief on leads? needs >
   1.3mm drills? maybe 1.5me?
+* Silk descriptions for t/r/s are too small
+* silk desginators for caps are too small (just a bit too small, but too small nonetheless)
+* With the status led I stole from work, 1K is far far too bright! try 10k maybe.
 
 (Look for a battery case that has pins for mounting?)
 
