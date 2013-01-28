@@ -4,7 +4,7 @@
 # Verbose by default please.
 V?=1
 BINARY=boxcar
-OBJS+=ms_systick.o nastylog.o
+OBJS+=ms_systick.o
 
 # When finalised, this will be the real board, not discovery
 LDSCRIPT = stm32f100x8.ld

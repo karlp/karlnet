@@ -17,13 +17,7 @@
 #include <libopencm3/stm32/timer.h>
 
 #include "syscfg.h"
-#include "nastylog.h"
 #include "ms_systick.h"
-
-#define LOG_TAG __FILE__
-#define DLOG(format, args...)         nastylog(LOG_TAG ":DEBUG", format, ## args)
-#define ILOG(format, args...)         nastylog(LOG_TAG ":INFO", format, ## args)
-#define WLOG(format, args...)         nastylog(LOG_TAG ":WARN", format, ## args)
 
 static struct state_t state;
 
@@ -150,7 +144,7 @@ int read_dht(void) {
     int timings[40];
     while (bitcount < 40) {
         if (timer_get_counter(TIM6) > 0xdfff) {
-            DLOG("timeout...\n");
+            printf("timeout...\n");
             break;
         }
         int nowstate = gpio_get(PORT_DHT_IO, PIN_DHT_IO);
@@ -161,7 +155,7 @@ int read_dht(void) {
     }
     int i = 0;
     for (i =  0; i < bitcount; i++) {
-        DLOG("tim[%d] = %d\n", i, timings[i]);
+        printf("tim[%d] = %d\n", i, timings[i]);
     }
     
 #endif
@@ -200,7 +194,7 @@ int main(void) {
 
     while (1) {
         if (millis() - state.last_blink_time > 1000) {
-            DLOG("still alive: %c\n", c + '0');
+            printf("still alive: %c\n", c + '0');
             c = (c == 9) ? 0 : c + 1; /* Increment c. */
             state.last_blink_time = millis();
         }
