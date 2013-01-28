@@ -6,14 +6,14 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/cm3/systick.h>
 #include <libopencm3/stm32/f1/rcc.h>
 #include <libopencm3/stm32/f1/flash.h>
-#include <libopencm3/stm32/f1/gpio.h>
 #include <libopencm3/stm32/f1/dma.h>
-#include <libopencm3/stm32/nvic.h>
+#include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/usart.h>
-#include <libopencm3/stm32/systick.h>
 #include <libopencm3/stm32/timer.h>
 
 #include "syscfg.h"
@@ -121,17 +121,17 @@ int read_dht(void) {
     
     
     // This is for the IO pin...
-    gpio_set_mode(PORT_DHT, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT);
-    gpio_set(PORT_DHT, PIN_DHT);
+    gpio_set_mode(PORT_DHT_IO, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT_IO);
+    gpio_set(PORT_DHT_IO, PIN_DHT_IO);
     delay_ms(250);
 
     
-    gpio_clear(PORT_DHT, PIN_DHT);
+    gpio_clear(PORT_DHT_IO, PIN_DHT_IO);
     delay_ms(20);
-    gpio_set(PORT_DHT, PIN_DHT);
+    gpio_set(PORT_DHT_IO, PIN_DHT_IO);
     // want to wait for 40us here, but we're ok with letting some code delay us..
 
-    gpio_set_mode(PORT_DHT, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, PIN_DHT);
+    gpio_set_mode(PORT_DHT_IO, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, PIN_DHT_IO);
 #if USE_INTERRUPTS
      //Enable EXTI0 interrupt. 
     nvic_enable_irq(NVIC_EXTI0_IRQ);
@@ -153,7 +153,7 @@ int read_dht(void) {
             DLOG("timeout...\n");
             break;
         }
-        int nowstate = gpio_get(PORT_DHT, PIN_DHT);
+        int nowstate = gpio_get(PORT_DHT_IO, PIN_DHT_IO);
         if (nowstate != state) {
             timings[bitcount++] = timer_get_counter(TIM6);
             state = nowstate;
@@ -174,7 +174,7 @@ int read_dht(void) {
 void exti0_isr(void) {
     exti_reset_request(EXTI_DHT);
     state.bitcount++;
-    if (gpio_get(PORT_DHT, PIN_DHT)) {
+    if (gpio_get(PORT_DHT, PIN_DHT_IO)) {
         putchar('I');
     } else {
         putchar('i');

@@ -11,8 +11,8 @@
 extern "C" {
 #endif
 
-#include <libopencm3/stm32/f1/gpio.h>
-#include <libopencm3/stm32/nvic.h>
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/usart.h>
 
@@ -21,14 +21,13 @@ extern "C" {
 #define USE_NASTYLOG 1
 
     // Discovery board LED is PC8 (blue led)
-#define PIN_STATUS_LED GPIO8
-#define PORT_STATUS_LED GPIOC
+#define PIN_STATUS_LED GPIO14
+#define PORT_STATUS_LED GPIOB
 
-#define DHT_POWER
-#define PORT_DHT GPIOB
 #define PORT_DHT_POWER GPIOA
-#define PIN_DHT GPIO6
 #define PIN_DHT_POWER GPIO10
+#define PORT_DHT_IO GPIOB
+#define PIN_DHT_IO GPIO6
 #define EXTI_DHT EXTI6
     
 

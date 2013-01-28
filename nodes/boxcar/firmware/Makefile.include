@@ -24,19 +24,26 @@ CC		= $(PREFIX)-gcc
 LD		= $(PREFIX)-gcc
 OBJCOPY		= $(PREFIX)-objcopy
 OBJDUMP		= $(PREFIX)-objdump
+SIZE		= $(PREFIX)-size
 GDB		= $(PREFIX)-gdb
-# If you are copying this file to use in your own project,
-# You will need to change this... (Leave unset to assume installed
-# in the toolchain itself)
-#OPENCM3_DIR    ?= /opt/libopencm3/$(PREFIX)
-#OPENCM3_DIR     ?= ../../../../..
-#OPENCM3_DIR     ?= /home/karlp/src/libopencm3
 
-ARCH_FLAGS      = -mcpu=cortex-m3 -mthumb -msoft-float
-CFLAGS		+= -g -Os -Wall -Wextra \
+TOOLCHAIN_DIR ?= ../../../../..
+ifeq ($(wildcard ../../../../../lib/libopencm3_stm32f1.a),)
+ifneq ($(strip $(shell which $(CC))),)
+TOOLCHAIN_DIR := $(shell dirname `which $(CC)`)/../$(PREFIX)
+endif
+else
+ifeq ($(V),1)
+$(info We seem to be building the example in the source directory. Using local library!)
+endif
+endif
+
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m3 -msoft-float
+CFLAGS		+= -Os -g -Wall -Wextra -I$(TOOLCHAIN_DIR)/include \
 		   -fno-common $(ARCH_FLAGS) -MD -DSTM32F1
 LDSCRIPT	?= $(BINARY).ld
-LDFLAGS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group \
+LDFLAGS		+= --static -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group \
+		   -L$(TOOLCHAIN_DIR)/lib \
 		   -T$(LDSCRIPT) -nostartfiles -Wl,--gc-sections \
 		   $(ARCH_FLAGS) -mfix-cortex-m3-ldrd
 
@@ -65,7 +72,7 @@ ifneq ($(V),1)
 Q := @
 NULL := 2>/dev/null
 else
-#LDFLAGS += -Wl,--print-gc-sections
+# shush! LDFLAGS += -Wl,--print-gc-sections
 endif
 
 .SUFFIXES: .elf .bin .hex .srec .list .images
@@ -96,13 +103,11 @@ flash: $(BINARY).flash
 	@#printf "  OBJDUMP $(*).list\n"
 	$(Q)$(OBJDUMP) -S $(*).elf > $(*).list
 
-ifeq ($(OPENCM3_DIR),)
+#%.elf: $(OBJS) $(LDSCRIPT) $(TOOLCHAIN_DIR)/lib/libopencm3_stm32f1.a
 %.elf: $(OBJS) 
-else
-%.elf: $(OBJS) $(LDSCRIPT) $(OPENCM3_DIR)/lib/stm32/f1/libopencm3_stm32f1.a
-endif
 	@#printf "  LD      $(subst $(shell pwd)/,,$(@))\n"
 	$(Q)$(LD) -o $(*).elf $(OBJS) -lopencm3_stm32f1 $(LDFLAGS)
+	$(Q)$(SIZE) $(*).elf
 
 %.o: %.c Makefile
 	@#printf "  CC      $(subst $(shell pwd)/,,$(@))\n"
