@@ -20,23 +20,32 @@ extern "C" {
 #define USART_CONSOLE USART2
 #define USE_NASTYLOG 1
 
-    // Discovery board LED is PC8 (blue led)
+	// Discovery board LED is PC8 (blue led)
 #define PIN_STATUS_LED GPIO14
 #define PORT_STATUS_LED GPIOB
 
-#define PORT_DHT_POWER GPIOA
-#define PIN_DHT_POWER GPIO10
-#define PORT_DHT_IO GPIOB
-#define PIN_DHT_IO GPIO6
-#define EXTI_DHT EXTI6
-    
+#define PORT_RHT_POWER GPIOA
+#define PIN_RHT_POWER GPIO10
+#define PORT_RHT_IO GPIOB
+#define PIN_RHT_IO GPIO6
+#define RHT_EXTI EXTI6
+#define RHT_isr exti9_5_isr
+#define RHT_NVIC NVIC_EXTI9_5_IRQ
 
+#define RHT_INTER_BIT_TIMEOUT_USEC 500
+	// Falling edge-falling edge times less than this are 0, else 1
+#define RHT_LOW_HIGH_THRESHOLD 100
 
-    struct state_t {
-        unsigned long last_blink_time;
-        unsigned long last_dht_time;
-        int bitcount;
-    };
+	struct state_t {
+		int seconds;
+		int last_start;
+		unsigned long last_blink_time;
+		bool seen_startbit;
+		uint8_t rht_bytes[5];
+		bool rht_timeout;
+		int bitcount;
+		int milliticks;
+	};
 
 
 #ifdef	__cplusplus

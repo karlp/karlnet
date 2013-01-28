@@ -9,8 +9,6 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/stm32/f1/rcc.h>
-#include <libopencm3/stm32/f1/flash.h>
-#include <libopencm3/stm32/f1/dma.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/usart.h>
@@ -19,58 +17,70 @@
 #include "syscfg.h"
 #include "ms_systick.h"
 
-static struct state_t state;
-
-
-void clock_setup(void) {
-    rcc_clock_setup_in_hsi_out_24mhz();
-    /* Lots of things on all ports... */
-    rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPAEN);
-    rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPBEN);
-    rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPCEN);
-
-    rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_USART2EN);
-    // oh, and dma!
-    rcc_peripheral_enable_clock(&RCC_AHBENR, RCC_AHBENR_DMA1EN);
-    // and timers...
-    rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_TIM6EN);
+__attribute__((always_inline)) static inline void __WFI(void)
+{
+	__asm volatile ("wfi");
 }
 
-void usart_enable_all_pins(void) {
-    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART2_TX);
-    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART2_RX);
+struct state_t volatile state;
+
+void clock_setup(void)
+{
+	rcc_clock_setup_in_hsi_out_24mhz();
+	/* Lots of things on all ports... */
+	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPAEN);
+	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPBEN);
+	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPCEN);
+
+	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_USART2EN);
+	// oh, and dma!
+	rcc_peripheral_enable_clock(&RCC_AHBENR, RCC_AHBENR_DMA1EN);
+	// and timers...
+	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_TIM7EN);
+	/* Enable AFIO clock. */
+	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_AFIOEN);
 }
 
-void usart_console_setup(void) {
-    usart_set_baudrate(USART_CONSOLE, 115200);
-    usart_set_databits(USART_CONSOLE, 8);
-    usart_set_stopbits(USART_CONSOLE, USART_STOPBITS_1);
-    usart_set_mode(USART_CONSOLE, USART_MODE_TX);
-    usart_set_parity(USART_CONSOLE, USART_PARITY_NONE);
-    usart_set_flow_control(USART_CONSOLE, USART_FLOWCONTROL_NONE);
-    usart_enable(USART_CONSOLE);
+void usart_enable_all_pins(void)
+{
+
+	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART2_TX);
+	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART2_RX);
 }
 
+void usart_console_setup(void)
+{
 
-void gpio_setup(void) {
-    gpio_set_mode(PORT_DHT_POWER, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT_POWER);
-
-    // FIXME - we aren't using this yet...
-    //gpio_set_mode(PORT_STATUS_LED, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_STATUS_LED);
+	usart_set_baudrate(USART_CONSOLE, 115200);
+	usart_set_databits(USART_CONSOLE, 8);
+	usart_set_stopbits(USART_CONSOLE, USART_STOPBITS_1);
+	usart_set_mode(USART_CONSOLE, USART_MODE_TX);
+	usart_set_parity(USART_CONSOLE, USART_PARITY_NONE);
+	usart_set_flow_control(USART_CONSOLE, USART_FLOWCONTROL_NONE);
+	usart_enable(USART_CONSOLE);
 }
 
+void gpio_setup(void)
+{
+	gpio_set_mode(PORT_RHT_POWER, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_RHT_POWER);
 
-void systick_setup(void) {
-    /* 24MHz / 8 => 3000000 counts per second. */
-    systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB_DIV8);
+	// FIXME - we aren't using this yet...
+	gpio_set_mode(PORT_STATUS_LED, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_STATUS_LED);
+}
 
-    /* 3000000/3000 = 1000 overflows per second - every 1ms one interrupt */
-    systick_set_reload(3000);
+void systick_setup(void)
+{
 
-    systick_interrupt_enable();
+	/* 24MHz / 8 => 3000000 counts per second. */
+	systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB_DIV8);
 
-    /* Start counting. */
-    systick_counter_enable();
+	/* 3000000/3000 = 1000 overflows per second - every 1ms one interrupt */
+	systick_set_reload(3000);
+
+	systick_interrupt_enable();
+
+	/* Start counting. */
+	systick_counter_enable();
 }
 
 /**
@@ -80,129 +90,177 @@ void systick_setup(void) {
  * @param len
  * @return 
  */
-int _write(int file, char *ptr, int len) {
-    int i;
+int _write(int file, char *ptr, int len)
+{
+	int i;
 
-    if (file == STDOUT_FILENO || file == STDERR_FILENO) {
-        for (i = 0; i < len; i++) {
-            if (ptr[i] == '\n') {
-                usart_send_blocking(USART_CONSOLE, '\r');
-            }
-            usart_send_blocking(USART_CONSOLE, ptr[i]);
-        }
-        return i;
-    }
-    errno = EIO;
-    return -1;
+	if (file == STDOUT_FILENO || file == STDERR_FILENO) {
+		for (i = 0; i < len; i++) {
+			if (ptr[i] == '\n') {
+				usart_send_blocking(USART_CONSOLE, '\r');
+			}
+			usart_send_blocking(USART_CONSOLE, ptr[i]);
+		}
+		return i;
+	}
+	errno = EIO;
+
+	return -1;
 }
 
-void dht_power(bool enable) {
-    if (enable) {
-        gpio_set(PORT_DHT_POWER, PIN_DHT_POWER);
-    } else {
-        gpio_clear(PORT_DHT_POWER, PIN_DHT_POWER);
-    }
+void dht_power(bool enable)
+{
+	if (enable) {
+		gpio_set(PORT_RHT_POWER, PIN_RHT_POWER);
+	} else {
+		gpio_clear(PORT_RHT_POWER, PIN_RHT_POWER);
+	}
+}
+
+void stuff_bit(int bitnumber, int timing, volatile uint8_t * bytes)
+{
+	int byte_offset = bitnumber / 8;
+	int bit = 7 - (bitnumber % 8); // Stuff MSB first.
+	if (timing < RHT_LOW_HIGH_THRESHOLD) {
+		bytes[byte_offset] &= ~(1 << bit);
+	} else {
+
+		bytes[byte_offset] |= (1 << bit);
+	}
+}
+
+void RHT_isr(void)
+{
+	exti_reset_request(RHT_EXTI);
+	int cnt = TIM7_CNT;
+	TIM7_CNT = 0;
+	// Skip catching ourself pulsing the start line until the 150uS start.
+	if (!state.seen_startbit) {
+		if (cnt < RHT_LOW_HIGH_THRESHOLD) {
+			return;
+		} else {
+			state.seen_startbit = true;
+		}
+	}
+	if (state.bitcount > 0) { // but skip that start bit...
+
+		stuff_bit(state.bitcount - 1, cnt, state.rht_bytes);
+	}
+	state.bitcount++;
 }
 
 /**
- * Ugly hack, just drag some pins up and down and try and record timings...
- * @return 
+ * We set this timer to count uSecs.
+ * The interrupt is only to indicate that it timed out and to shut itself off.
  */
-int read_dht(void) {
-    // drag the pins up and down, 
-    // then turn on EXTI, and have it just print out that it detected transitions.
-    // Then, we can turn on a timer to have the interrupt grab the times instead.
-    
-    
-    // This is for the IO pin...
-    gpio_set_mode(PORT_DHT_IO, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_DHT_IO);
-    gpio_set(PORT_DHT_IO, PIN_DHT_IO);
-    delay_ms(250);
+void setup_tim7(void)
+{
 
-    
-    gpio_clear(PORT_DHT_IO, PIN_DHT_IO);
-    delay_ms(20);
-    gpio_set(PORT_DHT_IO, PIN_DHT_IO);
-    // want to wait for 40us here, but we're ok with letting some code delay us..
-
-    gpio_set_mode(PORT_DHT_IO, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, PIN_DHT_IO);
-#if USE_INTERRUPTS
-     //Enable EXTI0 interrupt. 
-    nvic_enable_irq(NVIC_EXTI0_IRQ);
-    
-    exti_select_source(EXTI_DHT, PORT_DHT);
-    exti_set_trigger(EXTI_DHT, EXTI_TRIGGER_BOTH);
-    exti_enable_request(EXTI_DHT);
-#else
-    timer_reset(TIM6);
-    timer_set_prescaler(TIM6, 23);  // 24Mhz, freq is x + 1, so 1uS ticks...
-    timer_set_period(TIM6, 0xffff);  // max, we should use the overflow here to "timeout"
-    timer_enable_counter(TIM6);
-    
-    int state = 0;
-    int bitcount = 0;
-    int timings[40];
-    while (bitcount < 40) {
-        if (timer_get_counter(TIM6) > 0xdfff) {
-            printf("timeout...\n");
-            break;
-        }
-        int nowstate = gpio_get(PORT_DHT_IO, PIN_DHT_IO);
-        if (nowstate != state) {
-            timings[bitcount++] = timer_get_counter(TIM6);
-            state = nowstate;
-        }
-    }
-    int i = 0;
-    for (i =  0; i < bitcount; i++) {
-        printf("tim[%d] = %d\n", i, timings[i]);
-    }
-    
-#endif
-    
-    return 0;
-    
+	timer_clear_flag(TIM7, TIM_SR_UIF);
+	TIM7_CNT = 1;
+	timer_set_prescaler(TIM7, 23); // 24Mhz/1Mhz - 1
+	timer_set_period(TIM7, RHT_INTER_BIT_TIMEOUT_USEC);
+	timer_enable_irq(TIM7, TIM_DIER_UIE);
+	nvic_enable_irq(NVIC_TIM7_IRQ);
+	timer_enable_counter(TIM7);
 }
 
-#if 0
-void exti0_isr(void) {
-    exti_reset_request(EXTI_DHT);
-    state.bitcount++;
-    if (gpio_get(PORT_DHT, PIN_DHT_IO)) {
-        putchar('I');
-    } else {
-        putchar('i');
-    }
-    if (state.bitcount > 40) {
-        exti_disable_request(EXTI_DHT);
-        nvic_disable_irq(NVIC_EXTI0_IRQ);
-    }
+void start_rht_read(void)
+{
+	// First, move the pins up and down to get it going...
+
+	gpio_set_mode(PORT_RHT_IO, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_RHT_IO);
+	gpio_clear(PORT_RHT_IO, PIN_RHT_IO);
+	delay_ms(20); // docs say 1-10ms is enough....
+	gpio_set(PORT_RHT_IO, PIN_RHT_IO);
+	// want to wait for 40us here, but we're ok with letting some code delay us..
+	state.bitcount = 0;
+	state.seen_startbit = false;
+	state.rht_timeout = false;
+	// don't need, let bitcount declare what's valid!
+	// memset(state.timings, 0, sizeof(state.timings));
+	nvic_enable_irq(RHT_NVIC);
+	// pull up will finish the job here for us.
+	gpio_set_mode(PORT_RHT_IO, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, PIN_RHT_IO);
+	exti_select_source(RHT_EXTI, PORT_RHT_IO);
+	exti_set_trigger(RHT_EXTI, EXTI_TRIGGER_FALLING);
+	exti_enable_request(RHT_EXTI);
+	setup_tim7();
 }
-#endif
 
-int main(void) {
-    int c = 0;
+void tim7_isr(void)
+{
 
-    memset(&state, 0, sizeof (state));
+	timer_clear_flag(TIM7, TIM_SR_UIF);
+	state.rht_timeout = true;
+	nvic_disable_irq(NVIC_TIM7_IRQ);
+	//nvic_set_priority(NVIC_TIM&_IRQ, 1);
+	timer_disable_irq(TIM7, TIM_DIER_UIE);
+	timer_disable_counter(TIM7);
+}
 
-    clock_setup();
-    gpio_setup();
-    systick_setup();
-    usart_enable_all_pins();
-    usart_console_setup();
-    dht_power(true);
+void wait_for_shit(void)
+{
+	while (1) {
+		if (state.rht_timeout) {
+			return;
+		}
+		if (state.bitcount >= 40) {
 
-    while (1) {
-        if (millis() - state.last_blink_time > 1000) {
-            printf("still alive: %c\n", c + '0');
-            c = (c == 9) ? 0 : c + 1; /* Increment c. */
-            state.last_blink_time = millis();
-        }
-        if (millis() - state.last_dht_time > 2500) {
-            state.last_dht_time = millis();
-            read_dht();
-        }
-    }
+			return;
+		}
+		__WFI();
+	}
+}
 
-    return 0;
+void loop_forever(void)
+{
+	if (state.seconds - state.last_start > 3) {
+		state.last_start = state.seconds;
+		printf("Start!\n");
+		start_rht_read();
+		wait_for_shit();
+		if (state.rht_timeout) {
+			printf("timeout\n");
+			return;
+		}
+		printf("All bits found!\n");
+		unsigned chksum = state.rht_bytes[0] + state.rht_bytes[1] + state.rht_bytes[2] + state.rht_bytes[3];
+		chksum &= 0xff;
+		printf("%x %x %x %x sum: %x == %x\n",
+			state.rht_bytes[0], state.rht_bytes[1], state.rht_bytes[2], state.rht_bytes[3],
+			chksum, state.rht_bytes[4]);
+		if (chksum != state.rht_bytes[4]) {
+			printf("CHKSUM failed, ignoring: \n");
+
+			return;
+		}
+
+		int rh = (state.rht_bytes[0] << 8 | state.rht_bytes[1]);
+		int temp = (state.rht_bytes[2] << 8 | state.rht_bytes[3]);
+		printf("orig: temp = %d, rh = %d\n", temp, rh);
+		printf("Temp: %d.%d C, RH = %d.%d %%\n", temp / 10, temp % 10, rh / 10, rh % 10);
+
+	}
+	// texane/stlink will have problems debugging through this.
+	//__WFI();
+}
+
+int main(void)
+{
+	clock_setup();
+	gpio_setup();
+	systick_setup();
+	usart_enable_all_pins();
+	usart_console_setup();
+	printf("hello!\n");
+	// power up the RHT chip...
+	dht_power(true);
+	delay_ms(2000);
+	setup_tim7();
+	while (1) {
+		loop_forever();
+	}
+
+	return 0;
 }

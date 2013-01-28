@@ -9,27 +9,37 @@
 
 #include <stdint.h>
 #include "ms_systick.h"
+#include "syscfg.h"
 
+extern struct state_t state;
 
 volatile uint64_t ksystick;
 
 uint64_t millis(void)
 {
-    return ksystick;
+	return ksystick;
 }
 
 /**
  * Busy loop for X ms USES INTERRUPTS
  * @param ms
  */
-void delay_ms(unsigned int ms) {
-    uint64_t now = millis();
-    while (millis() - ms < now) {
-        ;
-    }
+void delay_ms(unsigned int ms)
+{
+	uint64_t now = millis();
+	while (millis() - ms < now) {
+		;
+	}
 }
 
 void sys_tick_handler(void)
 {
-    ksystick++;
+	ksystick++;
+	state.milliticks++;
+	if (state.milliticks >= 1000) {
+		state.milliticks = 0;
+		printf("Tick: %d\n", state.seconds);
+		state.seconds++;
+		gpio_toggle(PORT_STATUS_LED, PIN_STATUS_LED);
+	}
 }
