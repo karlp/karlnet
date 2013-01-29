@@ -143,7 +143,6 @@ void RHT_isr(void)
 		}
 	}
 	if (state.bitcount > 0) { // but skip that start bit...
-
 		stuff_bit(state.bitcount - 1, cnt, state.rht_bytes);
 	}
 	state.bitcount++;
@@ -168,7 +167,6 @@ void setup_tim7(void)
 void start_rht_read(void)
 {
 	// First, move the pins up and down to get it going...
-
 	gpio_set_mode(PORT_RHT_IO, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_RHT_IO);
 	gpio_clear(PORT_RHT_IO, PIN_RHT_IO);
 	delay_ms(20); // docs say 1-10ms is enough....
@@ -177,8 +175,6 @@ void start_rht_read(void)
 	state.bitcount = 0;
 	state.seen_startbit = false;
 	state.rht_timeout = false;
-	// don't need, let bitcount declare what's valid!
-	// memset(state.timings, 0, sizeof(state.timings));
 	nvic_enable_irq(RHT_NVIC);
 	// pull up will finish the job here for us.
 	gpio_set_mode(PORT_RHT_IO, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, PIN_RHT_IO);
@@ -190,11 +186,9 @@ void start_rht_read(void)
 
 void tim7_isr(void)
 {
-
 	timer_clear_flag(TIM7, TIM_SR_UIF);
 	state.rht_timeout = true;
 	nvic_disable_irq(NVIC_TIM7_IRQ);
-	//nvic_set_priority(NVIC_TIM&_IRQ, 1);
 	timer_disable_irq(TIM7, TIM_DIER_UIE);
 	timer_disable_counter(TIM7);
 }
@@ -206,10 +200,9 @@ void wait_for_shit(void)
 			return;
 		}
 		if (state.bitcount >= 40) {
-
 			return;
 		}
-		__WFI();
+		//__WFI();
 	}
 }
 
@@ -221,7 +214,11 @@ void loop_forever(void)
 		start_rht_read();
 		wait_for_shit();
 		if (state.rht_timeout) {
-			printf("timeout\n");
+			printf("timeout, toggling power\n");
+			dht_power(false);
+			delay_ms(1000);
+			dht_power(true);
+			delay_ms(3000);
 			return;
 		}
 		printf("All bits found!\n");
