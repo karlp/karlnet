@@ -31,13 +31,13 @@ extern "C" {
 #define RHT_EXTI EXTI6
 #define RHT_isr exti9_5_isr
 #define RHT_NVIC NVIC_EXTI9_5_IRQ
-	
-	
+
+
 #define MRF_SPI SPI1
 #define MRF_SELECT_PORT GPIOB
 #define MRF_SELECT_PIN GPIO7
-//#define MRF_RESET_PORT GPIOC
-//#define MRF_RESET_PIN GPIO1
+	//#define MRF_RESET_PORT GPIOC
+	//#define MRF_RESET_PIN GPIO1
 #define MRF_INTERRUPT_PORT GPIOB
 #define MRF_INTERRUPT_PIN GPIO0
 #define MRF_INTERRUPT_NVIC NVIC_EXTI0_IRQ
@@ -45,10 +45,27 @@ extern "C" {
 #define MRF_isr exti0_isr
 
 
-
 #define RHT_INTER_BIT_TIMEOUT_USEC 500
 	// Falling edge-falling edge times less than this are 0, else 1
 #define RHT_LOW_HIGH_THRESHOLD 100
+
+	enum jack_machine_steps {
+		jack_machine_step_off,
+		jack_machine_step_powered,
+		jack_machine_step_ready
+	};
+
+	struct jacks_result_t {
+		bool ready;
+		int value;
+	};
+
+	struct jacks_machine_t {
+		int last_read;
+		enum jack_machine_steps step;
+		int step_entry_millis;
+		struct jack_t *jack;
+	};
 
 	struct state_t {
 		int seconds;
@@ -59,6 +76,9 @@ extern "C" {
 		bool rht_timeout;
 		int bitcount;
 		int milliticks;
+
+		struct jacks_machine_t jack_machine1;
+		struct jacks_machine_t jack_machine2;
 	};
 
 

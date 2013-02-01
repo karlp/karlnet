@@ -19,6 +19,29 @@
 
 #include "syscfg.h"
 #include "ms_systick.h"
+#include "jacks.h"
+
+const struct jack_t jack1 = {
+	.en_pin = GPIO15,
+	.en_port = GPIOC,
+	.power_pin = GPIO1,
+	.power_port = GPIOA,
+	.val_pin = GPIO0,
+	.val_port = GPIOA,
+	.val_channel = ADC_CHANNEL0,
+	.power_on_time = 5 // just a guess
+};
+
+const struct jack_t jack2 = {
+	.en_pin = GPIO8,
+	.en_port = GPIOA,
+	.power_pin = GPIO9,
+	.power_port = GPIOA,
+	.val_pin = GPIO1,
+	.val_port = GPIOB,
+	.val_channel = ADC_CHANNEL9,
+	.power_on_time = 5 // just a guess
+};
 
 __attribute__((always_inline)) static inline void __WFI(void)
 {
@@ -220,7 +243,6 @@ void handle_tx(simrf_tx_info_t *txinfo)
 	}
 }
 
-
 void loop_forever(void)
 {
 	if (state.seconds - state.last_start > 3) {
@@ -255,7 +277,6 @@ void loop_forever(void)
 		simrf_send16(0x1, 4, "abcd");
 
 	}
-	simrf_check_flags(NULL, &handle_tx);
 	// texane/stlink will have problems debugging through this.
 	//__WFI();
 }
@@ -284,8 +305,16 @@ int main(void)
 	printf("pan read back in as %#x\n", pan_sanity_check);
 	simrf_address16_write(0x1111);
 
+	jack_setup(&jack1, &state.jack_machine1);
+	jack_setup(&jack2, &state.jack_machine2);
+
+
 	while (1) {
+		struct jacks_result_t jr1, jr2;
+		simrf_check_flags(NULL, &handle_tx);
 		loop_forever();
+		jack_run_task(&state.jack_machine1, &jr1);
+		jack_run_task(&state.jack_machine2, &jr2);
 	}
 
 	return 0;
