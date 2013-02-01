@@ -14,6 +14,9 @@
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/timer.h>
 
+#include <simrf.h>
+#include "simrf_plat.h"
+
 #include "syscfg.h"
 #include "ms_systick.h"
 
@@ -37,6 +40,8 @@ void clock_setup(void)
 	rcc_peripheral_enable_clock(&RCC_AHBENR, RCC_AHBENR_DMA1EN);
 	// and timers...
 	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_TIM7EN);
+	// and spi for the radio
+	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_SPI1EN);
 	/* Enable AFIO clock. */
 	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_AFIOEN);
 }
@@ -206,6 +211,16 @@ void wait_for_shit(void)
 	}
 }
 
+void handle_tx(simrf_tx_info_t *txinfo)
+{
+	if (txinfo->tx_ok) {
+		printf("TX went ok, got ack\n");
+	} else {
+		printf("TX failed after %d retries\n", txinfo->retries);
+	}
+}
+
+
 void loop_forever(void)
 {
 	if (state.seconds - state.last_start > 3) {
@@ -229,7 +244,6 @@ void loop_forever(void)
 			chksum, state.rht_bytes[4]);
 		if (chksum != state.rht_bytes[4]) {
 			printf("CHKSUM failed, ignoring: \n");
-
 			return;
 		}
 
@@ -237,8 +251,11 @@ void loop_forever(void)
 		int temp = (state.rht_bytes[2] << 8 | state.rht_bytes[3]);
 		printf("orig: temp = %d, rh = %d\n", temp, rh);
 		printf("Temp: %d.%d C, RH = %d.%d %%\n", temp / 10, temp % 10, rh / 10, rh % 10);
+		// Send something real here!
+		simrf_send16(0x1, 4, "abcd");
 
 	}
+	simrf_check_flags(NULL, &handle_tx);
 	// texane/stlink will have problems debugging through this.
 	//__WFI();
 }
@@ -255,6 +272,18 @@ int main(void)
 	dht_power(true);
 	delay_ms(2000);
 	setup_tim7();
+	platform_simrf_init();
+	// interrupt pin from mrf
+	platform_mrf_interrupt_enable();
+
+	simrf_soft_reset();
+	simrf_init();
+
+	simrf_pan_write(0xcafe);
+	uint16_t pan_sanity_check = simrf_pan_read();
+	printf("pan read back in as %#x\n", pan_sanity_check);
+	simrf_address16_write(0x1111);
+
 	while (1) {
 		loop_forever();
 	}
