@@ -250,7 +250,6 @@ void loop_forever(void)
 {
 	if (state.seconds - state.last_start > 3) {
 		state.last_start = state.seconds;
-		printf("Start!\n");
 		start_rht_read();
 		wait_for_shit();
 		if (state.rht_timeout) {
@@ -261,9 +260,9 @@ void loop_forever(void)
 			delay_ms(3000);
 			return;
 		}
-		printf("All bits found!\n");
 		unsigned chksum = state.rht_bytes[0] + state.rht_bytes[1] + state.rht_bytes[2] + state.rht_bytes[3];
 		chksum &= 0xff;
+		// Removing this print makes the checksum fail most of the time! :|
 		printf("%x %x %x %x sum: %x == %x\n",
 			state.rht_bytes[0], state.rht_bytes[1], state.rht_bytes[2], state.rht_bytes[3],
 			chksum, state.rht_bytes[4]);
@@ -274,7 +273,6 @@ void loop_forever(void)
 
 		int rh = (state.rht_bytes[0] << 8 | state.rht_bytes[1]);
 		int temp = (state.rht_bytes[2] << 8 | state.rht_bytes[3]);
-		printf("orig: temp = %d, rh = %d\n", temp, rh);
 		printf("Temp: %d.%d C, RH = %d.%d %%\n", temp / 10, temp % 10, rh / 10, rh % 10);
 		// Send something real here!
 		simrf_send16(0x1, 4, "abcd");
