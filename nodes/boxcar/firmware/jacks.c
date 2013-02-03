@@ -59,10 +59,23 @@ void jack_run_task(volatile struct jacks_machine_t *machine, struct jacks_result
 		break;
 
 	case jack_machine_step_ready:
+		// TODO - this should actually start a dma sequence and go to a next step 
+		// that decimates/averages and finally returns.
 		// ok! do a few readings and call it good
+		adc_disable_scan_mode(ADC1);
+		adc_set_single_conversion_mode(ADC1);
+		adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_28DOT5CYC);
+		//adc_set_single_channel(ADC1, machine->jack->val_channel);
+		adc_set_regular_sequence(ADC1, 1, (u8*)&(machine->jack->val_channel));
+
+		adc_enable_external_trigger_regular(ADC1, ADC_CR2_EXTSEL_SWSTART);
+		adc_start_conversion_regular(ADC1);
 		printf("ok, doing reading on channel!\n");
+		while(!adc_eoc(ADC1)) {
+			;
+		}
 		res->ready = true;
-		res->value = 1234;
+		res->value = adc_read_regular(ADC1);
 		machine->last_read = millis();
 		gpio_clear(machine->jack->power_port, machine->jack->power_pin);
 		machine->step = jack_machine_step_off;

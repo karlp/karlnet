@@ -9,6 +9,7 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/stm32/f1/rcc.h>
+#include <libopencm3/stm32/f1/adc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/usart.h>
@@ -67,6 +68,8 @@ void clock_setup(void)
 	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_SPI1EN);
 	/* Enable AFIO clock. */
 	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_AFIOEN);
+	/* ADC is also helpful */
+	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_ADC1EN);
 }
 
 void usart_enable_all_pins(void)
@@ -286,6 +289,7 @@ int main(void)
 	clock_setup();
 	gpio_setup();
 	systick_setup();
+	adc_off(ADC1);
 	usart_enable_all_pins();
 	usart_console_setup();
 	printf("hello!\n");
@@ -305,6 +309,10 @@ int main(void)
 	printf("pan read back in as %#x\n", pan_sanity_check);
 	simrf_address16_write(0x1111);
 
+	adc_power_on(ADC1);
+	adc_reset_calibration(ADC1);
+	adc_calibration(ADC1);
+
 	jack_setup(&jack1, &state.jack_machine1);
 	jack_setup(&jack2, &state.jack_machine2);
 
@@ -314,7 +322,13 @@ int main(void)
 		simrf_check_flags(NULL, &handle_tx);
 		loop_forever();
 		jack_run_task(&state.jack_machine1, &jr1);
+		if (jr1.ready) {
+			printf("Channel 1 result: %d\n", jr1.value);
+		}
 		jack_run_task(&state.jack_machine2, &jr2);
+		if (jr2.ready) {
+			printf("Channel 2 result: %d\n", jr2.value);
+		}
 	}
 
 	return 0;
