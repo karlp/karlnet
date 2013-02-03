@@ -6,12 +6,12 @@
 #include "ms_systick.h"
 #include "jacks.h"
 
-void jack_setup(const struct jack_t *jack, struct jacks_machine_t *machine)
+void jack_setup(const struct jack_t *jack, volatile struct jacks_machine_t *machine)
 {
 	// turn on gpios and modes for the pins...
 	gpio_set_mode(jack->en_port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, jack->en_pin);
-	// Explictly pull down.  // FIXME - make sure this all works properly!
-	gpio_set(jack->en_port, jack->en_pin);
+	// Explictly pull down.  This burns ~66uA per jack! // FIXME - make sure this all works properly!
+	GPIO_ODR(jack->en_port) &= ~(jack->en_pin);
 	gpio_set_mode(jack->power_port, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, jack->power_pin);
 	gpio_set_mode(jack->val_port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, jack->val_pin);
 	machine->step = jack_machine_step_off;
@@ -30,7 +30,7 @@ bool jack_connected(const struct jack_t *jack)
  * @param machine
  * @param res
  */
-void jack_run_task(struct jacks_machine_t *machine, struct jacks_result_t *res)
+void jack_run_task(volatile struct jacks_machine_t *machine, struct jacks_result_t *res)
 {
 	res->ready = false;
 	if (!jack_connected(machine->jack)) {
@@ -40,7 +40,7 @@ void jack_run_task(struct jacks_machine_t *machine, struct jacks_result_t *res)
 	case jack_machine_step_off:
 		// is it time to do a reading yet?
 		if (millis() - 3000 > machine->last_read) {
-			printf("switching power on\n");
+			printf("switching power on: channel %u\n", (unsigned int) machine->jack->val_channel);
 			gpio_set(machine->jack->power_port, machine->jack->power_pin);
 			machine->step = jack_machine_step_powered;
 			machine->step_entry_millis = millis();

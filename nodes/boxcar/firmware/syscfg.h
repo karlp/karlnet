@@ -64,7 +64,7 @@ extern "C" {
 		int last_read;
 		enum jack_machine_steps step;
 		int step_entry_millis;
-		struct jack_t *jack;
+		const struct jack_t *jack;
 	};
 
 	struct state_t {

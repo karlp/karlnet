@@ -28,8 +28,8 @@ extern "C" {
 		int power_on_time;
 	};
 
-	void jack_setup(const struct jack_t *jack, struct jacks_machine_t *machine);
-	void jack_run_task(struct jacks_machine_t *machine, struct jacks_result_t *res);
+	void jack_setup(const struct jack_t *jack, volatile struct jacks_machine_t *machine);
+	void jack_run_task(volatile struct jacks_machine_t *machine, struct jacks_result_t *res);
 
 
 
