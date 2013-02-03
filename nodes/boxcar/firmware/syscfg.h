@@ -70,7 +70,7 @@ extern "C" {
 	struct state_t {
 		int seconds;
 		int last_start;
-		unsigned long last_blink_time;
+		long last_blink_time;
 		bool seen_startbit;
 		uint8_t rht_bytes[5];
 		bool rht_timeout;

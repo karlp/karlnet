@@ -13,9 +13,9 @@
 
 extern struct state_t state;
 
-volatile uint64_t ksystick;
+static volatile int64_t ksystick;
 
-uint64_t millis(void)
+int64_t millis(void)
 {
 	return ksystick;
 }
@@ -24,9 +24,9 @@ uint64_t millis(void)
  * Busy loop for X ms USES INTERRUPTS
  * @param ms
  */
-void delay_ms(unsigned int ms)
+void delay_ms(int ms)
 {
-	uint64_t now = millis();
+	int64_t now = millis();
 	while (millis() - ms < now) {
 		;
 	}

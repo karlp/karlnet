@@ -11,8 +11,8 @@ extern "C" {
 
 #include <stdio.h>
     
-uint64_t millis(void);
-void delay_ms(unsigned int ms);
+int64_t millis(void);
+void delay_ms(int ms);
 
 
 
