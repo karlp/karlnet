@@ -17,6 +17,7 @@
 
 #include <simrf.h>
 #include "simrf_plat.h"
+#include "karlnet.h"
 
 #include "syscfg.h"
 #include "ms_systick.h"
@@ -30,7 +31,8 @@ const struct jack_t jack1 = {
 	.val_pin = GPIO0,
 	.val_port = GPIOA,
 	.val_channel = ADC_CHANNEL0,
-	.power_on_time = 5 // just a guess
+	.sensor_type = NTC_10K_3V3,
+	.power_on_time_millis = 5 // just a guess
 };
 
 const struct jack_t jack2 = {
@@ -41,7 +43,7 @@ const struct jack_t jack2 = {
 	.val_pin = GPIO1,
 	.val_port = GPIOB,
 	.val_channel = ADC_CHANNEL9,
-	.power_on_time = 5 // just a guess
+	.power_on_time_millis = 5 // just a guess
 };
 
 __attribute__((always_inline)) static inline void __WFI(void)
@@ -272,14 +274,43 @@ void loop_forever(void)
 		}
 
 		int rh = (state.rht_bytes[0] << 8 | state.rht_bytes[1]);
+		state.last_relative_humidity = rh / 10.0;
 		int temp = (state.rht_bytes[2] << 8 | state.rht_bytes[3]);
+		state.last_temperature = temp / 10.0;
 		printf("Temp: %d.%d C, RH = %d.%d %%\n", temp / 10, temp % 10, rh / 10, rh % 10);
-		// Send something real here!
-		simrf_send16(0x1, 4, "abcd");
 
 	}
 	// texane/stlink will have problems debugging through this.
 	//__WFI();
+}
+
+void task_send_data(volatile struct state_t *st)
+{
+	if (millis() - 3000 > st->last_send_time) {
+		kpacket2 kp;
+		kp.header = 'x';
+		kp.versionCount = VERSION_COUNT(2, 4);
+
+		ksensor s1 = {KPS_SENSOR_TEMPERATURE, st->last_temperature * 1000};
+		ksensor s2 = {KPS_SENSOR_RELATIVE_HUMIDITY, st->last_relative_humidity * 1000};
+		ksensor ch1 = {0, 0};
+		ksensor ch2 = {0, 0};
+		if (jack_connected(&jack1)) {
+			ch1.type = jack1.sensor_type;
+			ch1.value = st->jack_machine1.last_value;
+		}
+		if (jack_connected(&jack2)) {
+			ch2.type = jack2.sensor_type;
+			ch2.value = st->jack_machine2.last_value;
+		}
+		kp.ksensors[0] = s1;
+		kp.ksensors[1] = s2;
+		kp.ksensors[2] = ch1;
+		kp.ksensors[3] = ch2;
+
+		simrf_send16(0x1, sizeof(kp), (void*)&kp);
+		st->last_send_time = millis();
+	}
 }
 
 int main(void)
@@ -327,6 +358,7 @@ int main(void)
 		if (jr2.ready) {
 			printf("Channel 2 result: %d\n", jr2.value);
 		}
+		task_send_data(&state);
 	}
 
 	return 0;

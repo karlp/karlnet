@@ -47,16 +47,6 @@ static void plat_select(bool value) {
     }
 }
 
-static void plat_reset(bool value) {
-	// Reset not connected on this board....
-//    // active low
-//    if (value) {
-//        gpio_clear(MRF_RESET_PORT, MRF_RESET_PIN);
-//    } else {
-//        gpio_set(MRF_RESET_PORT, MRF_RESET_PIN);
-//    }
-}
-
 extern void delay_ms(int ms);
 
 static uint8_t plat_spi_tx(uint8_t cData) {
@@ -97,12 +87,11 @@ void platform_simrf_init(void) {
     spi_setup();
     
     plat_select(false);
-    plat_reset(false);
     
     struct simrf_platform plat;
     memset(&plat, 0, sizeof(plat));
     plat.select = &plat_select;
-    plat.reset = &plat_reset;
+    plat.reset = NULL; // Not connected on this board
     plat.spi_xfr = &plat_spi_tx;
     plat.delay_ms = &delay_ms;
     // TODO more here!

@@ -25,9 +25,11 @@ extern "C" {
 		u32 val_port;
 		u32 val_pin;
 		u32 val_channel;
-		int power_on_time;
+		int power_on_time_millis;
+		int sensor_type;
 	};
 
+	bool jack_connected(const struct jack_t *jack);
 	void jack_setup(const struct jack_t *jack, volatile struct jacks_machine_t *machine);
 	void jack_run_task(volatile struct jacks_machine_t *machine, struct jacks_result_t *res);
 

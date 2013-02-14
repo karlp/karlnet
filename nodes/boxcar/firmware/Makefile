@@ -11,5 +11,6 @@ LDSCRIPT = stm32f100x8.ld
 
 OPENCM3_DIR=../../../libs/libopencm3
 CFLAGS+=-I../../../libs/simrf/lib
+CFLAGS+=-I../../../common
 LDFLAGS+=-L../../../libs/simrf/lib -lsimrf
 include Makefile.include

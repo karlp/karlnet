@@ -61,7 +61,8 @@ extern "C" {
 	};
 
 	struct jacks_machine_t {
-		int last_read;
+		int last_read_millis;
+		int last_value;
 		enum jack_machine_steps step;
 		int step_entry_millis;
 		const struct jack_t *jack;
@@ -76,6 +77,10 @@ extern "C" {
 		bool rht_timeout;
 		int bitcount;
 		int milliticks;
+		
+		float last_temperature;
+		float last_relative_humidity;
+		long last_send_time;
 
 		struct jacks_machine_t jack_machine1;
 		struct jacks_machine_t jack_machine2;

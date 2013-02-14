@@ -15,7 +15,7 @@ void jack_setup(const struct jack_t *jack, volatile struct jacks_machine_t *mach
 	gpio_set_mode(jack->power_port, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, jack->power_pin);
 	gpio_set_mode(jack->val_port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, jack->val_pin);
 	machine->step = jack_machine_step_off;
-	machine->last_read = 0;
+	machine->last_read_millis = 0;
 	machine->step_entry_millis = 0;
 	machine->jack = jack;
 }
@@ -39,7 +39,7 @@ void jack_run_task(volatile struct jacks_machine_t *machine, struct jacks_result
 	switch (machine->step) {
 	case jack_machine_step_off:
 		// is it time to do a reading yet?
-		if (millis() - 3000 > machine->last_read) {
+		if (millis() - 3000 > machine->last_read_millis) {
 			printf("switching power on: channel %u\n", (unsigned int) machine->jack->val_channel);
 			gpio_set(machine->jack->power_port, machine->jack->power_pin);
 			machine->step = jack_machine_step_powered;
@@ -49,7 +49,7 @@ void jack_run_task(volatile struct jacks_machine_t *machine, struct jacks_result
 
 	case jack_machine_step_powered:
 		// have we been powered up long enough yet?
-		if (millis() - machine->jack->power_on_time > machine->step_entry_millis) {
+		if (millis() - machine->jack->power_on_time_millis > machine->step_entry_millis) {
 			printf("power stable!\n");
 			machine->step = jack_machine_step_ready;
 			// not really necessary... machine->step_entry_millis = millis();
@@ -76,7 +76,8 @@ void jack_run_task(volatile struct jacks_machine_t *machine, struct jacks_result
 		}
 		res->ready = true;
 		res->value = adc_read_regular(ADC1);
-		machine->last_read = millis();
+		machine->last_value = res->value;
+		machine->last_read_millis = millis();
 		gpio_clear(machine->jack->power_port, machine->jack->power_pin);
 		machine->step = jack_machine_step_off;
 		break;
