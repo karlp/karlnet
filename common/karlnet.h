@@ -36,22 +36,26 @@ typedef struct _kpacket2 {
 
 #define VERSION_COUNT(x,y)  (((x) << 4) | ((y) & 0x0f))
 
-#define LM35_VREF256        35
-#define TMP36_VREF256       36
-#define TMP36_VREF11        37
+#define LM35_VREF256        35 // 0x23
+#define TMP36_VREF256       36 // 0x24
+#define TMP36_VREF11        37 // 0x25
+// Real precalibrated temperature (in milli degrees C)
+#define KPS_SENSOR_TEMPERATURE	38 // 0x26
+// Real precalibrated relative humidity (in milli % RH)
+#define KPS_SENSOR_RELATIVE_HUMIDITY 39 // 0x27
 // HCH1000 with 555, reporting humidity as a frequency
-#define FREQ_1SEC           'f'
+#define FREQ_1SEC           'f' // 0x66
 // internal temperature sensor, for devices that measure against 1.1vref
-#define TEMP_INT_VREF11     'i'
+#define TEMP_INT_VREF11     'i' // 0x69
 // internal temperature sensor, for devices that measure against 2.56vref
-#define TEMP_INT_VREF256    'I'
+#define TEMP_INT_VREF256    'I' // 0x49
 // 10k NTC probe, with 10k resistor divider, measured against 3.3v VCC
-#define NTC_10K_3V3         'a'
+#define NTC_10K_3V3         'a' // 0x61
 // flag for binary state sensors (off/on)
-#define KPS_RELAY_STATE         'b'
-#define KPS_COMMAND         'c'
-#define KPS_COMMAND_ARG     'd'
-#define KPS_SENSOR_TEST         'z'
+#define KPS_RELAY_STATE     'b' // 0x62
+#define KPS_COMMAND         'c' // 0x63
+#define KPS_COMMAND_ARG     'd' // 0x64
+#define KPS_SENSOR_TEST     'z' // 0x7a
 
 // All possible commands
 #define KPS_COMMAND_REPORTING_INTERVAL  1
