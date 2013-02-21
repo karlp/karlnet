@@ -31,7 +31,7 @@ const struct jack_t jack1 = {
 	.val_pin = GPIO0,
 	.val_port = GPIOA,
 	.val_channel = ADC_CHANNEL0,
-	.sensor_type = NTC_10K_3V3,
+	.sensor_type = KPS_SENSOR_NTC_10K_3V3_12bit,
 	.power_on_time_millis = 5 // just a guess
 };
 

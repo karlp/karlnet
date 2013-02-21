@@ -158,8 +158,8 @@ class Sensor(object):
         tempC = 25 + lessOffset
         return tempC
 
-    def __convertNTC_10K_3V3(self, rawValue):
-            vout = float(rawValue) / 1023 * 3.3
+    def __convertNTC_10K_3V3(self, rawValue, bits=10):
+            vout = float(rawValue) / (2**bits - 1) * 3.3
             r1_r2 = vout/(3.3-vout)
             ntc = r1_r2 * 10000
             cc = curve.curve("ntc.10kz.curve.csv")
@@ -182,6 +182,12 @@ class Sensor(object):
             return (self.__convertSensor_TMP36(self.rawValue, 2560), 'degreesCelsius')
         if self.type == 37:
             return (self.__convertSensor_TMP36(self.rawValue, 1100), 'degreesCelsius')
+        if self.type == 38: # KPS_SENSOR_TEMPERATURE
+            return (self.rawValue / 1000.0, 'degreesCelsius')
+        if self.type == 39: # KPS_SENSOR_HUMIDITY
+            return (self.rawValue / 1000.0, 'percentRH')
+        if self.type == 40:
+            return (self.__convertNTC_10K_3V3(self.rawValue, 12))
         if self.type == ord('f'):
             # 555 timer is C = 1/f / 300k / 0.693 (555 constant)
             # seems to range from about 400pf (very dry) to about 1100pf (quite humid)

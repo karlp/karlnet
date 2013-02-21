@@ -43,6 +43,7 @@ typedef struct __attribute__ ((__packed__)) _kpacket2 {
 #define KPS_SENSOR_TEMPERATURE	38 // 0x26
 // Real precalibrated relative humidity (in milli % RH)
 #define KPS_SENSOR_RELATIVE_HUMIDITY 39 // 0x27
+#define KPS_SENSOR_NTC_10K_3V3_12bit	40 // 0x28
 // HCH1000 with 555, reporting humidity as a frequency
 #define FREQ_1SEC           'f' // 0x66
 // internal temperature sensor, for devices that measure against 1.1vref
@@ -50,7 +51,7 @@ typedef struct __attribute__ ((__packed__)) _kpacket2 {
 // internal temperature sensor, for devices that measure against 2.56vref
 #define TEMP_INT_VREF256    'I' // 0x49
 // 10k NTC probe, with 10k resistor divider, measured against 3.3v VCC
-#define NTC_10K_3V3         'a' // 0x61
+#define NTC_10K_3V3_10bit         'a' // 0x61
 // flag for binary state sensors (off/on)
 #define KPS_RELAY_STATE     'b' // 0x62
 #define KPS_COMMAND         'c' // 0x63
