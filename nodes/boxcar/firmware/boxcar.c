@@ -289,17 +289,19 @@ void task_send_data(volatile struct state_t *st)
 	if (millis() - 3000 > st->last_send_time) {
 		kpacket2 kp;
 		kp.header = 'x';
-		kp.versionCount = VERSION_COUNT(2, 4);
+		int sensor_count = 2;
 
 		ksensor s1 = {KPS_SENSOR_TEMPERATURE, st->last_temperature * 1000};
 		ksensor s2 = {KPS_SENSOR_RELATIVE_HUMIDITY, st->last_relative_humidity * 1000};
 		ksensor ch1 = {0, 0};
 		ksensor ch2 = {0, 0};
 		if (jack_connected(&jack1)) {
+			sensor_count++;
 			ch1.type = jack1.sensor_type;
 			ch1.value = st->jack_machine1.last_value;
 		}
 		if (jack_connected(&jack2)) {
+			sensor_count++;
 			ch2.type = jack2.sensor_type;
 			ch2.value = st->jack_machine2.last_value;
 		}
@@ -307,6 +309,7 @@ void task_send_data(volatile struct state_t *st)
 		kp.ksensors[1] = s2;
 		kp.ksensors[2] = ch1;
 		kp.ksensors[3] = ch2;
+		kp.versionCount = VERSION_COUNT(2, sensor_count);
 
 		simrf_send16(0x1, sizeof(kp), (void*)&kp);
 		st->last_send_time = millis();
