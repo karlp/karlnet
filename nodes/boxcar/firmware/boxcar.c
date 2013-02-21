@@ -311,7 +311,7 @@ void task_send_data(volatile struct state_t *st)
 		kp.ksensors[3] = ch2;
 		kp.versionCount = VERSION_COUNT(2, sensor_count);
 
-		simrf_send16(0x1, sizeof(kp), (void*)&kp);
+		simrf_send16(state.rf_dest_id, sizeof (kp), (void*) &kp);
 		st->last_send_time = millis();
 	}
 }
@@ -348,6 +348,7 @@ int main(void)
 	jack_setup(&jack1, &state.jack_machine1);
 	jack_setup(&jack2, &state.jack_machine2);
 
+	state.rf_dest_id = 0x4202;
 
 	while (1) {
 		struct jacks_result_t jr1, jr2;

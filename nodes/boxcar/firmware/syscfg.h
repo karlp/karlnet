@@ -77,7 +77,8 @@ extern "C" {
 		bool rht_timeout;
 		int bitcount;
 		int milliticks;
-		
+		uint16_t rf_dest_id;
+
 		float last_temperature;
 		float last_relative_humidity;
 		long last_send_time;
