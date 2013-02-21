@@ -11,13 +11,13 @@
 #define MAX_SENSORS     4
 
 // A single sensor reading.
-typedef struct _ksensor {
+typedef struct __attribute__ ((__packed__)) _ksensor {
     uint8_t     type;
     uint32_t    value;
 } ksensor;
 
 // a collection of sensor readings
-typedef struct _kpacket {
+typedef struct __attribute__ ((__packed__)) _kpacket {
 	uint8_t 	header;
         uint8_t         version:4;
         uint8_t         nsensors:4;
@@ -25,7 +25,7 @@ typedef struct _kpacket {
 } kpacket;
 
 // a collection of sensor readings
-typedef struct _kpacket2 {
+typedef struct __attribute__ ((__packed__)) _kpacket2 {
         uint8_t 	header;
         uint8_t         versionCount;
         ksensor         ksensors[MAX_SENSORS];
