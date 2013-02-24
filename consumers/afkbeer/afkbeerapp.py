@@ -57,18 +57,33 @@ class MyWindow(Gtk.Window):
 			button.set_label("Connect")
 			hostfield.set_editable(True)
 
+	def handle_potential_alarm(self, current, target, enabled):
+		if not enabled:
+			log.info("Alarm not enabled for this target, ignoring")
+			return
+		log.info("current value: %d, target:%d, should we do something?", current, target)
+
 	def on_message(self, mosq, obj, msg):
 		if debug:
 			self.l_last_msg_topic.set_text(msg.topic)
 			self.l_last_msg_payload.set_text(msg.payload)
 		kp = jsonpickle.decode(msg.payload)
-	        if (kp['node'] == config['node']):
-			log.info("Got a relevant node message")
-			l1 = self.builder.get_object("l_value1")
-			l1.set_text(str(kp["sensors"][config["sensor1"]]["value"]))
-			l2 = self.builder.get_object("l_value2")
-			l2.set_text(str(kp["sensors"][config["sensor2"]]["value"]))
-					
+	        if (kp['node'] != config['node']):
+			return
+
+		log.info("Got a relevant node message")
+		l1_val = kp["sensors"][config["sensor1"]]["value"]
+		l2_val = kp["sensors"][config["sensor2"]]["value"]
+		l1 = self.builder.get_object("l_value1")
+		l1.set_text(str(l1_val))
+		l2 = self.builder.get_object("l_value2")
+		l2.set_text(str(l2_val))
+		target1 = self.builder.get_object("adjustment1").get_value()
+		enabled1 = self.builder.get_object("chk_alarm_value1").get_active()
+		target2 = self.builder.get_object("adjustment2").get_value()
+		enabled2 = self.builder.get_object("chk_alarm_value2").get_active()
+		self.handle_potential_alarm(l1_val, target1, enabled1)
+		self.handle_potential_alarm(l2_val, target2, enabled2)
 
 	def quit(self, *args):
         	Gtk.main_quit()
