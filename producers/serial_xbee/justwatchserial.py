@@ -37,7 +37,7 @@ else:
     mqttc = mosquitto.Mosquitto("serial port listener")
     logging.basicConfig(level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-        filename="/var/log/karlnet_serial.log")
+        filename="/var/log/karlnet/serial_xbee.log")
 
 log = logging.getLogger("main")
 
