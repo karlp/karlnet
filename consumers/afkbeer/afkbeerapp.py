@@ -13,8 +13,10 @@ APPNAME="AFK Beer Console"
 debug = True
 config = {
 	"node" : 4369,
-	"sensor1" : 0,
-	"sensor2" : 2
+	"sensors" : [
+		{"sensor_num" : 0, "name" : "kettle probe" },
+		{"sensor_num" : 2, "name" : "Ambient temp" }
+	]
 }
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s - %(message)s",
@@ -96,12 +98,17 @@ class MyWindow(Gtk.Window):
 			self.l_last_msg_topic.set_visible(False)
 			self.l_last_msg_payload.set_visible(False)
 
-		self.alarm1 = AlarmedSensor("alarm1")
+		s1name = config["sensors"][0]["name"]
+		self.alarm1 = AlarmedSensor(s1name)
+		self.builder.get_object("l_desc_sensor1").set_text(s1name)
 		target1 = self.builder.get_object("adjustment1")
 		target1.connect("value-changed", self.alarm1.handle_update_threshold)
 		enabled1 = self.builder.get_object("chk_alarm_value1")
 		enabled1.connect("toggled", self.alarm1.handle_enabled)
-		self.alarm2 = AlarmedSensor("alarm2")
+
+		s2name = config["sensors"][1]["name"]
+		self.alarm2 = AlarmedSensor(s2name)
+		self.builder.get_object("l_desc_sensor2").set_text(s2name)
 		target2 = self.builder.get_object("adjustment2")
 		target2.connect("value-changed", self.alarm2.handle_update_threshold)
 		enabled2 = self.builder.get_object("chk_alarm_value2")
@@ -134,8 +141,8 @@ class MyWindow(Gtk.Window):
 			return
 
 		log.info("Got a relevant node message")
-		l1_val = kp["sensors"][config["sensor1"]]["value"]
-		l2_val = kp["sensors"][config["sensor2"]]["value"]
+		l1_val = kp["sensors"][config["sensors"][0]["sensor_num"]]["value"]
+		l2_val = kp["sensors"][config["sensors"][1]["sensor_num"]]["value"]
 		l1 = self.builder.get_object("l_value1")
 		l1.set_text(str(l1_val))
 		l2 = self.builder.get_object("l_value2")
