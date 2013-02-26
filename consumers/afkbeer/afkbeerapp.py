@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import logging
-import os
+import os, sys
 from gi.repository import Gtk
 from gi.repository import GLib
+from gi.repository import Gst
+from gi.repository import GObject
 import jsonpickle
 import mosquitto
 
@@ -20,7 +22,6 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(nam
 )
 log = logging.getLogger("main")
 
-GLib.threads_init()
 
 class MyWindow(Gtk.Window):
 
@@ -39,6 +40,10 @@ class MyWindow(Gtk.Window):
 		if not debug:
 			self.l_last_msg_topic.set_visible(False)
 			self.l_last_msg_payload.set_visible(False)
+		self.player = Gst.ElementFactory.make("playbin2", "player")
+		fakesink = Gst.ElementFactory.make("fakesink", "fakesink")
+		self.player.set_property("video-sink", fakesink)
+		self.player.set_property("uri", "file:///home/karlp/src/karlnet-git/consumers/pachube/phone_2.wav")
 		
 
 	def connect_toggle(self, button):
@@ -57,11 +62,35 @@ class MyWindow(Gtk.Window):
 			button.set_label("Connect")
 			hostfield.set_editable(True)
 
-	def handle_potential_alarm(self, current, target, enabled):
+	def playsound(self, on):
+		log.info("playing sound: %s", on)
+		if on:
+			self.player.set_state(Gst.State.PLAYING)
+		else:
+			self.player.set_state(Gst.State.PAUSED)
+
+	def handle_potential_alarm(self, current, threshold, enabled):
 		if not enabled:
+			# FIXME - need to turn it off though if it was on because of this alarm
 			log.info("Alarm not enabled for this target, ignoring")
 			return
-		log.info("current value: %d, target:%d, should we do something?", current, target)
+		log.info("current value: %d, target:%d, should we do something?", current, threshold)
+
+		if threshold is not None:
+			cooling = threshold < 50
+			heating = not cooling
+			log.debug("threshold is %d, mode: %s", threshold, "cooling" if cooling else "heating")
+		# Assume cooling if the setTemp is under 50, assume heating if the set temp is over 50....
+		if (cooling and current < threshold) or (heating and current > threshold):
+			log.warn("ok, it's ready!")
+			self.playsound(True)
+		else:
+			if (heating):
+				log.info("Turning music off.... we're below the threshold")
+			else:
+				log.info("Turning music off.... we're above the threshold")
+			self.playsound(False)
+
 
 	def on_message(self, mosq, obj, msg):
 		if debug:
@@ -90,5 +119,8 @@ class MyWindow(Gtk.Window):
 
 
 if __name__ == '__main__':
+	GObject.threads_init()
+	Gst.init_check(sys.argv)
+	GLib.threads_init()
 	ui = MyWindow()
 	Gtk.main()
