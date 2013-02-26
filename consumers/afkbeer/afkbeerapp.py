@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import logging
 import os, sys
 from gi.repository import Gtk
@@ -22,6 +22,61 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(nam
 )
 log = logging.getLogger("main")
 
+class AlarmedSensor():
+	"""
+	Ideally, this would be a gtk widget, that could respond to signals directly and stuff
+	"""
+	fileuri = "file:///home/karlp/src/karlnet-git/consumers/pachube/phone_2.wav"
+	playing = False
+	enabled = False
+	threshold = None
+	def __init__(self, name):
+		self.name = name
+		self.ilog = logging.getLogger(self.__class__.__name__ + "_" + self.name)
+		self.player = Gst.ElementFactory.make("playbin2", "player")
+		fakesink = Gst.ElementFactory.make("fakesink", "fakesink")
+		self.player.set_property("video-sink", fakesink)
+		self.player.set_property("uri", self.fileuri)
+		self.player.connect("about-to-finish", self.on_about_to_finish)
+
+	def on_about_to_finish(self, player):
+		"""need to just restart it again"""
+		player.set_property("uri", self.fileuri)
+
+	def handle_enabled(self, enabled):
+		self.enabled = enabled.get_active()
+		if not self.enabled:
+			self.play(False)
+
+	def handle_update_threshold(self, adjustment):
+		self.threshold = adjustment.get_value()
+
+	def play(self, on):
+		self.ilog.info("playing sound: %s", on)
+		# Don't try and restart if we're already playing
+		#if self.playing and on:
+		#	return
+		if on and self.enabled:
+			self.player.set_state(Gst.State.PLAYING)
+			self.playing = True
+		else:
+			self.player.set_state(Gst.State.PAUSED)
+			self.playing = False
+
+	def update(self, currentvalue):
+		if self.threshold is None:
+			self.ilog.warn("Treshold can't be none...")
+			return
+		cooling = self.threshold < 50
+		heating = not cooling
+		self.ilog.debug("threshold is %d, mode: %s", self.threshold, "cooling" if cooling else "heating")
+		if (cooling and currentvalue < self.threshold) or (heating and currentvalue > self.threshold):
+			self.ilog.info("Ok, we're ready!")
+			self.play(True)
+		else:
+			self.ilog.info("Turning sound off, we're no longer in range")
+			self.play(False)
+
 
 class MyWindow(Gtk.Window):
 
@@ -40,10 +95,17 @@ class MyWindow(Gtk.Window):
 		if not debug:
 			self.l_last_msg_topic.set_visible(False)
 			self.l_last_msg_payload.set_visible(False)
-		self.player = Gst.ElementFactory.make("playbin2", "player")
-		fakesink = Gst.ElementFactory.make("fakesink", "fakesink")
-		self.player.set_property("video-sink", fakesink)
-		self.player.set_property("uri", "file:///home/karlp/src/karlnet-git/consumers/pachube/phone_2.wav")
+
+		self.alarm1 = AlarmedSensor("alarm1")
+		target1 = self.builder.get_object("adjustment1")
+		target1.connect("value-changed", self.alarm1.handle_update_threshold)
+		enabled1 = self.builder.get_object("chk_alarm_value1")
+		enabled1.connect("toggled", self.alarm1.handle_enabled)
+		self.alarm2 = AlarmedSensor("alarm2")
+		target2 = self.builder.get_object("adjustment2")
+		target2.connect("value-changed", self.alarm2.handle_update_threshold)
+		enabled2 = self.builder.get_object("chk_alarm_value2")
+		enabled2.connect("toggled", self.alarm2.handle_enabled)
 		
 
 	def connect_toggle(self, button):
@@ -62,35 +124,6 @@ class MyWindow(Gtk.Window):
 			button.set_label("Connect")
 			hostfield.set_editable(True)
 
-	def playsound(self, on):
-		log.info("playing sound: %s", on)
-		if on:
-			self.player.set_state(Gst.State.PLAYING)
-		else:
-			self.player.set_state(Gst.State.PAUSED)
-
-	def handle_potential_alarm(self, current, threshold, enabled):
-		if not enabled:
-			# FIXME - need to turn it off though if it was on because of this alarm
-			log.info("Alarm not enabled for this target, ignoring")
-			return
-		log.info("current value: %d, target:%d, should we do something?", current, threshold)
-
-		if threshold is not None:
-			cooling = threshold < 50
-			heating = not cooling
-			log.debug("threshold is %d, mode: %s", threshold, "cooling" if cooling else "heating")
-		# Assume cooling if the setTemp is under 50, assume heating if the set temp is over 50....
-		if (cooling and current < threshold) or (heating and current > threshold):
-			log.warn("ok, it's ready!")
-			self.playsound(True)
-		else:
-			if (heating):
-				log.info("Turning music off.... we're below the threshold")
-			else:
-				log.info("Turning music off.... we're above the threshold")
-			self.playsound(False)
-
 
 	def on_message(self, mosq, obj, msg):
 		if debug:
@@ -107,12 +140,8 @@ class MyWindow(Gtk.Window):
 		l1.set_text(str(l1_val))
 		l2 = self.builder.get_object("l_value2")
 		l2.set_text(str(l2_val))
-		target1 = self.builder.get_object("adjustment1").get_value()
-		enabled1 = self.builder.get_object("chk_alarm_value1").get_active()
-		target2 = self.builder.get_object("adjustment2").get_value()
-		enabled2 = self.builder.get_object("chk_alarm_value2").get_active()
-		self.handle_potential_alarm(l1_val, target1, enabled1)
-		self.handle_potential_alarm(l2_val, target2, enabled2)
+		self.alarm1.update(l1_val)
+		self.alarm2.update(l2_val)
 
 	def quit(self, *args):
         	Gtk.main_quit()
