@@ -235,7 +235,7 @@ void wait_for_shit(void)
 		if (state.bitcount >= 40) {
 			return;
 		}
-		//__WFI();
+		__WFI();
 	}
 }
 
@@ -283,7 +283,7 @@ void loop_forever(void)
 
 	}
 	// texane/stlink will have problems debugging through this.
-	//__WFI();
+	__WFI();
 }
 
 void task_send_data(volatile struct state_t *st)
@@ -368,6 +368,7 @@ int main(void)
 			printf("Channel 2 result: %d\n", jr2.value);
 		}
 		task_send_data(&state);
+		__WFI();
 	}
 
 	return 0;
