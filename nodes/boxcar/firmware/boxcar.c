@@ -246,6 +246,8 @@ void handle_tx(simrf_tx_info_t *txinfo)
 	} else {
 		printf("TX failed after %d retries\n", txinfo->retries);
 	}
+	printf("SLEEP\n");
+	simrf_immediate_sleep();
 }
 
 void loop_forever(void)
@@ -287,6 +289,8 @@ void loop_forever(void)
 void task_send_data(volatile struct state_t *st)
 {
 	if (millis() - 3000 > st->last_send_time) {
+		printf("WAKESEND...\n");
+		simrf_immediate_wakeup();
 		kpacket2 kp;
 		kp.header = 'x';
 		int sensor_count = 2;
@@ -335,6 +339,7 @@ int main(void)
 
 	simrf_soft_reset();
 	simrf_init();
+	simrf_immediate_sleep();
 
 	simrf_pan_write(0xcafe);
 	uint16_t pan_sanity_check = simrf_pan_read();
