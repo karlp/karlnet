@@ -14,8 +14,8 @@ debug = True
 config = {
 	"node" : 4369,
 	"sensors" : [
-		{"sensor_num" : 0, "name" : "kettle probe" },
-		{"sensor_num" : 2, "name" : "Ambient temp" }
+		{"sensor_num" : 2, "name" : "kettle probe" },
+		{"sensor_num" : 0, "name" : "Ambient temp" }
 	]
 }
 
