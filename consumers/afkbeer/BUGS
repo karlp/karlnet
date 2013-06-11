@@ -1,0 +1,7 @@
+connecting without a probe causes a list index error that it doesn't recover from
+And it needs to say something useful like, "not connected"
+File "afkbeerapp.py", line 144, in on_message
+    l1_val = kp["sensors"][config["sensors"][0]["sensor_num"]]["value"]
+
+
+still segfaults sometimes
