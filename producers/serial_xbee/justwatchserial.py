@@ -49,7 +49,7 @@ def runMainLoop():
     if mqttc:
         mqttc.connect("localhost")
 
-    while(1):
+    while mqttc.loop() == 0:
         if time.time() - lastgoodtime > manualTimeout:
             log.warn("XXX Reopening the serial port, no data for %d seconds!", manualTimeout)
             if port:
