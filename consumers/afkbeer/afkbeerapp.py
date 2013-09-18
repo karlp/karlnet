@@ -35,8 +35,10 @@ class AlarmedSensor():
 	def __init__(self, name):
 		self.name = name
 		self.ilog = logging.getLogger(self.__class__.__name__ + "_" + self.name)
-		self.player = Gst.ElementFactory.make("playbin2", "player")
+		self.player = Gst.ElementFactory.make("playbin", "player")
+		assert self.player, "Failed to create player"
 		fakesink = Gst.ElementFactory.make("fakesink", "fakesink")
+		assert fakesink, "Failed to create fakesink"
 		self.player.set_property("video-sink", fakesink)
 		self.player.set_property("uri", self.fileuri)
 		self.player.connect("about-to-finish", self.on_about_to_finish)
