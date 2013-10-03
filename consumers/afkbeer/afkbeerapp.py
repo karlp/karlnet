@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import logging
 import os, sys
+import gi
+gi.require_version("Gst", "1.0")
 from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import Gst
@@ -158,7 +160,7 @@ class MyWindow(Gtk.Window):
 
 if __name__ == '__main__':
 	GObject.threads_init()
-	Gst.init_check(sys.argv)
+	Gst.init(None)
 	GLib.threads_init()
 	ui = MyWindow()
 	Gtk.main()
