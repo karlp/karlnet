@@ -251,8 +251,10 @@ void handle_rx(mrf_rx_info_t *rxinfo, uint8_t *rbuf) {
         dest_id |= rbuf[i++] << 8;
         src_id = rbuf[i++];
         src_id |= rbuf[i++] << 8;
+#if PAD_DIGI_HEADER
         // TODO Can't move this into the library without doing more decoding in the library...
         i += 2;  // as in the library, module seems to have two useless bytes after headers!
+#endif
     }
     if (dest_id != config.rf_ourid) {
         // unexpected, shouldn't ever happen

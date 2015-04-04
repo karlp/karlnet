@@ -150,7 +150,11 @@ void mrf_send16(uint16_t dest16, uint8_t len, char * data) {
 
     int i = 0;
     mrf_write_long(i++, 9);  // header length
+#if PAD_DIGI_HEADER
     mrf_write_long(i++, 9+2+len); //+2 is because module seems to ignore 2 bytes after the header?!
+#else
+    mrf_write_long(i++, 9+len);
+#endif
 
 // 0 | pan compression | ack | no security | no data pending | data frame[3 bits]
     mrf_write_long(i++, 0b01100001); // first byte of Frame Control
@@ -169,7 +173,10 @@ void mrf_send16(uint16_t dest16, uint8_t len, char * data) {
     mrf_write_long(i++, src16 & 0xff); // src16 low
     mrf_write_long(i++, src16 >> 8); // src16 high
 
+/* See ATMM command for xbee */
+#if PAD_DIGI_HEADER
     i+=2;  // All testing seems to indicate that the next two bytes are ignored.
+#endif
     for (int q = 0; q < len; q++) {
         mrf_write_long(i++, data[q]);
     }
