@@ -14,7 +14,7 @@ sys.path.append(os.path.join(sys.path[0], "../../common"))
 
 from xbee import xbee, xbee_receiver
 import kpacket
-import mosquitto
+import paho.mqtt.client as paho
 import jsonpickle
 import logging
 import logging.config
@@ -34,7 +34,7 @@ if options.testmode:
     logging.basicConfig(level=logging.DEBUG,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 else:
-    mqttc = mosquitto.Mosquitto("serial port listener")
+    mqttc = paho.Client("serial port listener")
     logging.basicConfig(level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s",
         filename="/var/log/karlnet/serial_xbee.log")
