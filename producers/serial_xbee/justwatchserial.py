@@ -20,6 +20,17 @@ import logging
 import logging.config
 import logging.handlers
 
+class TestClient(object):
+    def loop(self):
+        return 0
+
+    def connect(self, host):
+        pass
+
+    def publish(self, topic, payload):
+        pass
+
+
 parser = OptionParser()
 parser.add_option("-t", "--test", dest="testmode", action="store_true",
     help="Run in test mode (don't post any reports to message broker, log to console)",
@@ -30,7 +41,7 @@ parser.add_option("-p", "--port", dest="port",
 (options, args) = parser.parse_args()
 
 if options.testmode:
-    mqttc = None
+    mqttc = TestClient()
     logging.basicConfig(level=logging.DEBUG,
         format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 else:
@@ -46,8 +57,7 @@ def runMainLoop():
     port = None
     manualTimeout = 40
 
-    if mqttc:
-        mqttc.connect("localhost")
+    mqttc.connect("localhost")
 
     while mqttc.loop() == 0:
         if time.time() - lastgoodtime > manualTimeout:
@@ -79,9 +89,7 @@ def runMainLoop():
         lastgoodtime = time.time()
         hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
         hp.time_received = time.time()
-        if mqttc:
-            mqttc.publish("karlnet/readings/%d" % hp.node, jsonpickle.encode(hp))
-            #stomp.put(jsonpickle.encode(hp), destination="/topic/karlnet.%d" % hp.node)
+        mqttc.publish("karlnet/readings/%d" % hp.node, jsonpickle.encode(hp))
         log.info(hp)
 
 
