@@ -353,7 +353,8 @@ int main(void)
 	jack_setup(&jack1, &state.jack_machine1);
 	jack_setup(&jack2, &state.jack_machine2);
 
-	state.rf_dest_id = 0x4202;
+	//state.rf_dest_id = 0x4202;
+	state.rf_dest_id = 0x1;
 
 	while (1) {
 		struct jacks_result_t jr1, jr2;
