@@ -47,8 +47,7 @@ if options.testmode:
 else:
     mqttc = paho.Client("serial port listener")
     logging.basicConfig(level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-        filename="/var/log/karlnet/serial_xbee.log")
+        format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 
 log = logging.getLogger("main")
 
