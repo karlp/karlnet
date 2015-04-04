@@ -1,9 +1,11 @@
 // Karl Palsson, 2011
 // 
 // Keep netbeans happy
+/*
 #ifndef __AVR_ATmega32U4__
 #define __AVR_ATmega32U4__
 #endif
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
