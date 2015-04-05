@@ -63,7 +63,7 @@ def runMainLoop():
             log.warn("XXX Reopening the serial port, no data for %d seconds!", manualTimeout)
             if port:
                 port.close()
-            port = serial.Serial(options.port, 19200, timeout=10)
+            port = serial.Serial(options.port, 115200, timeout=10)
         packet = xbee_receiver.find_packet(port)
         if packet:
             xb = xbee_receiver(packet)
