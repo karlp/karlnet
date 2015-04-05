@@ -7,3 +7,4 @@ WorkingDirectory=/home/karlp/src/karlnet-git/producers/serial_xbee
 ExecStart=/home/karlp/src/karlnet-git/producers/serial_xbee/.env/bin/python \
 	justwatchserial.py -p /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_babe-if00-port0
 Restart=always
+RestartSec=3
