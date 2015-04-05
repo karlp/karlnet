@@ -89,7 +89,7 @@ def runMainLoop():
         hp = kpacket.human_packet(node=xb.address_16, sensors=kp.sensors)
         hp.time_received = time.time()
         mqttc.publish("karlnet/readings/%d" % hp.node, jsonpickle.encode(hp))
-        log.info(hp)
+        #log.info(hp)
 
 
 if __name__ == "__main__":
