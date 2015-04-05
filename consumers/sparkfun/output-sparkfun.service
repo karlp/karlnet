@@ -1,0 +1,9 @@
+[Unit]
+Description=boxcar node 0x1111 data.sparkfun publisher
+Wants=mosquitto.service
+
+[Service]
+WorkingDirectory=/home/karlp/src/karlnet-git/consumers/sparkfun
+ExecStart=/home/karlp/src/karlnet-git/consumers/sparkfun/.env/bin/python \
+	output-sparkfun.py -k 0mgrmMJyzyi04ya5A0nY -p 1njLnEDamaH6lN0WG6nX
+Restart=always
