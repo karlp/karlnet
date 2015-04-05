@@ -1,0 +1,7 @@
+si7020 for temp/humi
+mrf24xa  with pcb antenna
+mrf24j40 option?
+stm32l100? (l15x for more ram for ipv6?)
+swo brought out properly, maybe even 10pin cortex swd?
+mcp1640 with smaller footprints and everything
+
