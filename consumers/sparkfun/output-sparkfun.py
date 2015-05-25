@@ -27,6 +27,8 @@ def on_message(client, userdata, msg):
         }
         if len(mm["sensors"]) > 2:
             data["channel1_temp"] = mm["sensors"][2]["value"]
+        else:
+            data["channel1_temp"] = 0
 
         print("posting data: ", data)
         resp = requests.post("http://data.sparkfun.com/input/%s" % userdata.public_key, data=data, headers=headers)
