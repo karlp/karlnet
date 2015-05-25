@@ -67,7 +67,6 @@ void spi_setup(void) {
         SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
     /* Ignore the stupid NSS pin. */
     spi_enable_software_slave_management(MRF_SPI);
-    spi_enable_ss_output(MRF_SPI);
     spi_set_nss_high(MRF_SPI);
 
     /* Finally enable the SPI. */
