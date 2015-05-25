@@ -28,7 +28,7 @@ SIZE		= $(PREFIX)-size
 GDB		= $(PREFIX)-gdb
 
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m3 -msoft-float
-CFLAGS		+= -O0 -ggdb3 -Wall -Wextra \
+CFLAGS		+= -Os -ggdb3 -Wall -Wextra \
 		   -fno-common $(ARCH_FLAGS) -MD -DSTM32F1
 LDSCRIPT	?= $(BINARY).ld
 LDFLAGS		+= --static -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group \
