@@ -27,23 +27,11 @@ OBJDUMP		= $(PREFIX)-objdump
 SIZE		= $(PREFIX)-size
 GDB		= $(PREFIX)-gdb
 
-TOOLCHAIN_DIR ?= ../../../../..
-ifeq ($(wildcard ../../../../../lib/libopencm3_stm32f1.a),)
-ifneq ($(strip $(shell which $(CC))),)
-TOOLCHAIN_DIR := $(shell dirname `which $(CC)`)/../$(PREFIX)
-endif
-else
-ifeq ($(V),1)
-$(info We seem to be building the example in the source directory. Using local library!)
-endif
-endif
-
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m3 -msoft-float
-CFLAGS		+= -O0 -ggdb3 -Wall -Wextra -I$(TOOLCHAIN_DIR)/include \
+CFLAGS		+= -O0 -ggdb3 -Wall -Wextra \
 		   -fno-common $(ARCH_FLAGS) -MD -DSTM32F1
 LDSCRIPT	?= $(BINARY).ld
 LDFLAGS		+= --static -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group \
-		   -L$(TOOLCHAIN_DIR)/lib \
 		   -T$(LDSCRIPT) -nostartfiles -Wl,--gc-sections \
 		   $(ARCH_FLAGS) -mfix-cortex-m3-ldrd
 LDFLAGS+=--specs=nano.specs
@@ -51,9 +39,7 @@ LDFLAGS+=--specs=nano.specs
 ifneq ($(OPENCM3_DIR),)
 CFLAGS          += -I$(OPENCM3_DIR)/include
 LDFLAGS         += -L$(OPENCM3_DIR)/lib -L$(OPENCM3_DIR)/lib/stm32/f1
-SCRIPT_DIR      = $(OPENCM3_DIR)/share
 else
-SCRIPT_DIR      = $(shell dirname $(shell readlink -f $(shell which $(PREFIX)-gcc)))/../$(PREFIX)/share
 endif
 
 OBJS		+= $(BINARY).o
