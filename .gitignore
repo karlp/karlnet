@@ -14,7 +14,9 @@
 .dep.inc
 
 # netbeans
-private/
+nbproject/
+#intellij
+.idea/
 
 # python droppings
 *.pyc
