@@ -20,6 +20,9 @@ private/
 *.pyc
 *.pyo
 
+# virtualenv common names.
+.env
+
 # vim droppings
 *.*~
 *~
