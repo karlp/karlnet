@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
+#include <avr/power.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include "uart.h"
@@ -28,6 +29,7 @@ static int _uart1_putc(char c, FILE* stream) {
 }
 
 static void init(void) {
+    clock_prescale_set(clock_div_1);
     uart_init(UART_BAUD_SELECT(BAUD, F_CPU));
     uart1_init(UART_BAUD_SELECT(BAUD, F_CPU));
     fdev_setup_stream(&mystdout, _uart_putc, NULL, _FDEV_SETUP_WRITE);

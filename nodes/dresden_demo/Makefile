@@ -67,7 +67,9 @@ MCU = atmega128rfa1
 #   variable to same clock speed.  The _delay_ms() macro uses this, and many
 #   examples use this variable to calculate timings.  Do not add a "UL" here.
 #F_CPU = 1000000
-F_CPU = 8000000
+# Only if you have set lfuse properly to 0xd6
+# (external 16mhz crystal on the dresden module)
+F_CPU = 16000000
 
 
 # Output format. (can be srec, ihex, binary)
