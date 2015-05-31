@@ -36,6 +36,7 @@ static void init(void) {
     fdev_setup_stream(&mystdout1, _uart1_putc, NULL, _FDEV_SETUP_WRITE);
     stdout = &mystdout;
     DDRD |= _BV(PIND6);
+    DDRE |= _BV(PINE3);
 }
 
 int main(void) {
@@ -44,10 +45,12 @@ int main(void) {
     uint32_t i = 0;
     while (1) {
         PORTD |= (1 << PIND6);
+        PORTE &= ~(1 << PINE3);
         _delay_ms(500);
         printf_P(PSTR("hello karl, this is uart0, loop %d\n"), i++);
         fprintf_P(&mystdout1, PSTR("this is uart1, loop %d\n"), i);
         PORTD &= ~(1 << PIND6);
+        PORTE |= (1 << PINE3);
         _delay_ms(250);
     }
 }
