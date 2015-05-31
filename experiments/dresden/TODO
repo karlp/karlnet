@@ -1,3 +1,12 @@
+Note: v4 has nicer text, and nicer layout of extra pins, but 
+ but module DOES NOT make proper contact in the sockets when it's mounted that
+way up.
+
+v3c: you have to mount it upside down, but it was planned that way, but that
+way around the device actually makes contact and works!
+If you're making anything else, make sure to use the upside down footprint!
+
+
 v02 bugs
 * avr mosi connected to ICSP 5v pin
 * ICSP MOSI pin disconnected
