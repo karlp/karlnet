@@ -8,7 +8,7 @@
 #include <util/delay.h>
 #include "uart.h"
 
-#define BAUD 9600
+#define BAUD 57600
 
 static FILE mystdout = {0};
 static FILE mystdout1 = {0};
